@@ -1,146 +1,75 @@
-"""This module contains conversions, that are needed in different parts of the 
-library. It is not meant to import from anywhere within XHARPy so that its
-functions can be import without circular imports"""
-
-from typing import List, Tuple, Dict, Optional
+from typing import List, Dict, Union, Tuple, Optional
 import numpy as np
 
 
-def ucif2ucart(cell_mat_m: np.ndarray, u_mats: np.ndarray) -> np.ndarray:
-    """Calculate anisotropic displacement matrices in the cartesian convention
-    from the displacement matrices in the cif convention
-    see: R. W. Grosse-Kunstleve and P. D. Adams J. Appl. Cryst 2002, p.478
-    eq. 3a + 4a
-
-    Parameters
-    ----------
-    cell_mat_m : np.ndarray
-        size (3,3) array containing the cell vectors as row vectors
-    u_mats : np.ndarray
-        size (N, 3, 3) array containing the anisotropic displacement matrices in
-        cif format
-
-    Returns
-    -------
-    u_cart: np.ndarray
-        size (N, 3, 3) array of the matrices in cartesian convention
-    """
-    # 
-    cell_mat_f = np.linalg.inv(cell_mat_m).T
-    cell_mat_n = np.eye(3) * np.linalg.norm(cell_mat_f, axis=1)
-
-    u_star = np.einsum('ab, zbc, cd -> zad', cell_mat_n, u_mats, cell_mat_n.T)
-    return np.einsum('ab, zbc, cd -> zad', cell_mat_m, u_star, cell_mat_m.T)
-
-
-def cell_constants_to_M(
-    a: float,
-    b: float,
-    c: float,
-    alpha: float,
-    beta: float,
-    gamma: float,
-    crystal_system: str = 'triclinic'
+def cell_dict2atom_sites_dict(
+    cell_dict: Dict[str, float]
 ):
     """Generates a matrix with the three lattice vectors as row vectors
 
-    Parameters
-    ----------
-    a : float
-        cell constant a in Angstroem
-    b : float
-        cell constant b in Angstroem
-    c : float
-        cell constant c in Angstroem
-    alpha : float
-        cell angle alpha in degree
-    beta : float
-        cell angle beta in degree
-    gamma : float
-        cell angle gamma in degree
-    crystal_system : str, optional
-        Crystal system of the evaluated structure. Possible values are: 
-        'triclinic', 'monoclinic' 'orthorhombic', 'tetragonal', 'hexagonal',
-        'trigonal' and 'cubic'. Does not make a difference for the calculation
-        of the matrix, but does make a difference for the derivatives to the
-        cell parameters
-
     Returns
     -------
-    cell_mat_m: np.ndarray
+    matrix: np.ndarray
         size (3, 3) array containing the cell vectors as row vectors
     """
-    if crystal_system == 'monoclinic':
-        alpha = 90.0
-        gamma = 90.0
-    elif crystal_system == 'orthorhombic':
-        alpha = 90.0
-        beta = 90.0
-        gamma = 90.0
-    elif crystal_system == 'tetragonal':
-        b = a
-        alpha = 90.0
-        beta = 90.0
-        gamma = 90.0
-    elif crystal_system in ('hexagonal', 'trigonal'):
-        b = a
-        alpha = 90.0
-        beta = 90.0
-        gamma = 120.0
-    elif crystal_system == 'cubic':
-        b = a
-        c = a
-        alpha = 90.0
-        beta = 90.0
-        gamma = 90.0
-    alpha = alpha / 180.0 * np.pi
-    beta = beta / 180.0 * np.pi
-    gamma = gamma / 180.0 * np.pi
-    M = np.array(
+    a = cell_dict['cell_length_a']
+    b = cell_dict['cell_length_b']
+    c = cell_dict['cell_length_c']
+    alpha = cell_dict['cell_angle_alpha'] / 180.0 * np.pi
+    beta = cell_dict['cell_angle_beta'] / 180.0 * np.pi
+    gamma = cell_dict['cell_angle_gamma'] / 180.0 * np.pi
+    matrix = np.array(
         [
             [
                 a,
-                0,
-                0
-            ],
-            [
                 b * np.cos(gamma),
-                b * np.sin(gamma),
-                0
+                c * np.cos(beta)
             ],
             [
-                c * np.cos(beta),
-                c * (np.cos(alpha) - np.cos(gamma) * np.cos(beta)) / np.sin(gamma),
+                0,
+                b * np.sin(gamma),
+                c * (np.cos(alpha) - np.cos(gamma) * np.cos(beta)) / np.sin(gamma)
+            ],
+            [
+                0,
+                0,
                 c / np.sin(gamma) * np.sqrt(1.0 - np.cos(alpha)**2 - np.cos(beta)**2
                                             - np.cos(gamma)**2
                                             + 2 * np.cos(alpha) * np.cos(beta) * np.cos(gamma))
             ]
         ]
     )
-    return M.T
+    atom_sites_dict = {
+        'atom_sites_Cartn_transform_axes': 'a parallel to x; b in the plane of y and z',
+        'atom_sites_Cartn_tran_matrix': matrix
+    }
+    return atom_sites_dict
 
 
-def calc_sin_theta_ov_lambda(
-    cell_mat_f: np.ndarray,
-    index_vec_h: np.ndarray
-) -> np.ndarray:
+def add_sin_theta_ov_lambda(
+    cell_dict: Dict[str, float],
+    refln_dict: Dict[str, List[int]]
+) -> Dict[str, List[Union[int, float]]]:
     """Calculate the resolution in sin(theta)/lambda for the given set of Miller
     indicees
-
-    Parameters
-    ----------
-    cell_mat_f : np.ndarray
-        size (3, 3) array containing the reciprocal lattice vectors
-    index_vec_h : np.ndarray
-        size (H, 3) array of Miller indicees of reflections
-
-
-    Returns
-    -------
-    sin_theta_ov_lambda: np.ndarray
-        size (H) array containing the calculated resolution values
     """
-    return np.linalg.norm(np.einsum('xy, zy -> zx', cell_mat_f, index_vec_h), axis=1) / 2 
+    atom_sites_dict = cell_dict2atom_sites_dict(cell_dict=cell_dict)
+    cartn_tran_matrix = atom_sites_dict['atom_sites_Cartn_tran_matrix']
+    rec_cartn_tran_matrix = np.linalg.inv(cartn_tran_matrix).T
+    hkl = np.array([refln_dict[f'refln_index_{index}'] for index in ('h', 'k', 'l')]).T
+    output = refln_dict.copy()
+    output['refln_sint/lambda'] = np.linalg.norm(np.einsum('xy, zy -> zx', rec_cartn_tran_matrix, hkl), axis=1) / 2 
+    return output
+
+def add_cart_pos(atom_site_dict, cell_dict):
+    atom_sites_dict = cell_dict2atom_sites_dict(cell_dict)
+    xyz_fract = np.array([atom_site_dict[f'atom_site_fract_{val}'] for val in ('x', 'y', 'z')]).T
+    xyz_cartn = np.einsum('xy, zy -> zx', atom_sites_dict['atom_sites_Cartn_tran_matrix'], xyz_fract)
+    atom_site_out = atom_site_dict.copy()
+    atom_site_out['atom_site_Cartn_x'] = list(xyz_cartn[:,0])
+    atom_site_out['atom_site_Cartn_y'] = list(xyz_cartn[:,1])
+    atom_site_out['atom_site_Cartn_z'] = list(xyz_cartn[:,2])
+    return atom_site_out, atom_sites_dict
 
 
 def expand_symm_unique(
@@ -160,7 +89,7 @@ def expand_symm_unique(
     Parameters
     ----------
     type_symbols : List[str]
-        Element symbols of the atoms in the asymmetric unit
+        size (H) array containing the calculated resolution values
     coordinates : npt.NDArray[np.float64]
         size (N, 3) array of fractional atomic coordinates
     cell_mat_m : npt.NDArray[np.float64]

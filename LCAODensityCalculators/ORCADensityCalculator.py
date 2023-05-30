@@ -4,6 +4,7 @@ import platform
 import shutil
 import pathlib
 import subprocess
+from typing import Dict, List, Tuple, Union, Iterable, Optional
 
 calc_defaults = {
     'filebase': 'orca',
@@ -19,9 +20,22 @@ qm_defaults = {
     'blocks': {}
 }
 
-def batched(iterable: iter, n:int) -> iter:
-    "Batch data into tuples of length n. The last batch may be shorter."
-    # batched('ABCDEFG', 3) --> ABC DEF G
+def batched(iterable: Iterable, n:int) -> iter:
+    """
+    Batch data into tuples of length n. The last batch may be shorter.
+    Direct copy from the python itertools documentation
+
+    Args:
+        iterable (Iterable): Input iterable.
+        n (int): The size of the batches.
+
+    Returns:
+        Iterator[Tuple]: An iterator with the input data divided into batches.
+
+    Example:
+        batched('ABCDEFG', 3) --> ABC DEF G
+    """
+    
     if n < 1:
         raise ValueError('n must be at least one')
     it = iter(iterable)
@@ -29,10 +43,55 @@ def batched(iterable: iter, n:int) -> iter:
         yield batch
 
 class ORCADensityCalculator(LCAODensityCalculator):
+    """
+    A specialized calculator for using the ORCA quantum chemistry package that inherits from LCAODensityCalculator. 
+    This class provides methods to generate input files, execute ORCA, and process the output.
+
+    Attributes:
+        xyz_format (str): The format of the atomic coordinates.
+        provides_output (tuple): The output formats supported by the calculator.
+        atom_site_required (tuple): The required attributes for the atom_site_dict parameter.
+        qm_options (Dict[str, Any]): Quantum mechanics options for the ORCA calculation.
+            Keys:
+                'method': Either functional or orther quantum chemical method
+                    for the density calculation. Default: 'PBE'
+                'basis_set': Basis set for the wavefunction description. 
+                    Default: 'def2-SVP'
+                'multiplicity': spin multiplicity of the system. Default: 1
+                'charge': charge of the system. Default: 0
+                'keywords': List of additional keywords that will be added to 
+                    after the '!' in the ORCA input file.
+                'blocks': everything that is included into the ORCA input file
+                    using a % sign. If a newline is present in the included 
+                    string an entry will be concluded with 'end' in the input 
+                    file otherwise a single line entry without end will be
+                    produced. If cluster charges are included, an existing
+                    'pointcharges' entry will be overwritten.
+        calc_options (Dict[str, Any]): Calculation options specific to the ORCA calculation. The dictionary should contain
+            keys such as 'filebase' and 'output_format'.
+    """
     xyz_format = 'cartesian'
     provides_output = ('mkl', 'wfn')
+
+    atom_site_required = (
+        'atom_site_Cartn_x',
+        'atom_site_Cartn_y',
+        'atom_site_Cartn_z', 
+        'atom_site_type_symbol'
+    )
     
-    def __init__(self, *args, abs_orca_path=None, **kwargs):
+    def __init__(self, *args, abs_orca_path: Optional[str] = None, **kwargs):
+        """
+        Initialize the ORCADensityCalculator instance.
+
+        Args:
+            *args: Variable length argument list.
+            abs_orca_path (Optional[str]): The absolute path of the ORCA 
+                executable. Defaults to None, in this case the absolute path 
+                is determined from an orca executable in PATH.
+            **kwargs: Arbitrary keyword arguments.
+        """
+
         super().__init__(*args, **kwargs)
         if abs_orca_path is not None:
             self.abs_orca_path = abs_orca_path
@@ -45,13 +104,43 @@ class ORCADensityCalculator(LCAODensityCalculator):
             self.abs_orca_path = shutil.which('orca')
 
     def check_availability(self) -> bool:
+        """
+        Check if the ORCA executable is available in the system.
+
+        Returns:
+            bool: True if the ORCA executable is available, False otherwise.
+        """
         if self.abs_orca_path is not None:
             path = pathlib.Path(self.abs_orca_path)
             return path.exists()
         else:
             return False
     
-    def calculate_density(self, elements, xyz, cluster_charge_dict={}):
+
+    def calculate_density(
+            self,
+            atom_site_dict: Dict[str, Union[float, str]], 
+            cluster_charge_dict: Dict[str, List[float]] = {}
+        ):
+        """
+        Calculate the electronic density for a given atomic configuration using ORCA.
+
+        Args:
+            atom_site_dict (Dict[str, Union[float, str]]): Dictionary containing
+                the atomic configuration information.
+                Required keys: 'atom_site_type_symbol', 'atom_site_Cartn_x', 
+                'atom_site_Cartn_y', 'atom_site_Cartn_z'
+            cluster_charge_dict (Dict[str, List[float]], optional): Dictionary 
+                containing cluster charge information. provide a n, 3 numpy 
+                array under 'positions' for the charge positions and a 
+                n sized array with the charges under 'charges'.
+                Defaults to an empty dict for no cluster charges.
+        """
+        missing = [entry for entry in self.atom_site_required if entry not in dict(atom_site_dict)]
+        if len(missing) > 0:
+            mis_str = ', '.join(missing)
+            raise ValueError(f'The following necessary entries are not in the atom_site_dict: {mis_str}')
+
         # Merge defaults and user-supplied options
         qm_options = qm_defaults.copy()
         
@@ -77,10 +166,10 @@ class ORCADensityCalculator(LCAODensityCalculator):
             with open(cc_filename, 'w') as fo:
                 fo.write(cc_file)
 
-            qm_options['blocks']['pointcharges'] = "'cc_filename'"
+            qm_options['blocks']['pointcharges'] = f"{cc_filename}"
  
         # Create the input file content
-        input_content = self._generate_orca_input(elements, xyz, qm_options)
+        input_content = self._generate_orca_input(atom_site_dict, qm_options)
 
         # Write the input file to disk
         input_filename = f"{calc_options['filebase']}.inp"
@@ -104,8 +193,18 @@ class ORCADensityCalculator(LCAODensityCalculator):
         else:
             raise NotImplementedError('output_format from OrcaCalculator is not implemented. Choose either mkl or wfn')
 
-    def _generate_cluster_charge_file(cluster_charge_dict):
+    def _generate_cluster_charge_file(
+            cluster_charge_dict: Dict[str, List[float]]
+        ) -> str:
+        """
+        Generate the content of the ORCA cluster charge file using the given cluster charge dictionary.
 
+        Args:
+            cluster_charge_dict (Dict[str, List[float]]): Dictionary containing cluster charge information.
+
+        Returns:
+            str: The content of the cluster charge file.
+        """
         position_strings = iter(
             ' '.join(f'{val: 12.8f}' for val in single_position)
             for single_position in cluster_charge_dict['positions']
@@ -118,7 +217,20 @@ class ORCADensityCalculator(LCAODensityCalculator):
         
         return f"{len(cluster_charge_dict['charges'])}\n{charge_block}\n"
 
-    def _generate_orca_input(self, elements, xyz, qm_options):
+    def _generate_orca_input(self, atom_site_dict: Dict[str, Union[float, str]], 
+                             qm_options: Dict[str, Union[str, int, float, List[str], Dict[str, str]]]) -> str:
+        """
+        Generate the content of the ORCA input file using the given atom_site_dict and qm_options.
+
+        Args:
+            atom_site_dict (Dict[str, Union[float, str]]): Dictionary containing the atomic configuration information.
+                Required keys: 'atom_site_type_symbol', 'atom_site_Cartn_x', 'atom_site_Cartn_y', 'atom_site_Cartn_z'
+            qm_options (Dict[str, Union[str, int, float, List[str], Dict[str, str]]]): Dictionary containing the quantum mechanics options.
+
+        Returns:
+            str: The content of the ORCA input file.
+        """
+          
         # Set up the ORCA input file header
         header = f"! {qm_options['method']} {qm_options['basis_set']}"
 
@@ -133,8 +245,15 @@ class ORCADensityCalculator(LCAODensityCalculator):
 
         charge_mult = f"*xyz {qm_options['charge']} {qm_options['multiplicity']}"
 
+        entries = [atom_site_dict.get[key] for key in (
+            'atom_site_type_symbol',
+            'atom_site_Cartn_x',
+            'atom_site_Cartn_y',
+            'atom_site_Cartn_z'
+        )]
+
         # Generate the coordinates section
-        coordinates = [f"{element} {x} {y} {z}" for element, (x, y, z) in zip(elements, xyz)]
+        coordinates = [f"{element} {x} {y} {z}" for element, x, y, z in zip(*entries)]
         coordinates_section = '\n'.join(coordinates)
 
         # Combine sections into a complete input file
