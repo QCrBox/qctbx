@@ -20,6 +20,7 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
             self,
             filename,
             atom_site_dict,
+            cell_dict,
             symm_strings,
             refln_dict = None,
         ):

@@ -223,7 +223,7 @@ class ORCADensityCalculator(LCAODensityCalculator):
 
         charge_mult = f"*xyz {qm_options['charge']} {qm_options['multiplicity']}"
 
-        entries = [atom_site_dict.get[key] for key in (
+        entries = [atom_site_dict[key] for key in (
             '_atom_site_type_symbol',
             '_atom_site_Cartn_x',
             '_atom_site_Cartn_y',

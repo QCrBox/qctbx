@@ -5,15 +5,18 @@ except:
     horton = None
     
 import numpy as np
+import sys
 from contextlib import redirect_stdout
-from ..conversions import cell_dict2atom_sites_dict, create_hkl_dmin
+from ..conversions import cell_dict2atom_sites_dict
+from ..constants import ANGSTROM_PER_BOHR
 from ..util import batched
 from typing import Dict, Any, List, Optional
 
 defaults = {
     'method': 'mbis',
     'method_options': {},
-    'hkl_batch_size': 2000
+    'hkl_batch_size': 2000,
+    'log_file': 'horton.log'
 }
 
 class HortonPartitioner(LCAODensityPartitioner):
@@ -36,6 +39,17 @@ class HortonPartitioner(LCAODensityPartitioner):
         if options['method'].lower().startswith('hirshfeld'):
             assert 'atomdb_path' in options, 'The Hirshfeld methods need a valid path to an an h5 file generated with horton-atomdb.py under the keyword "atomdb_path"'
         self.options = options
+        if options['log_file'] is not None:
+            self._log_fo = open('horton.log', 'a')
+            horton.log._file = self._log_fo
+        else:
+            self._log_fo = None
+
+
+    def __del__(self):
+        if self._log_fo is not None:
+            self._log_fo.close()
+            horton.log._file = sys.stdout
     
     def check_availability(self) -> bool:
         """
@@ -54,28 +68,27 @@ class HortonPartitioner(LCAODensityPartitioner):
         Args:
             density_path (str): Path to the density data file.
         """
-        assert density_path is not None, 'So far density has not been partitioned, so a path is needed'       
+        assert density_path is not None, 'So far density has not been partitioned, so a path is needed'    
+   
         mol = horton.IOData.from_file(density_path)
         grid = horton.BeckeMolGrid(mol.coordinates, mol.numbers, mol.pseudo_numbers, mode='keep')
         moldens = mol.obasis.compute_grid_density_dm(mol.get_dm_full(), grid.points)
         
-        with open('horton.log', 'a') as fo:
-            with redirect_stdout(fo):
-                method = self.options['method']
+        method = self.options['method']
 
-                if method.lower() == 'hirshfeld':
-                    atomdb = horton.ProAtomDB.from_file(self.options['atomdb_path'])
-                    wpart = horton.HirshfeldWPart(mol.coordinates, mol.numbers, mol.pseudo_numbers, grid, moldens, atomdb, **self.options['method_options'])
-                elif method.lower() == 'hirshfeld-i':
-                    atomdb = horton.ProAtomDB.from_file(self.options['atomdb_path'])
-                    wpart = horton.HirshfeldIWPart(mol.coordinates, mol.numbers, mol.pseudo_numbers, grid, moldens, atomdb, **self.options['method_options'])
-                elif method.lower() == 'iterative-stockholder':
-                    wpart = horton.IterativeStockholderWPart(mol.coordinates, mol.numbers, mol.pseudo_numbers, grid, moldens, **self.options['method_options'])
-                elif method.lower() == 'mbis':
-                    wpart = horton.MBISWPart(mol.coordinates, mol.numbers, mol.pseudo_numbers, grid, moldens, **self.options['method_options'])
-                else:
-                    raise NotImplementedError('Partitioning method not implemented. Use either Hirshfeld, Hirshfeld-I, Iterative-Stockholder or MBIS')
-                wpart.do_partitioning()
+        if method.lower() == 'hirshfeld':
+            atomdb = horton.ProAtomDB.from_file(self.options['atomdb_path'])
+            wpart = horton.HirshfeldWPart(mol.coordinates, mol.numbers, mol.pseudo_numbers, grid, moldens, atomdb, **self.options['method_options'])
+        elif method.lower() == 'hirshfeld-i':
+            atomdb = horton.ProAtomDB.from_file(self.options['atomdb_path'])
+            wpart = horton.HirshfeldIWPart(mol.coordinates, mol.numbers, mol.pseudo_numbers, grid, moldens, atomdb, **self.options['method_options'])
+        elif method.lower() == 'iterative-stockholder':
+            wpart = horton.IterativeStockholderWPart(mol.coordinates, mol.numbers, mol.pseudo_numbers, grid, moldens, **self.options['method_options'])
+        elif method.lower() == 'mbis':
+            wpart = horton.MBISWPart(mol.coordinates, mol.numbers, mol.pseudo_numbers, grid, moldens, **self.options['method_options'])
+        else:
+            raise NotImplementedError('Partitioning method not implemented. Use either Hirshfeld, Hirshfeld-I, Iterative-Stockholder or MBIS')
+        wpart.do_partitioning()
                 
         self.wpart = wpart
     
@@ -116,11 +129,11 @@ class HortonPartitioner(LCAODensityPartitioner):
         f0j = np.zeros((len(atom_indexes), index_vec_h.shape[0]), dtype=np.complex128)
         vec_s = np.einsum('xy, zy -> zx', cell_mat_f, index_vec_h)
         for atom_index in atom_indexes:
-            print(atom_index, end='/ ')
+            #print(atom_index, end='/ ')
             at_grid = self.wpart.get_grid(atom_index)
-            coordinates = at_grid.points - at_grid.center
+            coordinates = (at_grid.points - at_grid.center) * ANGSTROM_PER_BOHR
             for f0j_index, vec_s_slice in enumerate(batched(vec_s, self.options['hkl_batch_size'])):
-                print(f0j_index, end=' ')
+                #print(f0j_index, end=' ')
                 vec_s_array = np.array(vec_s_slice)
                 phase_factors = np.exp(2j * np.pi * np.einsum('ax, bx -> ab', vec_s_array, coordinates))
                 start = f0j_index * self.options['hkl_batch_size']
@@ -131,7 +144,7 @@ class HortonPartitioner(LCAODensityPartitioner):
                 f0j[atom_index, start:end] = np.sum(
                     (at_grid.weights * self.wpart[('at_weights', atom_index)] * self.wpart.get_moldens(atom_index))[None,:] * phase_factors, 
                     axis=1)
-            print('')
+            #print('')
         return f0j
     
     def calc_charges(self, atom_indexes: List[int], density_path: Optional[str] = None) -> np.ndarray:
