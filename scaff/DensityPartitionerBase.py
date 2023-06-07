@@ -16,5 +16,5 @@ class DensityPartitioner(ABC):
         pass
 
     @abstractmethod
-    def add_citation_strings(self):
+    def citation_strings(self):
         pass

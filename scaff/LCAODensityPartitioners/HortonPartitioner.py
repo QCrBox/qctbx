@@ -6,6 +6,7 @@ except:
     
 import numpy as np
 import sys
+from copy import deepcopy
 from contextlib import redirect_stdout
 from ..conversions import cell_dict2atom_sites_dict
 from ..constants import ANGSTROM_PER_BOHR
@@ -32,6 +33,7 @@ class HortonPartitioner(LCAODensityPartitioner):
             options (Dict[str, Any], optional): Options for HortonPartitioner. Defaults to {}.
         """
         super().__init__()
+        options = deepcopy(options)
         for key, value in defaults.items():
             if key not in options:
                 options[key] = value
@@ -93,18 +95,23 @@ class HortonPartitioner(LCAODensityPartitioner):
         self.wpart = wpart
     
     def calc_f0j(
-            self,
-            atom_indexes: List[int],
-            cell_dict: Dict[str, Any],
-            refln_dict: Dict[str, Any],
-            density_path: Optional[str] = None
-        ) -> np.ndarray:
+        self,
+        atom_labels: List[int],
+        atom_site_dict: Dict[str, List[Any]],
+        cell_dict: Dict[str, Any],
+        space_group_dict: Dict[str, Any],
+        refln_dict: Dict[str, Any],
+        density_path: Optional[str] = None
+    ) -> np.ndarray:
         """
         Calculate atomic structure factors given atom indexes and cell dictionary.
         Perform partitioning first if not done before. If the par
 
         Args:
-            atom_indexes (List[int]): List of atom indexes.
+            atom_labels (List[int]): Labels of atoms to be included in the 
+                partitioning.
+            atom_site_dict (Dict[str, Any]): Dictionary of atom site entries,
+                needs to contain _atom_site_label
             cell_dict (Dict[str, Any]): Cell dictionary containing the unit cell
                 parameters in with the keys being the CIF format entries.
             refln_dict (Dict[str, Any]): Miller indicees as refln_index keyed
@@ -117,6 +124,10 @@ class HortonPartitioner(LCAODensityPartitioner):
         """
         if self.wpart is None:
             self.partition(density_path)
+
+        all_atom_labels = list(atom_site_dict['_atom_site_label'])
+
+        atom_indexes = [all_atom_labels.index(label) for label in atom_labels]
         
         index_vec_h = np.array((
             refln_dict['_refln_index_h'],
@@ -147,7 +158,12 @@ class HortonPartitioner(LCAODensityPartitioner):
             #print('')
         return f0j
     
-    def calc_charges(self, atom_indexes: List[int], density_path: Optional[str] = None) -> np.ndarray:
+    def calc_charges(
+        self,
+        atom_labels: List[int],
+        atom_site_dict: Dict[str, List[Any]],
+        density_path: Optional[str] = None
+    ) -> np.ndarray:
         """
         Calculate atomic charges of given atom indexes. Perform partitioning 
         first if not done before.
@@ -162,11 +178,16 @@ class HortonPartitioner(LCAODensityPartitioner):
         """        
         if self.wpart is None:
             self.partition(density_path)
+
+
+        all_atom_labels = list(atom_site_dict['_atom_site_label'])
+
+        atom_indexes = [all_atom_labels.index(label) for label in atom_labels]
             
         return np.array([self.wpart['charges'][idx] for idx in atom_indexes])
     
 
-    def add_citation_strings(self) -> str:
+    def citation_strings(self) -> str:
         # TODO: Add a short string with the citation as bib and a sentence what was done
         return 'bib_string', 'sentence string'
     

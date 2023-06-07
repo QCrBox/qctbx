@@ -1,4 +1,4 @@
-from typing import List, Dict, Union, Tuple, Optional
+from typing import List, Dict, Union, Tuple, Optional, Any
 import numpy as np
 
 def cell_dict2atom_sites_dict(
@@ -70,7 +70,32 @@ def add_sin_theta_ov_lambda(
     output['_refln_sint/lambda'] = np.linalg.norm(np.einsum('xy, zy -> zx', rec_cartn_tran_matrix, hkl), axis=1) / 2 
     return output
 
-def add_cart_pos(atom_site_dict, cell_dict):
+def add_cart_pos(atom_site_dict: Dict[str, List[float]], cell_dict: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """
+    Convert fractional atomic positions to Cartesian coordinates based on the unit cell parameters.
+
+    Parameters
+    ----------
+    atom_site_dict : Dict[str, List[float]]
+        Dictionary containing fractional atomic positions as lists of floats
+        in cif format. Needs to include: '_atom_site_fract_x',
+        '_atom_site_fract_y', and '_atom_site_fract_z'.
+
+    cell_dict : Dict[str, Any]
+        Dictionary containing cell parameters in cif notation
+
+    Returns
+    -------
+    atom_site_out : Dict[str, Any]
+        The input dictionary with added Cartesian coordinates. These are added 
+        as lists of floats with keys '_atom_site_Cartn_x', '_atom_site_Cartn_y',
+        and '_atom_site_Cartn_z'.
+        
+    atom_sites_dict : Dict[str, Any]
+        Dictionary containing the transformation matrix for conversion from 
+        fractional to Cartesian coordinates and the cartesian convention in 
+        as cif keys.
+    """
     atom_sites_dict = cell_dict2atom_sites_dict(cell_dict)
     xyz_fract = np.array([atom_site_dict[f'_atom_site_fract_{val}'] for val in ('x', 'y', 'z')]).T
     xyz_cartn = np.einsum('xy, zy -> zx', atom_sites_dict['_atom_sites_Cartn_tran_matrix'], xyz_fract)
@@ -197,9 +222,10 @@ def create_hkl_dmin(
         '_refln_index_k': k.ravel(),
         '_refln_index_l': l.ravel()
     }
-    refln_dict = add_sin_theta_ov_lambda(cell_dict, refln_dict)    
+    refln_dict = add_sin_theta_ov_lambda(cell_dict, refln_dict)
+    condition = np.logical_and(refln_dict['_refln_sint/lambda'] <= 0.5 / d_min, refln_dict['_refln_sint/lambda'] > 0.5)
     return {
-        '_refln_index_h': refln_dict['_refln_index_h'][refln_dict['_refln_sint/lambda'] <= 0.5 / d_min].copy(),
-        '_refln_index_k': refln_dict['_refln_index_k'][refln_dict['_refln_sint/lambda'] <= 0.5 / d_min].copy(),
-        '_refln_index_l': refln_dict['_refln_index_l'][refln_dict['_refln_sint/lambda'] <= 0.5 / d_min].copy(),
+        '_refln_index_h': refln_dict['_refln_index_h'][condition].copy(),
+        '_refln_index_k': refln_dict['_refln_index_k'][condition].copy(),
+        '_refln_index_l': refln_dict['_refln_index_l'][condition].copy(),
     }

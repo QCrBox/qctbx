@@ -1,5 +1,6 @@
 from .LCAODensityCalculatorBase import LCAODensityCalculator
 from ..util import batched
+from ..conversions import add_cart_pos
 import platform
 import shutil
 import pathlib
@@ -50,15 +51,13 @@ class ORCADensityCalculator(LCAODensityCalculator):
     """
     xyz_format = 'cartesian'
     provides_output = ('mkl', 'wfn')
-
-    atom_site_required = (
-        '_atom_site_Cartn_x',
-        '_atom_site_Cartn_y',
-        '_atom_site_Cartn_z', 
-        '_atom_site_type_symbol'
-    )
     
-    def __init__(self, *args, abs_orca_path: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        *args, 
+        abs_orca_path: Optional[str] = None,
+        **kwargs
+    ):
         """
         Initialize the ORCADensityCalculator instance.
 
@@ -98,6 +97,7 @@ class ORCADensityCalculator(LCAODensityCalculator):
     def calculate_density(
             self,
             atom_site_dict: Dict[str, Union[float, str]], 
+            cell_dict,
             cluster_charge_dict: Dict[str, List[float]] = {}
         ):
         """
@@ -114,11 +114,6 @@ class ORCADensityCalculator(LCAODensityCalculator):
                 n sized array with the charges under 'charges'.
                 Defaults to an empty dict for no cluster charges.
         """
-        missing = [entry for entry in self.atom_site_required if entry not in dict(atom_site_dict)]
-        if len(missing) > 0:
-            mis_str = ', '.join(missing)
-            raise ValueError(f'The following necessary entries are not in the atom_site_dict: {mis_str}')
-
         # Merge defaults and user-supplied options
         qm_options = qm_defaults.copy()
         
@@ -147,7 +142,7 @@ class ORCADensityCalculator(LCAODensityCalculator):
             qm_options['blocks']['pointcharges'] = f"{cc_filename}"
  
         # Create the input file content
-        input_content = self._generate_orca_input(atom_site_dict, qm_options)
+        input_content = self._generate_orca_input(atom_site_dict, cell_dict, qm_options)
 
         # Write the input file to disk
         input_filename = f"{calc_options['filebase']}.inp"
@@ -166,10 +161,13 @@ class ORCADensityCalculator(LCAODensityCalculator):
         format_standardise = calc_options['output_format'].lower().replace('.', '')
         if  format_standardise == 'mkl':
             subprocess.check_output(['orca_2mkl', calc_options['filebase']])
+            return calc_options['filebase'] + '.mkl'
         elif format_standardise == 'wfn':
             subprocess.check_output(['orca_2aim', calc_options['filebase']])
+            return calc_options['filebase'] + '.wfn'
         else:
             raise NotImplementedError('output_format from OrcaCalculator is not implemented. Choose either mkl or wfn')
+        
 
     def _generate_cluster_charge_file(
             cluster_charge_dict: Dict[str, List[float]]
@@ -195,8 +193,12 @@ class ORCADensityCalculator(LCAODensityCalculator):
         
         return f"{len(cluster_charge_dict['charges'])}\n{charge_block}\n"
 
-    def _generate_orca_input(self, atom_site_dict: Dict[str, Union[float, str]], 
-                             qm_options: Dict[str, Union[str, int, float, List[str], Dict[str, str]]]) -> str:
+    def _generate_orca_input(
+            self,
+            atom_site_dict: Dict[str, Union[float, str]],
+            cell_dict: Dict[str, float],
+            qm_options: Dict[str, Union[str, int, float, List[str], Dict[str, str]]]
+        ) -> str:
         """
         Generate the content of the ORCA input file using the given atom_site_dict and qm_options.
 
@@ -222,13 +224,17 @@ class ORCADensityCalculator(LCAODensityCalculator):
         )
 
         charge_mult = f"*xyz {qm_options['charge']} {qm_options['multiplicity']}"
-
-        entries = [atom_site_dict[key] for key in (
+        columns = (
             '_atom_site_type_symbol',
             '_atom_site_Cartn_x',
             '_atom_site_Cartn_y',
             '_atom_site_Cartn_z'
-        )]
+        )
+        try:
+            entries = [atom_site_dict[key] for key in columns]
+        except KeyError:
+            new_atom_site_dict, _ = add_cart_pos(atom_site_dict, cell_dict)
+            entries = [new_atom_site_dict[key] for key in columns]
 
         # Generate the coordinates section
         coordinates = [f"{element} {x} {y} {z}" for element, x, y, z in zip(*entries)]
@@ -242,7 +248,7 @@ class ORCADensityCalculator(LCAODensityCalculator):
         # TODO: Implement the logic to generate a CIF output from the calculation
         return 'Someone needs to implement this before production'
     
-    def add_citation_strings(self) -> str:
+    def citation_strings(self) -> str:
         # TODO: Add a short string with the citation as bib and a sentence what was done
         return 'bib_string', 'sentence string'
 

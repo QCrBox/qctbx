@@ -68,11 +68,11 @@ class GaussianDensityCalculator(LCAODensityCalculator):
 
         format_standardise = calc_options['output_format'].lower().replace('.', '')
         if format_standardise == 'wfn':
-            pass
             #subprocess.check_output(['formchk', f"{calc_options['filebase']}.chk", f"{calc_options['filebase']}.wfn"])
+            return calc_options['filebase'] + '.wfn'
         elif format_standardise == 'wfx':
-            pass
             #subprocess.check_output(['formchk', '-3', f"{calc_options['filebase']}.chk", f"{calc_options['filebase']}.wfx"])
+            return calc_options['filebase'] + '.wfn'
         else:
             raise NotImplementedError('output_format from GaussianDensityCalculator is not implemented. Choose wfn or wfx')
 
