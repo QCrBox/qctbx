@@ -1,5 +1,6 @@
 import ase
 from .LCAODensityCalculatorBase import LCAODensityCalculator
+from ..QCCalculator.AseCalculator import AseLCAOCalculator
 from ..util import dict_merge
 from ..conversions import add_cart_pos
 from ase.calculators.nwchem import NWChem
@@ -8,30 +9,35 @@ import os
 import pathlib
 import numpy as np
 import subprocess
+import warnings
 
 calc_defaults = {
     'label': 'nwchem',
     'work_directory': '.',
-    'output_format': 'mkl'
+    'output_format': 'wfn'
 }
 
 qm_defaults = {
-    'method': 'PBE',
+    'method': 'hcth407p',
     'basis_set': 'def2-SVP',
     'multiplicity': 1,
-    'charge': 0,
+    'charge': 0,                       
     'n_core': 1,
     'ram': 2000,
     'ase_options': {}
 }
 
 
+molden2aimfile = 'molden= -1\nwfn= 1\nwfncheck= 1\nwfx= 1\nwfxcheck= 1\nnbo= -1\nnbocheck= -1\nwbo= -1\nprogram=0\nedftyp=0\nallmo=1\nprspin=1\nunknown=1\ncarsph=0\nnbopro=0\nnosupp=1\ntitle=0\nclear=1\nansi=0\n'
+
 class NWChemLCAODensityCalculator(LCAODensityCalculator):
     xyz_format = 'cartesian'
     provides_output = ('wfn')
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, nwchem_path='nwchem', molden2aimpath=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.nwchem_path = nwchem_path
+        self.molden2aimpath = molden2aimpath
 
     def check_availability(self) -> bool:
         """
@@ -40,7 +46,7 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
         Returns:
             bool: True if the nwchem executable is available, False otherwise.
         """
-        path = pathlib.Path('nwchem')
+        path = pathlib.Path(self.nwchem_path)
         return path.exists()
 
     def calculate_density(
@@ -75,19 +81,57 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
         used_calc_options = dict_merge(calc_defaults, self.calc_options)
         
         ase_options = used_qm_options['ase_options']
-        ase_options['method'] = used_qm_options['method']
-        ase_options['basis_set'] = used_qm_options['basis_set']
+        ase_options['dft'] = {
+            'xc': used_qm_options['method'],
+        }
+        ase_options['basis'] = used_qm_options['basis_set']
+        ase_options['charge'] = used_qm_options['charge']
+        if used_qm_options['multiplicity'] != 1:
+            ase_options['dft']['MULT'] = used_qm_options['multiplicity']
         ase_options['label'] = os.path.join(used_calc_options['work_directory'], used_calc_options['label'])
+        if self.molden2aimpath is not None:
+            ase_options['property'] = {
+                'Moldenfile': None,
+                'Molden_norm': 'janpa'
+            }
+        else:
+            ase_options['property'] = {
+                'Aimfile': None
+            }
+        ase_options['task'] = 'property'
+        ase_options['memory'] = f'total {int(used_qm_options["ram"])} mb'
 
+        if used_qm_options['n_core'] > 1:
+            ase_options['command'] = f'mpirun -n {used_qm_options["n_core"]} {self.nwchem_path}]'
+     
+        nwchem = NWChem(**ase_options)
 
-        nwchem = NWChem(
-
+        calculator = AseLCAOCalculator(
+            calc=nwchem,
+            positions=positions,
+            symbols=list(atom_site_dict['_atom_site_type_symbol'])
         )
 
+        calculator.run_calculation()
         
-        if self.qm_options['postproc_command'] is not None:
-            subprocess.check_output(self.qm_options['postproc_command'], shell=True)
+        if self.molden2aimpath is not None:
+            self._write_molden2aim_ini()
+            abs_path = pathlib.Path(self.molden2aimpath).resolve()
+            with open(os.path.join(used_calc_options['work_directory'], 'molden2aim.log'), 'w') as fo:
+                subprocess.check_call(
+                    [abs_path, '-i', f"{used_calc_options['label']}.molden"],
+                    cwd=os.path.join(used_calc_options['work_directory'], used_calc_options['label']),
+                    stdout=fo
+                )
+        else:
+            warnings.warn('The wfn output without molden2aim might not be compatible with all partitioners (NoSpherA2 should work)')
 
+        return os.path.join(used_calc_options['work_directory'], used_calc_options['label'], f"{used_calc_options['label']}.wfn")
+
+    def _write_molden2aim_ini(self):
+        used_calc_options = dict_merge(calc_defaults, self.calc_options)
+        with open(os.path.join(used_calc_options['work_directory'], used_calc_options['label'], 'm2a.ini'), 'w') as fo:
+            fo.write(molden2aimfile)
     def cif_output(self):
         return 'Implement me'
 

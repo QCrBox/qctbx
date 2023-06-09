@@ -8,12 +8,10 @@ class AseLCAOCalculator(LCAOQCCalculator):
         self,
         *args,
         calc = None,
-        label='generic_ase',
         **kwargs
     ):
         super().__init__(*args, **kwargs)
         self.calc = calc
-        self.label = label
 
     @property
     def charge(self):

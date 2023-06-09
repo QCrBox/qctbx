@@ -25,7 +25,7 @@ def batched(iterable: Iterable, n:int) -> iter:
     while batch := tuple(islice(it, n)):
         yield batch
 
-def dict_merge(*args: Dict[str, Any], case_sensitive=True) -> Dict[str, Any]:
+def dict_merge(*args: Dict[str, Any], case_sensitive: bool=True) -> Dict[str, Any]:
     """
     Merge multiple input dictionaries into a single dictionary.
     
@@ -44,6 +44,10 @@ def dict_merge(*args: Dict[str, Any], case_sensitive=True) -> Dict[str, Any]:
 
     Args:
         *args: A variable number of dictionaries to be merged.
+        case_sensitive (bool): if True case sensitivity will be obeyed in the 
+            merging of dictionaries and lists. If False, the merging will be 
+            done with the assumption that different case strings are equal. 
+            Resulting strings will come from the latest dict in args.
 
     Returns:
         A single dictionary that is the result of merging all input 

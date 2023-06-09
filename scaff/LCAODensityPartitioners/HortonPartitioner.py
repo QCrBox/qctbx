@@ -71,7 +71,7 @@ class HortonPartitioner(LCAODensityPartitioner):
             density_path (str): Path to the density data file.
         """
         assert density_path is not None, 'So far density has not been partitioned, so a path is needed'    
-   
+
         mol = horton.IOData.from_file(density_path)
         grid = horton.BeckeMolGrid(mol.coordinates, mol.numbers, mol.pseudo_numbers, mode='keep')
         moldens = mol.obasis.compute_grid_density_dm(mol.get_dm_full(), grid.points)
@@ -178,7 +178,6 @@ class HortonPartitioner(LCAODensityPartitioner):
         """        
         if self.wpart is None:
             self.partition(density_path)
-
 
         all_atom_labels = list(atom_site_dict['_atom_site_label'])
 
