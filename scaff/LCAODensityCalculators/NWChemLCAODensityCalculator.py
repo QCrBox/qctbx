@@ -1,13 +1,32 @@
 import ase
 from .LCAODensityCalculatorBase import LCAODensityCalculator
+from ..util import dict_merge
 from ..conversions import add_cart_pos
+from ase.calculators.nwchem import NWChem
 from typing import Dict, List, Union, Any
+import os
 import pathlib
 import numpy as np
 import subprocess
 
+calc_defaults = {
+    'label': 'nwchem',
+    'work_directory': '.',
+    'output_format': 'mkl'
+}
 
-class AseLCAODensityCalculator(LCAODensityCalculator):
+qm_defaults = {
+    'method': 'PBE',
+    'basis_set': 'def2-SVP',
+    'multiplicity': 1,
+    'charge': 0,
+    'n_core': 1,
+    'ram': 2000,
+    'ase_options': {}
+}
+
+
+class NWChemLCAODensityCalculator(LCAODensityCalculator):
     xyz_format = 'cartesian'
     provides_output = ('wfn')
 
@@ -52,10 +71,20 @@ class AseLCAODensityCalculator(LCAODensityCalculator):
             new_atom_site_dict, _ = add_cart_pos(atom_site_dict, cell_dict)
             positions = np.array([new_atom_site_dict[f'_atom_site_Cartn_{coord}'] for coord in ('x', 'y', 'z')]).T
 
-        atoms = ase.Atoms(symbols=symbols, positions=positions)
-        atoms.set_calculator(self.qm_options['ase_calc'])
-        atoms.get_potential_energy()
+        used_qm_options = dict_merge(qm_defaults, self.qm_options)
+        used_calc_options = dict_merge(calc_defaults, self.calc_options)
+        
+        ase_options = used_qm_options['ase_options']
+        ase_options['method'] = used_qm_options['method']
+        ase_options['basis_set'] = used_qm_options['basis_set']
+        ase_options['label'] = os.path.join(used_calc_options['work_directory'], used_calc_options['label'])
 
+
+        nwchem = NWChem(
+
+        )
+
+        
         if self.qm_options['postproc_command'] is not None:
             subprocess.check_output(self.qm_options['postproc_command'], shell=True)
 
