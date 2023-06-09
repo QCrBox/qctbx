@@ -74,6 +74,7 @@ def dict_merge(*args: Dict[str, Any], case_sensitive: bool=True) -> Dict[str, An
             a_compare = list(lower_if_str(key) for key in a.keys())
         else:
             a_compare = a.keys()
+        orig_a_keys = list(a.keys())
         for b_key in b:
             if case_sensitive:
                 b_compare = b_key
@@ -83,7 +84,7 @@ def dict_merge(*args: Dict[str, Any], case_sensitive: bool=True) -> Dict[str, An
                 if case_sensitive:
                     a_key = b_key
                 else:
-                    a_key = list(a.keys())[a_compare.index(lower_if_str(b_key))]
+                    a_key = orig_a_keys[a_compare.index(lower_if_str(b_key))]
                 if isinstance(a[a_key], dict) and isinstance(b[b_key], dict):
                     inner_merge(a[a_key], b[b_key], path + [str(b_key)])
                 elif isinstance(a[a_key], list) and isinstance(b[b_key], list):
@@ -99,7 +100,7 @@ def dict_merge(*args: Dict[str, Any], case_sensitive: bool=True) -> Dict[str, An
                         del(a[a_key])
                     a[b_key] = b[b_key]
                 else:
-                    raise Exception('Types of entries do not match at %s' % '.'.join(path + [str(b_key)]))
+                    raise Exception(f"Types of entries do not match at {'.'.join(path + [str(b_key)])}, type1 {str(type(b[b_key]))}, type2 {str(type(a[a_key]))}")
             else:
                 a[b_key] = b[b_key]
         return a

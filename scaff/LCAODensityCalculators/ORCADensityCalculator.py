@@ -5,6 +5,7 @@ from ..QCCalculator.ORCACalculator import ORCACalculator
 from ..util import dict_merge
 import subprocess
 import numpy as np
+import os
 
 from typing import Dict, List, Union, Optional
 
@@ -146,10 +147,10 @@ class ORCADensityCalculator(LCAODensityCalculator):
         format_standardise = calc_options['output_format'].lower().replace('.', '')
         if  format_standardise == 'mkl':
             subprocess.check_output(['orca_2mkl', calc_options['label']], cwd=calc_options['work_directory'])
-            return calc_options['label'] + '.mkl'
+            return os.path.join(calc_options['work_directory'], calc_options['label'] + '.mkl')
         elif format_standardise == 'wfn':
             subprocess.check_output(['orca_2aim', calc_options['label']], cwd=calc_options['work_directory'])
-            return calc_options['label'] + '.wfn'
+            return os.path.join(calc_options['work_directory'], calc_options['label'] + '.wfn')
         else:
             raise NotImplementedError('output_format from OrcaCalculator is not implemented. Choose either mkl or wfn')
 
