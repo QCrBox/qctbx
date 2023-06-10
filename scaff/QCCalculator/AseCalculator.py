@@ -1,4 +1,4 @@
-from .BaseLCAOQCCalculator import LCAOQCCalculator
+from .BaseQCCalculators import LCAOQCCalculator
 import ase
 
 class AseLCAOCalculator(LCAOQCCalculator):

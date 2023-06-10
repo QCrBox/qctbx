@@ -3,7 +3,7 @@ import pathlib
 import shutil
 import subprocess
 import os
-from .BaseLCAOQCCalculator import LCAOQCCalculator
+from .BaseQCCalculators import LCAOQCCalculator
 from typing import Dict, List, Union, Optional
 import numpy as np
 from ..util import batched
