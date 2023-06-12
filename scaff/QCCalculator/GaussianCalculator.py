@@ -64,13 +64,13 @@ class GaussianCalculator(LCAOQCCalculator):
         charge_mult = f"{self.charge} {self.multiplicity}"
 
         if self.cluster_charge_dict.get('charges', []) > 0:
-            ecp_lines = [f"{charge} {x} {y} {z}" for charge, (x, y, z) in zip(self.cluster_charge_dict['charges'], self.cluster_charge_dict['positions'])]
+            ecp_lines = [f"{charge} {x} {y} {z}" for charge, (x, y, z) in zip(self.cluster_charge_dict['charges'], self.cluster_charge_dict['positions_cart'])]
             ecp_section = "\n".join(ecp_lines)
             ecp_input = f"\n{ecp_section}\n"
         else:
             ecp_input = ""
 
-        coordinates = [f"{element} {x} {y} {z}" for element, (x, y, z) in zip(self.symbols, self.positions)]
+        coordinates = [f"{element} {x} {y} {z}" for element, (x, y, z) in zip(self.symbols, self.positions_cart)]
         coordinates_section = '\n'.join(coordinates)
 
         route_section = f"# "

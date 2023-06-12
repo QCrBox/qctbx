@@ -65,17 +65,17 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
                 '_atom_site_Cartn_y', '_atom_site_Cartn_z'
             cluster_charge_dict (Dict[str, List[float]], optional): Dictionary 
                 containing cluster charge information. provide a n, 3 numpy 
-                array under 'positions' for the charge positions and a 
+                array under 'positions_cart' for the charge positions and a 
                 n sized array with the charges under 'charges'.
                 Defaults to an empty dict for no cluster charges.
         """
         assert len(cluster_charge_dict) == 0, 'Cluster charges are currently not supported'
         symbols = list(atom_site_dict['_atom_site_type_symbol'])
         try:
-            positions = np.array([atom_site_dict[f'_atom_site_Cartn_{coord}'] for coord in ('x', 'y', 'z')]).T
+            positions_cart = np.array([atom_site_dict[f'_atom_site_Cartn_{coord}'] for coord in ('x', 'y', 'z')]).T
         except KeyError:
             new_atom_site_dict, _ = add_cart_pos(atom_site_dict, cell_dict)
-            positions = np.array([new_atom_site_dict[f'_atom_site_Cartn_{coord}'] for coord in ('x', 'y', 'z')]).T
+            positions_cart = np.array([new_atom_site_dict[f'_atom_site_Cartn_{coord}'] for coord in ('x', 'y', 'z')]).T
 
         used_qm_options = dict_merge(qm_defaults, self.qm_options)
         used_calc_options = dict_merge(calc_defaults, self.calc_options)
@@ -108,7 +108,7 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
 
         calculator = AseLCAOCalculator(
             calc=nwchem,
-            positions=positions,
+            positions_cart=positions_cart,
             symbols=list(atom_site_dict['_atom_site_type_symbol'])
         )
 

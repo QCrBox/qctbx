@@ -112,7 +112,6 @@ def expand_symm_unique(
         cell_mat_m: np.ndarray,
         symm_mats_vec: Tuple[np.ndarray, np.ndarray],
         skip_symm: Dict[str, List[int]] = {},
-        magmoms: Optional[np.ndarray] = None
     ) -> Tuple[np.ndarray, List[str],
                np.ndarray, Optional[np.ndarray]]:
     """Expand the type_symbols and coordinates for one complete unit cell.
@@ -123,7 +122,7 @@ def expand_symm_unique(
     Parameters
     ----------
     type_symbols : List[str]
-        size (H) array containing the calculated resolution values
+        size (N) list containing the element symbols
     coordinates : npt.NDArray[np.float64]
         size (N, 3) array of fractional atomic coordinates
     cell_mat_m : npt.NDArray[np.float64]
@@ -136,9 +135,6 @@ def expand_symm_unique(
         values with not be applied to the respective atoms with the atom names
         given in the key(s). Indexes need to be identical to the ones in 
         symm_mats_vec., by default {}
-    magmoms : Optional[npt.NDArray[np.float64]], optional
-        Magnetic Moments. The enforced symmetry might not be correcz, by default
-        None
 
     Returns
     -------
@@ -151,8 +147,6 @@ def expand_symm_unique(
         size (K, N) array with indexes mapping the unique atom positions back to 
         the individual symmetry elements and atom positions in the asymmetric 
         unit
-    symm_magmoms: Optional[npt.NDArray[np.float64]]]
-        magnetic moments for symmetry generated atoms. Undertested!
     """
     symm_mats_r, symm_vecs_t = symm_mats_vec
     pos_frac0 = coordinates % 1
@@ -160,10 +154,6 @@ def expand_symm_unique(
     n_atoms = 0
     type_symbols_symm = []
     inv_indexes = []
-    if magmoms is not None:
-        magmoms_symm = []
-    else:
-        magmoms_symm = None
     # Only check atom with itself
     for atom_index, (pos0, type_symbol) in enumerate(zip(pos_frac0, type_symbols)):
         if atom_index in skip_symm:
@@ -182,13 +172,9 @@ def expand_symm_unique(
         )
         un_positions = np.concatenate((un_positions, symm_positions[unique_indexes]))
         type_symbols_symm += [type_symbol] * unique_indexes.shape[0]
-        if magmoms is not None:
-            magmoms_symm += [magmoms[atom_index]] * unique_indexes.shape[0]
         inv_indexes.append(inv_indexes_at + n_atoms)
         n_atoms += unique_indexes.shape[0]
-    if magmoms_symm is not None:
-        magmoms_symm = np.array(magmoms_symm)
-    return un_positions.copy(), type_symbols_symm, np.array(inv_indexes, dtype=object), magmoms_symm
+    return un_positions.copy(), type_symbols_symm, np.array(inv_indexes, dtype=object)
 
 
 def create_hkl_dmin(

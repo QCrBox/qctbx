@@ -101,7 +101,7 @@ class ORCADensityCalculator(LCAODensityCalculator):
                 '_atom_site_Cartn_y', '_atom_site_Cartn_z'
             cluster_charge_dict (Dict[str, List[float]], optional): Dictionary 
                 containing cluster charge information. provide a n, 3 numpy 
-                array under 'positions' for the charge positions and a 
+                array under 'positions_cart' for the charge positions and a 
                 n sized array with the charges under 'charges'.
                 Defaults to an empty dict for no cluster charges.
         """
@@ -110,10 +110,10 @@ class ORCADensityCalculator(LCAODensityCalculator):
         calc_options = dict_merge(calc_defaults, self.calc_options, case_sensitive=True)
 
         try:
-            positions = np.array([atom_site_dict[f'_atom_site_Cartn_{coord}'] for coord in ('x', 'y', 'z')]).T
+            positions_cart = np.array([atom_site_dict[f'_atom_site_Cartn_{coord}'] for coord in ('x', 'y', 'z')]).T
         except KeyError:
             new_atom_site_dict, _ = add_cart_pos(atom_site_dict, cell_dict)
-            positions = np.array([new_atom_site_dict[f'_atom_site_Cartn_{coord}'] for coord in ('x', 'y', 'z')]).T
+            positions_cart = np.array([new_atom_site_dict[f'_atom_site_Cartn_{coord}'] for coord in ('x', 'y', 'z')]).T
 
         keywords = [qm_options['method']]
         blocks = {}
@@ -125,7 +125,7 @@ class ORCADensityCalculator(LCAODensityCalculator):
 
         self._calculator.set_atoms(
             list(atom_site_dict['_atom_site_type_symbol']),
-            positions
+            positions_cart
         )
 
         blocks['maxcore'] = str(qm_options['ram'] // qm_options['n_core'])

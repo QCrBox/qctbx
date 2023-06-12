@@ -2,33 +2,33 @@ import numpy as np
 import os
 
 class BaseQCCalculator:
-    _positions = np.empty(0)
+    _positions_cart = np.empty(0)
     symbols = []
     _directory = '.'
 
     def __init__(
         self,
-        positions=None,
+        positions_cart=None,
         symbols=None,
         directory=None,
         **kwargs
     ):
         if symbols is not None:
             self.symbols = symbols
-        if positions is not None:
-            self.positions = positions
+        if positions_cart is not None:
+            self.positions_cart = positions_cart
         if directory is not None:
             self._directory = directory
 
     @property
-    def positions(self):
-        return self._positions
+    def positions_cart(self):
+        return self._positions_cart
 
-    @positions.setter
-    def positions(self, value):
+    @positions_cart.setter
+    def positions_cart(self, value):
         pos = np.array(value)
-        assert value.shape[1] == 3, 'The positions need to have 3 entries for every atom'
-        self._positions = pos
+        assert value.shape[1] == 3, 'The positions_cart need to have 3 entries for every atom'
+        self._positions_cart = pos
 
     @property
     def directory(self):
@@ -39,10 +39,10 @@ class BaseQCCalculator:
         assert os.path.exists(path), 'The set directory does not exist: ' + str(path)
         self._directory = path
 
-    def set_atoms(self, symbols, positions):
-        pos = np.array(positions)
-        assert len(symbols) == pos.shape[0], ' The number of entries in positions and elements needs to be identical'
-        self.positions = pos
+    def set_atoms(self, symbols, positions_cart):
+        pos = np.array(positions_cart)
+        assert len(symbols) == pos.shape[0], ' The number of entries in positions_cart and elements needs to be identical'
+        self.positions_cart = pos
         self.symbols = symbols
 
 
@@ -83,8 +83,24 @@ class LCAOQCCalculator(BaseQCCalculator):
 
 
 class RegGrQCCalculator(BaseQCCalculator):
-    pass
+    _cell_parameters = np.zeros(6)
+    def __init__(
+        self,
+        *args, 
+        cell_parameters,
+        **kwargs
+    ):
+        super().__init__(*args, **kwargs)
+        self.cell_parameters = cell_parameters
 
+    @property
+    def cell_parameters(self):
+        return self._cell_parameters
+    
+    @cell_parameters.setter
+    def cell_parameters(self, value):
+        assert len(value) == 6, 'There are always six cell parameters'
+        self._cell_parameters = np.array(value)
     
     
         

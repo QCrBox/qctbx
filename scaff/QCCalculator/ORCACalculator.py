@@ -103,7 +103,7 @@ class ORCACalculator(LCAOQCCalculator):
         """
         position_strings = iter(
             ' '.join(f'{val: 12.8f}' for val in single_position)
-            for single_position in self.cluster_charge_dict['positions']
+            for single_position in self.cluster_charge_dict['positions_cart']
         )
 
         charge_block = '\n'.join(
@@ -141,7 +141,7 @@ class ORCACalculator(LCAOQCCalculator):
         charge_mult = f"*xyz {self.charge} {self.multiplicity}"
 
         # Generate the coordinates section
-        coordinates = [f"{element} {x} {y} {z}" for element, (x, y, z) in zip(self.symbols, self.positions)]
+        coordinates = [f"{element} {x} {y} {z}" for element, (x, y, z) in zip(self.symbols, self.positions_cart)]
         coordinates_section = '\n'.join(coordinates)
 
         # Combine sections into a complete input file
