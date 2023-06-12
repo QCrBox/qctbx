@@ -1,8 +1,9 @@
 import numpy as np
 import os
+from ..conversions import cell_dict2atom_sites_dict
 
 class BaseQCCalculator:
-    _positions_cart = np.empty(0)
+    _positions_cart = np.empty((0,3))
     symbols = []
     _directory = '.'
 
@@ -11,7 +12,6 @@ class BaseQCCalculator:
         positions_cart=None,
         symbols=None,
         directory=None,
-        **kwargs
     ):
         if symbols is not None:
             self.symbols = symbols
@@ -27,7 +27,7 @@ class BaseQCCalculator:
     @positions_cart.setter
     def positions_cart(self, value):
         pos = np.array(value)
-        assert value.shape[1] == 3, 'The positions_cart need to have 3 entries for every atom'
+        assert value.shape[1] == 3, 'The positions need to have 3 entries for every atom'
         self._positions_cart = pos
 
     @property
@@ -55,6 +55,7 @@ class LCAOQCCalculator(BaseQCCalculator):
         *args,
         charge=None,
         multiplicity=None,
+        atom_site_dict=None,
         **kwargs
     ):
         super().__init__(*args, **kwargs)
@@ -62,6 +63,8 @@ class LCAOQCCalculator(BaseQCCalculator):
             self.charge = charge
         if multiplicity is not None:
             self.multiplicity = multiplicity
+        if atom_site_dict is not None:
+            self.atom_site_dict = atom_site_dict
 
     @property
     def multiplicity(self):
@@ -81,17 +84,43 @@ class LCAOQCCalculator(BaseQCCalculator):
         assert int(value) == value, 'The overall charge can only be integer'
         self._charge = value
 
+    @property
+    def atom_site_dict(self):
+        return {
+            '_atom_site_type_symbol': self.symbols,
+            '_atom_site_Cartn_x': self.positions_cart[:,0],
+            '_atom_site_Cartn_y': self.positions_cart[:,1],
+            '_atom_site_Cartn_z': self.positions_cart[:,2],
+        }
+    
+    @atom_site_dict.setter
+    def atom_site_dict(self, value):
+        assert '_atom_site_Cartn_x' in value, 'Atom site dict needs to contain positions in cartesian coordinates'
+        assert '_atom_site_type_symbol' in value, 'Atom site dict needs to contain type symbols'
+        self.positions_cart = np.stack(
+            (np.array(value[f'_atom_site_Cartn_{coord}']) for coord in ('x', 'y', 'z')), axis=-1
+        )
+        self.symbols = list(value['_atom_site_type_symbol'])
+
 
 class RegGrQCCalculator(BaseQCCalculator):
-    _cell_parameters = np.zeros(6)
+    _cell_parameters = np.empty(6)
+    _cell_mat_m = np.empty((3,3))
     def __init__(
         self,
         *args, 
-        cell_parameters,
+        cell_parameters=None,
+        cell_dict=None,
+        atom_site_dict=None,
         **kwargs
     ):
         super().__init__(*args, **kwargs)
-        self.cell_parameters = cell_parameters
+        if cell_parameters is not None:
+            self.cell_parameters = cell_parameters
+        if cell_dict is not None:
+            self.cell_dict = cell_dict
+        if atom_site_dict is not None:
+            self.atom_site_dict = atom_site_dict
 
     @property
     def cell_parameters(self):
@@ -101,6 +130,51 @@ class RegGrQCCalculator(BaseQCCalculator):
     def cell_parameters(self, value):
         assert len(value) == 6, 'There are always six cell parameters'
         self._cell_parameters = np.array(value)
+        self._cell_mat_m = cell_dict2atom_sites_dict(self._cell_mat_m)
+
+    @property
+    def cell_dict(self):
+        keys = ('_cell_length_a', '_cell_length_b', '_cell_length_c', '_cell_angle_alpha', '_cell_angle_beta', '_cell_angle_gamma')
+        return {key: value for key, value in zip(keys, self.cell_parameters)}
     
+    @cell_dict.setter
+    def cell_dict(self, value):
+        keys = ('_cell_length_a', '_cell_length_b', '_cell_length_c', '_cell_angle_alpha', '_cell_angle_beta', '_cell_angle_gamma')
+        self.cell_parameters = np.array([value[key] for key in keys])
+
+    @property
+    def positions_frac(self):
+        return np.einsum('xy, zy -> zx', np.linalg.inv(self._cell_mat_m), self.positions_cart)
     
+    @positions_frac.setter
+    def positions_frac(self, value):
+        self.positions_cart = np.einsum('xy, zy -> zx', self._cell_mat_m, value)
+
+    @property
+    def atom_site_dict(self):
+        pos_frac = self.positions_frac
+        return {
+            '_atom_site_type_symbol': self.symbols,
+            '_atom_site_fract_x': pos_frac[:, 0],
+            '_atom_site_fract_y': pos_frac[:, 1],
+            '_atom_site_fract_z': pos_frac[:, 2],
+            '_atom_site_Cartn_x': self.positions_cart[:,0],
+            '_atom_site_Cartn_y': self.positions_cart[:,1],
+            '_atom_site_Cartn_z': self.positions_cart[:,2],
+        }
+
+    @atom_site_dict.setter
+    def atom_site_dict(self, new_dict):
+        cartn_keys = (f'_atom_site_Cartn_{coord}' for coord in ('x', 'y', 'z'))
+        fract_keys = (f'_atom_site_fract_{coord}' for coord in ('x', 'y', 'z'))
         
+        if all(key in new_dict for key in cartn_keys):
+            self.positions_cart = np.stack((np.array(new_dict[key]) for key in cartn_keys), axis=-1)
+        elif all(key in new_dict for key in fract_keys):
+            self.positions_frac = np.stack((np.array(new_dict[key]) for key in fract_keys), axis=-1)
+        else:
+            raise KeyError('atomic positions need to be present using either the _atom_site_Cartn or the _atom_site_fract keys')
+        
+        self.symbols = list(new_dict['_atom_site_type_symbol'])
+    
+
