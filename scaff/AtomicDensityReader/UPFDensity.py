@@ -66,9 +66,9 @@ def upf_file2atomic_densities(
     atom_types = [atom_type] * distance_grid.shape[0]
     
     return {
-        'qubox_density_atomic_atom_type': atom_types,
-        'qubox_density_atomic_rgrid': list(distance_grid),
-        'qubox_density_atomic_valence': list(valence_density),
-        'qubox_density_atomic_core': list(core_density),
-        'qubox_density_atomic_total': list(total_density)
+        '_qubox_density_atomic_atom_type': atom_types,
+        '_qubox_density_atomic_rgrid': list(distance_grid),
+        '_qubox_density_atomic_valence': list(valence_density),
+        '_qubox_density_atomic_core': list(core_density),
+        '_qubox_density_atomic_total': list(total_density)
     }

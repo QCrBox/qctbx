@@ -130,7 +130,7 @@ class RegGrQCCalculator(BaseQCCalculator):
     def cell_parameters(self, value):
         assert len(value) == 6, 'There are always six cell parameters'
         self._cell_parameters = np.array(value)
-        self._cell_mat_m = cell_dict2atom_sites_dict(self._cell_mat_m)
+        self._cell_mat_m = cell_dict2atom_sites_dict(self.cell_dict)['_atom_sites_Cartn_tran_matrix']
 
     @property
     def cell_dict(self):
@@ -160,16 +160,16 @@ class RegGrQCCalculator(BaseQCCalculator):
             '_atom_site_fract_z': pos_frac[:, 2],
             '_atom_site_Cartn_x': self.positions_cart[:,0],
             '_atom_site_Cartn_y': self.positions_cart[:,1],
-            '_atom_site_Cartn_z': self.positions_cart[:,2],
+            '_atom_site_Cartn_z': self.positions_cart[:,2]
         }
 
     @atom_site_dict.setter
     def atom_site_dict(self, new_dict):
-        cartn_keys = (f'_atom_site_Cartn_{coord}' for coord in ('x', 'y', 'z'))
-        fract_keys = (f'_atom_site_fract_{coord}' for coord in ('x', 'y', 'z'))
+        cartn_keys = tuple(f'_atom_site_Cartn_{coord}' for coord in ('x', 'y', 'z'))
+        fract_keys = tuple(f'_atom_site_fract_{coord}' for coord in ('x', 'y', 'z'))
         
         if all(key in new_dict for key in cartn_keys):
-            self.positions_cart = np.stack((np.array(new_dict[key]) for key in cartn_keys), axis=-1)
+            self.positions_cart = np.stack(tuple(np.array(new_dict[key]) for key in cartn_keys), axis=-1)
         elif all(key in new_dict for key in fract_keys):
             self.positions_frac = np.stack((np.array(new_dict[key]) for key in fract_keys), axis=-1)
         else:

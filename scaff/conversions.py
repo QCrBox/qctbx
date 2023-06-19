@@ -1,5 +1,8 @@
 from typing import List, Dict, Union, Tuple, Optional, Any
+from collections import OrderedDict
+from copy import deepcopy
 import numpy as np
+import re
 
 def cell_dict2atom_sites_dict(
     cell_dict: Dict[str, Union[float, np.ndarray]]
@@ -106,75 +109,142 @@ def add_cart_pos(atom_site_dict: Dict[str, List[float]], cell_dict: Dict[str, An
     return atom_site_out, atom_sites_dict
 
 
-def expand_symm_unique(
-        type_symbols: List[str],
-        coordinates: np.ndarray,
-        cell_mat_m: np.ndarray,
-        symm_mats_vec: Tuple[np.ndarray, np.ndarray],
-        skip_symm: Dict[str, List[int]] = {},
-    ) -> Tuple[np.ndarray, List[str],
-               np.ndarray, Optional[np.ndarray]]:
-    """Expand the type_symbols and coordinates for one complete unit cell.
-    Atoms on special positions appear only once. For disorder on a special
-    position use skip_symm.
-
+def symm_to_matrix_vector(instruction: str) -> Tuple[np.ndarray, np.ndarray]:
+    """Converts a symmetry instruction into a symmetry matrix and a translation
+    vector for that symmetry element.
 
     Parameters
     ----------
-    type_symbols : List[str]
-        size (N) list containing the element symbols
-    coordinates : npt.NDArray[np.float64]
-        size (N, 3) array of fractional atomic coordinates
-    cell_mat_m : npt.NDArray[np.float64]
-        Matrix with cell vectors as column vectors, (Angstroem)
-    symm_mats_vec : Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
-        size (K, 3, 3) array of symmetry matrices and size (K, 3) array
-        of translation vectors for all symmetry elements in the unit cell
-    skip_symm : Dict[str, List[int]], optional
-        Symmetry elements with indexes given the list(s) in the dictionary
-        values with not be applied to the respective atoms with the atom names
-        given in the key(s). Indexes need to be identical to the ones in 
-        symm_mats_vec., by default {}
+    instruction : str
+        Instruction string containing symmetry instruction for all three 
+        coordinates separated by comma signs (e.g -x, -y, 0.5+z)
 
     Returns
     -------
-    symm_positions: npt.NDArray[np.float64]
-        size (M, 3) array of all unique atom positions within the unit cell
-    symm_symbols: List[str]
-        ist of length M with element symbols for the unique atom positions
-        within the unit cell
-    reverse_indexes: npt.NDArray[np.float64]
-        size (K, N) array with indexes mapping the unique atom positions back to 
-        the individual symmetry elements and atom positions in the asymmetric 
-        unit
+    symm_matrix: np.ndarray, 
+        size (3, 3) array containing the symmetry matrix for the symmetry element
+    symm_vector: np.ndarray
+        size (3) array containing the translation vector for the symmetry element
+    """    
+    instruction_strings = [val.replace(' ', '').upper() for val in instruction.split(',')]
+    matrix = np.zeros((3,3), dtype=np.float64)
+    vector = np.zeros(3, dtype=np.float64)
+    for xyz, element in enumerate(instruction_strings):
+        # search for fraction in a/b notation
+        fraction1 = re.search(r'(-{0,1}\d{1,3})/(\d{1,3})(?![XYZ])', element)
+        # search for fraction in 0.0 notation
+        fraction2 = re.search(r'(-{0,1}\d{0,1}\.\d{1,4})(?![XYZ])', element)
+        # search for whole numbers
+        fraction3 = re.search(r'(-{0,1}\d)(?![XYZ])', element)
+        if fraction1:
+            vector[xyz] = float(fraction1.group(1)) / float(fraction1.group(2))
+        elif fraction2:
+            vector[xyz] = float(fraction2.group(1))
+        elif fraction3:
+            vector[xyz] = float(fraction3.group(1))
+
+        symm = re.findall(r'-{0,1}[\d\.]{0,8}[XYZ]', element)
+        for xyz_match in symm:
+            if len(xyz_match) == 1:
+                sign = 1
+            elif xyz_match[0] == '-' and len(xyz_match) == 2:
+                sign = -1
+            else:
+                sign = float(xyz_match[:-1])
+            if xyz_match[-1] == 'X':
+                matrix[xyz, 0] = sign
+            if xyz_match[-1] == 'Y':
+                matrix[xyz, 1] = sign
+            if xyz_match[-1] == 'Z':
+                matrix[xyz, 2] = sign
+    return matrix, vector
+
+
+def expand_atom_site_table_symm(
+    atom_site_dict: Dict[str, List[Union[str, float]]], 
+    expand_positions: Dict[str, Union[str, List[str]]], 
+    cell_dict: Optional[Dict[str, float]] = None, 
+    check_special: bool = True
+) -> Dict[str, List[Union[str, float]]]:
     """
-    symm_mats_r, symm_vecs_t = symm_mats_vec
-    pos_frac0 = coordinates % 1
-    un_positions = np.zeros((0, 3))
-    n_atoms = 0
-    type_symbols_symm = []
-    inv_indexes = []
-    # Only check atom with itself
-    for atom_index, (pos0, type_symbol) in enumerate(zip(pos_frac0, type_symbols)):
-        if atom_index in skip_symm:
-            use_indexes = [i for i in range(symm_mats_r.shape[0]) if i not in skip_symm[atom_index]]
-        else:
-            use_indexes = list(range(symm_mats_r.shape[0]))
-        symm_positions = (np.einsum(
-            'kxy, y -> kx',
-             symm_mats_r[use_indexes, :, :], pos0) + symm_vecs_t[use_indexes, :]
-        ) % 1
-        _, unique_indexes, inv_indexes_at = np.unique(
-            np.round(np.einsum('xy, zy -> zx', cell_mat_m, symm_positions), 3),
-            axis=0,
-            return_index=True,
-            return_inverse=True
-        )
-        un_positions = np.concatenate((un_positions, symm_positions[unique_indexes]))
-        type_symbols_symm += [type_symbol] * unique_indexes.shape[0]
-        inv_indexes.append(inv_indexes_at + n_atoms)
-        n_atoms += unique_indexes.shape[0]
-    return un_positions.copy(), type_symbols_symm, np.array(inv_indexes, dtype=object)
+    Expands an atom site table based on symmetry operations. 
+
+    Args:
+        atom_site_dict (Dict[str, List[Union[str, float]]]): Dictionary containing the atom site information. 
+            Necessary keys are:
+            - '_atom_site_label': List of strings, the labels of the atoms.
+            - '_atom_site_type_symbol': List of strings, the atomic symbols.
+            - '_atom_site_fract_x': List of floats, the fractional x coordinates.
+            - '_atom_site_fract_y': List of floats, the fractional y coordinates.
+            - '_atom_site_fract_z': List of floats, the fractional z coordinates.
+            Optional keys that are also returned are:
+            - '_atom_site_disorder_group': List of strings, the disorder group of the atoms (if present).
+            - '_atom_site_disorder_assembly': List of strings, the disorder assembly of the atoms (if present).
+            
+        expand_positions (Dict[str, Union[str, List[str]]]): Dictionary containing the symmetry operations 
+            and the atom labels to which these operations should be applied. The symmetry operation is the key 
+            and the value can be either:
+            - a string "all" indicating that the symmetry operation should be applied to all atoms.
+            - a string starting with "all" followed by "skip" and a list of space separated atom labels to be skipped.
+            - a list of specific atom labels to which the symmetry operation should be applied.
+
+        cell_dict (Optional[Dict[str, float]]): Dictionary containing the unit cell parameters. 
+            Default is None. Required if check_special is True.
+        check_special (bool): Flag to check for special positions by distance. Default is True.
+
+    Returns:
+        new_atom_site_dict (Dict[str, List[Union[str, float]]]): New atom site dictionary after applying the symmetry operations.
+
+    Raises:
+        AssertionError: If check_special is True and cell_dict is None.
+    """
+
+    use_cols = [
+        '_atom_site_label', '_atom_site_type_symbol', '_atom_site_fract_x', '_atom_site_fract_y', '_atom_site_fract_z',  '_atom_site_disorder_group', '_atom_site_disorder_assembly'
+    ]
+    use_cols = [col for col in use_cols if col in atom_site_dict]
+    
+    original_indexes = list(range(len(atom_site_dict[use_cols[0]])))
+    
+    atoms_dict = OrderedDict((atom_site_dict['_atom_site_label'][i], {key: atom_site_dict[key][i] for key in use_cols}) for i in original_indexes)
+    xyz_cols = ('_atom_site_fract_x', '_atom_site_fract_y', '_atom_site_fract_z')
+    if check_special:
+        assert cell_dict is not None, 'For checking special positions by distance a cell_dict is needed'
+        cell_mat_m = cell_dict2atom_sites_dict(cell_dict)['_atom_sites_Cartn_tran_matrix']
+        check_present = {key: [cell_mat_m @ (np.array([value[col] for col in xyz_cols]) % 1)] for key, value in atoms_dict.items()}
+    
+    for symm_element, expanded_atoms in expand_positions.items():
+        symm_mat, symm_vec = symm_to_matrix_vector(symm_element)
+        if np.sum(np.abs(symm_mat - np.eye(3))) + np.sum(np.abs(symm_vec)) < 1e-5:
+            # do not include x, y, z
+            continue
+        if expanded_atoms.strip().startswith('all'):
+            if 'skip' in expanded_atoms:
+                skipped_atoms = expanded_atom.split('skip')[1].strip().split()
+                expanded_atoms = [elem for elem in atom_site_dict['_atom_site_label'] if elem not in skipped_atoms]
+            else:
+                expanded_atoms = list(atom_site_dict['_atom_site_label'])
+        for expanded_atom in expanded_atoms:
+            new_atom = deepcopy(atoms_dict[expanded_atom])
+            xyz = np.array([new_atom[col] for col in xyz_cols])
+            new_xyz = symm_mat @ xyz + symm_vec
+            if check_special:
+                new_cartn = cell_mat_m @ (new_xyz % 1)
+                if any(np.linalg.norm(new_cartn - known_cartn) < 0.1 for known_cartn in check_present[new_atom['_atom_site_label']]):
+                    continue
+                check_present[new_atom['_atom_site_label']].append(new_cartn)
+            new_atom['_atom_site_fract_x'] = new_xyz[0]
+            new_atom['_atom_site_fract_y'] = new_xyz[1]
+            new_atom['_atom_site_fract_z'] = new_xyz[2]
+            new_atom['_atom_site_label'] += ':' + symm_element.replace(' ', '')
+            atoms_dict[new_atom['_atom_site_label']] = new_atom
+    
+    new_atom_site_dict = {
+        key: [atom[key] for atom in list(atoms_dict.values())] for key in use_cols
+    }
+
+    return new_atom_site_dict
+
 
 
 def create_hkl_dmin(

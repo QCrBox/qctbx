@@ -49,19 +49,10 @@ class AsePBCCalculator(RegGrQCCalculator):
         self.calc = calc
 
     def run_calculation(self):
-        atom_sites_dict = cell_dict2atom_sites_dict({
-            '_cell_length_a': self.cell_parameters[0],
-            '_cell_length_b': self.cell_parameters[1],
-            '_cell_length_c': self.cell_parameters[2],
-            '_cell_angle_alpha': self.cell_parameters[3],
-            '_cell_angle_beta': self.cell_parameters[4],
-            '_cell_angle_gamma': self.cell_parameters[5],
-        })
-
         atoms = crystal(
             symbols=self.symbols,
-            positions_cart=self.positions_cart,
-            cell=np.array(atom_sites_dict['_atom_sites_Cartn_tran_matrix'])
+            positions=self.positions_cart,
+            cell=self._cell_mat_m
         )
 
         atoms.set_calculator(self.calc)
