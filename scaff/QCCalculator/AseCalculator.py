@@ -51,7 +51,7 @@ class AsePBCCalculator(RegGrQCCalculator):
     def run_calculation(self):
         atoms = crystal(
             symbols=self.symbols,
-            positions=self.positions_cart,
+            basis=self.positions_frac,
             cell=self._cell_mat_m
         )
 
