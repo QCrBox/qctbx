@@ -28,13 +28,13 @@ class LCAOF0jEvaluation:
         refln_dict: Dict[str, Any]
     ):
         if len(self.expand_positions) > 0:
-            atom_site_dict_exp = self.expand_positions(atom_site_dict)
+            atom_site_dict_exp = self.expand_symm(atom_site_dict)
         else:
             atom_site_dict_exp = atom_site_dict
 
         wavefunction_path = self.density_calculator.calculate_density(atom_site_dict_exp, cell_dict)
 
-        return self.partitioner.calc_f0j(
+        f0j, charges = self.partitioner.calc_f0j(
             list(atom_site_dict['_atom_site_label']),
             atom_site_dict_exp,
             cell_dict,
@@ -42,6 +42,8 @@ class LCAOF0jEvaluation:
             refln_dict,
             wavefunction_path
         )
+
+        return f0j
 
     def write_tsc(
         self,
@@ -68,6 +70,7 @@ class LCAOF0jEvaluation:
         new_tsc.data = new_data
 
         new_tsc.to_file(tsc_filename)
+
 
 
 

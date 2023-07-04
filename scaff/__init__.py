@@ -7,3 +7,5 @@ from .LCAODensityCalculators.GaussianDensityCalculator import GaussianDensityCal
 from .LCAODensityCalculators.NWChemLCAODensityCalculator import NWChemLCAODensityCalculator
 from .LCAODensityPartitioners.NoSpherA2Partitioner import NoSpherA2Partitioner
 from .LCAODensityPartitioners.HortonPartitioner import HortonPartitioner
+from .RegGridDensityCalculators.GPAWDensityCalculator import GPAWDensityCalculator
+from .RegGridDensityPartitioners.PythonRegGridPartitioner import PythonRegGridPartitioner

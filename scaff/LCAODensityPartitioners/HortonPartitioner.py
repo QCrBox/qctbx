@@ -121,9 +121,9 @@ class HortonPartitioner(LCAODensityPartitioner):
 
         Returns:
             np.ndarray: Calculated atomic structure factors.
+            np.ndarray: Calculated atomic charges
         """
-        if self.wpart is None:
-            self.partition(density_path)
+        self.partition(density_path)
 
         all_atom_labels = list(atom_site_dict['_atom_site_label'])
 
@@ -139,6 +139,7 @@ class HortonPartitioner(LCAODensityPartitioner):
         cell_mat_f = np.linalg.inv(cell_mat_m).T
         f0j = np.zeros((len(atom_indexes), index_vec_h.shape[0]), dtype=np.complex128)
         vec_s = np.einsum('xy, zy -> zx', cell_mat_f, index_vec_h)
+
         for atom_index in atom_indexes:
             #print(atom_index, end='/ ')
             at_grid = self.wpart.get_grid(atom_index)
@@ -156,37 +157,13 @@ class HortonPartitioner(LCAODensityPartitioner):
                     (at_grid.weights * self.wpart[('at_weights', atom_index)] * self.wpart.get_moldens(atom_index))[None,:] * phase_factors, 
                     axis=1)
             #print('')
-        return f0j
-    
-    def calc_charges(
-        self,
-        atom_labels: List[int],
-        atom_site_dict: Dict[str, List[Any]],
-        density_path: Optional[str] = None
-    ) -> np.ndarray:
-        """
-        Calculate atomic charges of given atom indexes. Perform partitioning 
-        first if not done before.
 
-        Args:
-            atom_indexes (List[int]): List of atom indexes.
-            density_path (Optional[str], optional): Path to the density data file. 
-                Defaults to None. Needed if partitioning was not done before
-
-        Returns:
-            np.ndarray: Calculated charges for each atom index.
-        """        
-        if self.wpart is None:
-            self.partition(density_path)
-
-        all_atom_labels = list(atom_site_dict['_atom_site_label'])
-
-        atom_indexes = [all_atom_labels.index(label) for label in atom_labels]
-            
-        return np.array([self.wpart['charges'][idx] for idx in atom_indexes])
-    
+        return f0j, np.array([self.wpart['charges'][idx] for idx in atom_indexes])
 
     def citation_strings(self) -> str:
         # TODO: Add a short string with the citation as bib and a sentence what was done
         return 'bib_string', 'sentence string'
+    
+    def cif_output(self) -> str:
+        return 'To be implemented'
     

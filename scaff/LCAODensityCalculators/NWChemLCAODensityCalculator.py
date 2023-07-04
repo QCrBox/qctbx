@@ -132,6 +132,7 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
         used_calc_options = dict_merge(calc_defaults, self.calc_options)
         with open(os.path.join(used_calc_options['work_directory'], used_calc_options['label'], 'm2a.ini'), 'w') as fo:
             fo.write(molden2aimfile)
+
     def cif_output(self):
         return 'Implement me'
 

@@ -183,14 +183,6 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
             tsc.data[(h, k, l)] if (h, k, l) in tsc.data.keys() else np.conj(tsc.data[(-h, -k, -l)]) for h, k, l in zip(refln_dict['_refln_index_h'], refln_dict['_refln_index_k'], refln_dict['_refln_index_l'])
         ]).T
 
-        return f0j
-
-    def calc_charges(
-        self,
-        atom_labels: List[int],
-        atom_site_dict: Dict[str, List[Any]],
-        density_path: Optional[str] = None
-    ) -> np.ndarray:
         with open(os.path.join(self.options['calc_folder'], 'NoSpherA2.log'), 'r') as fo:
             content = fo.read()
         
@@ -205,7 +197,11 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
             name, _, _, atom_charge = line.strip().split()
             charge_dict[name] = float(atom_charge)
 
-        return np.array([charge_dict[label] for label in atom_labels])
+        return f0j, np.array([charge_dict[label] for label in atom_labels])
 
-    def citation_strings(self):
-        pass
+    def citation_strings(self) -> str:
+        # TODO: Add a short string with the citation as bib and a sentence what was done
+        return 'bib_string', 'sentence string'
+    
+    def cif_output(self) -> str:
+        return 'To be implemented'
