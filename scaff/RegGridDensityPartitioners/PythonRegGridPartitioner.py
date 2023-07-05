@@ -132,13 +132,13 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
         """
         cell_mat_m = cell_dict2atom_sites_dict(cell_dict)['_atom_sites_Cartn_tran_matrix']
         cell_mat_f = np.linalg.inv(cell_mat_m).T
-        hkl = np.stack((np.array(refln_dict[f'_refln_index_{idx}']) for idx in ('h', 'k', 'l')), axis=0)
+        hkl = np.stack(tuple((np.array(refln_dict[f'_refln_index_{idx}']) for idx in ('h', 'k', 'l'))), axis=1)
         g_ks = np.linalg.norm(np.einsum('xy, zy -> zx', cell_mat_f, hkl), axis=-1)
 
         f0j_core_dict = {}
         for element, atomic_entries in self.options['atomic_densities_dict'].items():
-            r = atomic_entries['_qubox_density_atomic_rgrid']
-            core_density = atomic_entries['_qubox_density_atomic_core']
+            r = np.array(atomic_entries['_qubox_density_atomic_rgrid'])
+            core_density = np.array(atomic_entries['_qubox_density_atomic_core'])
             gr = r[None,:] * g_ks[:,None]
             j0 = np.zeros_like(gr)
             j0[gr != 0] = np.sin(2 * np.pi * gr[gr != 0]) / (2 * np.pi * gr[gr != 0])
@@ -166,7 +166,7 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
         cell_lengths = np.array([cell_dict[f'_cell_length_{axis}'] for axis in ('a', 'b', 'c')])
 
         cube = read_cube(density_path)
-        density = cube[0] / ANGSTROM_PER_BOHR**3 * np.linalg.det(np.stack((cube[1]['xvec'], cube[1]['yvec'], cube[1]['zvec'])) * ANGSTROM_PER_BOHR)
+        density = cube[0] / ANGSTROM_PER_BOHR**3 * np.linalg.det(np.stack(tuple((cube[1]['xvec'], cube[1]['yvec'], cube[1]['zvec']))) * ANGSTROM_PER_BOHR)
         linspaces = (np.linspace(0.0, 1.0, npoints, endpoint=False) for npoints in density.shape)
         xyz_cart_cell = np.einsum('xy, abcy -> abcx', cell_mat_m, np.stack(np.meshgrid(*linspaces, indexing='ij'), axis=-1))
 

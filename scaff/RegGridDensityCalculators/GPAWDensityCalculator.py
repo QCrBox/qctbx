@@ -5,6 +5,7 @@ from ..util import dict_merge
 import os
 try:
     from gpaw import GPAW
+    import gpaw
     from ase.io import write
     from ase.units import Bohr, eV, Hartree
     from gpaw.utilities.tools import cutoff2gridspacing, gridspacing2cutoff
@@ -12,14 +13,45 @@ try:
 except:
     import_worked = False
 
+gpaw_bibtex_key = 'GPAW1,GPAW2'
 
+gpaw_bibtex_entry = """
+@article{GPAW1,
+    title = {Real-space grid implementation of the projector augmented wave method},
+    author = {Mortensen, J. J. and Hansen, L. B. and Jacobsen, K. W.},
+    journal = {Phys. Rev. B},
+    volume = {71},
+    issue = {3},
+    pages = {035109},
+    numpages = {11},
+    year = {2005},
+    month = {Jan},
+    publisher = {American Physical Society},
+    doi = {10.1103/PhysRevB.71.035109},
+    url = {https://link.aps.org/doi/10.1103/PhysRevB.71.035109}
+}
+
+@article{GPAW2,
+doi = {10.1088/0953-8984/22/25/253202},
+url = {https://dx.doi.org/10.1088/0953-8984/22/25/253202},
+year = {2010},
+month = {jun},
+publisher = {},
+volume = {22},
+number = {25},
+pages = {253202},
+author = {J Enkovaara and C Rostgaard and J J Mortensen and J Chen and M Dułak and L Ferrighi and J Gavnholt and C Glinsvad and V Haikola and H A Hansen and H H Kristoffersen and M Kuisma and A H Larsen and L Lehtovaara and M Ljungberg and O Lopez-Acevedo and P G Moses and J Ojanen and T Olsen and V Petzold and N A Romero and J Stausholm-Møller and M Strange and G A Tritsaris and M Vanin and M Walter and B Hammer and H Häkkinen and G K H Madsen and R M Nieminen and J K Nørskov and M Puska and T T Rantala and J Schiøtz and K S Thygesen and K W Jacobsen},
+title = {Electronic structure calculations with GPAW: a real-space implementation of the projector
+augmented-wave method},
+journal = {Journal of Physics: Condensed Matter},
+}""".strip()
 
 calc_defaults = {
     'label': 'gpaw',
     'work_directory': '.',
     'output_format': 'cube',
     'output_type': 'total',
-    'gridinterpolation': 4,
+    'grid_interpolation': 4,
 
 }
 
@@ -39,6 +71,8 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._calc_options = dict_merge(calc_defaults, self.calc_options)
+        self._qm_options = dict_merge(qm_defaults, self.qm_options)
 
     def check_availability(self):
         return import_worked
@@ -48,19 +82,18 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
         atom_site_dict,
         cell_dict
     ):  
-        calc_options = dict_merge(calc_defaults, self.calc_options)
-        qm_options = dict_merge(qm_defaults, self.qm_options)
-        if 'xc' in qm_options['gpaw_options']:
-            qm_options['method'] = qm_options['gpaw_options']['xc']
-            del(qm_options['gpaw_options']['xc'])
-        if 'h' in qm_options['gpaw_options']:
-            qm_options['e_cut_ev'] = gridspacing2cutoff(qm_options['gpaw_options']['h']) / Hartree
-            del(qm_options['gpaw_options']['h'])
-        print(cutoff2gridspacing(qm_options['e_cut_ev'] * Hartree), qm_options['e_cut_ev'])
+        self._calc_options = dict_merge(calc_defaults, self.calc_options)
+        self._qm_options = dict_merge(qm_defaults, self.qm_options)
+        if 'xc' in self._qm_options['gpaw_options']:
+            self._qm_options['method'] = self._qm_options['gpaw_options']['xc']
+            del(self._qm_options['gpaw_options']['xc'])
+        if 'h' in self._qm_options['gpaw_options']:
+            self._qm_options['e_cut_ev'] = gridspacing2cutoff(self._qm_options['gpaw_options']['h']) / Hartree
+            del(self._qm_options['gpaw_options']['h'])
         ase_calc = GPAW(
-            xc=qm_options['method'],
-            h=cutoff2gridspacing(qm_options['e_cut_ev'] * Hartree),
-            **qm_options['gpaw_options']
+            xc=self._qm_options['method'],
+            h=cutoff2gridspacing(self._qm_options['e_cut_ev'] * Hartree),
+            **self._qm_options['gpaw_options']
         )
 
         calculator = AsePBCCalculator(
@@ -71,13 +104,13 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
 
         atoms, calc = calculator.run_calculation()
 
-        if calc_options['output_type'] == 'total':
-            density = calc.get_all_electron_density(grid_refinement=calc_options['grid_interpolation'])
-        elif calc_options['output_type'] == 'valence':
-            density = calc.get_all_electron_density(skip_core=True, grid_refinement=calc_options['grid_interpolation'])
+        if self._calc_options['output_type'] == 'total':
+            density = calc.get_all_electron_density(gridrefinement=self._calc_options['grid_interpolation'])
+        elif self._calc_options['output_type'] == 'valence':
+            density = calc.get_all_electron_density(skip_core=True, gridrefinement=self._calc_options['grid_interpolation'])
         else: 
             raise NotImplementedError('output_type needs to be valence or total')
-        path = os.path.join(calc_options['work_directory'], f"{calc_options['label']}.cube")
+        path = os.path.join (self._calc_options['work_directory'], f" {self._calc_options['label']}.cube")
         write(path, atoms, data=density * Bohr**3)
         return path
     
@@ -85,8 +118,17 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
         return 'Implement me'
 
     def citation_strings(self) -> str:
-        # TODO: Add a short string with the citation as bib and a sentence what was done
-        return 'bib_string', 'sentence string'
+        self._calc_options = dict_merge(calc_defaults, self.calc_options)
+        self._qm_options = dict_merge(qm_defaults, self.qm_options)
+
+        gpaw_version = gpaw.__version__
+        software_name = f'ASE/GPAW {gpaw_version}'
+        ase_bibtex_key, ase_bibtex_entry = AsePBCCalculator({}, {}).bibtex_strings()
+
+        software_key = ','.join((ase_bibtex_key, gpaw_bibtex_key))
+        software_bibtex_entry = '\n\n\n'.join((ase_bibtex_entry, gpaw_bibtex_entry))
+
+        return self.generate_description(software_name, software_key, software_bibtex_entry)
 
 
     

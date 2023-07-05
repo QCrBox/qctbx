@@ -3,10 +3,11 @@ import numpy as np
 import re
 from copy import deepcopy
 from collections import OrderedDict
+from .RegGridDensityCalculators.RegGridDensityCalculatorBase import RegGridDensityCalculator
 from ..io.tsc import TSCFile
 from .conversions import expand_atom_site_table_symm
 
-class LCAOF0jEvaluation:
+class F0jEvaluation:
     charge_dict = {}
 
     def __init__(self, density_calculator, partitioner, expand_positions={}, use_charges=False):
@@ -16,10 +17,7 @@ class LCAOF0jEvaluation:
         self.use_charges = use_charges
         if use_charges:
             raise NotImplementedError('cluster charge calculations are not implemented yet')
-        
-    def expand_symm(self, atom_site_dict):
-        return expand_atom_site_table_symm(atom_site_dict, self.expand_positions, check_special=False)
-        
+                
     def calc_f0j(
         self,
         atom_site_dict: Dict[str, List[Any]],
@@ -27,8 +25,11 @@ class LCAOF0jEvaluation:
         space_group_dict: Dict[str, Any],
         refln_dict: Dict[str, Any]
     ):
-        if len(self.expand_positions) > 0:
-            atom_site_dict_exp = self.expand_symm(atom_site_dict)
+        if isinstance(self.density_calculator, RegGridDensityCalculator):
+            expand_positions = {op: 'all' for op in space_group_dict['_space_group_symop_operation_xyz']}
+            atom_site_dict_exp = expand_atom_site_table_symm(atom_site_dict, expand_positions, cell_dict, check_special=True)
+        elif len(self.expand_positions) > 0:
+            atom_site_dict_exp = expand_atom_site_table_symm(atom_site_dict, self.expand_positions, check_special=False)
         else:
             atom_site_dict_exp = atom_site_dict
 

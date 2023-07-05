@@ -7,7 +7,7 @@ from .BaseQCCalculators import LCAOQCCalculator
 from typing import Dict, List, Union, Optional
 import numpy as np
 from ..util import batched
-
+import textwrap
 
 class ORCACalculator(LCAOQCCalculator):
     cluster_charge_dict = {}
@@ -148,7 +148,22 @@ class ORCACalculator(LCAOQCCalculator):
         orca_input = f"{header}\n{blocks}\n{charge_mult}\n{coordinates_section}\n*\n"
         return orca_input
     
-    def citation_strings(self) -> str:
-        # TODO: Add a short string with the citation as bib and a sentence what was done
-        return 'bib_string', 'sentence string'
+    def bibtex_strings(self) -> str:
+        return 'ORCA2020', textwrap.dedent("""
+            @article{ORCA2020,
+                author = {Neese, Frank and Wennmohs, Frank and Becker, Ute and Riplinger, Christoph},
+                title = "{The ORCA quantum chemistry program package}",
+                journal = {The Journal of Chemical Physics},
+                volume = {152},
+                number = {22},
+                pages = {224108},
+                year = {2020},
+                month = {06},
+                abstract = "{In this contribution to the special software-centered issue, the ORCA program package is described. We start with a short historical perspective of how the project began and go on to discuss its current feature set. ORCA has grown into a rather comprehensive general-purpose package for theoretical research in all areas of chemistry and many neighboring disciplines such as materials sciences and biochemistry. ORCA features density functional theory, a range of wavefunction based correlation methods, semi-empirical methods, and even force-field methods. A range of solvation and embedding models is featured as well as a complete intrinsic to ORCA quantum mechanics/molecular mechanics engine. A specialty of ORCA always has been a focus on transition metals and spectroscopy as well as a focus on applicability of the implemented methods to “real-life” chemical applications involving systems with a few hundred atoms. In addition to being efficient, user friendly, and, to the largest extent possible, platform independent, ORCA features a number of methods that are either unique to ORCA or have been first implemented in the course of the ORCA development. Next to a range of spectroscopic and magnetic properties, the linear- or low-order single- and multi-reference local correlation methods based on pair natural orbitals (domain based local pair natural orbital methods) should be mentioned here. Consequently, ORCA is a widely used program in various areas of chemistry and spectroscopy with a current user base of over 22 000 registered users in academic research and in industry.}",
+                issn = {0021-9606},
+                doi = {10.1063/5.0004608},
+                url = {https://doi.org/10.1063/5.0004608},
+                eprint = {https://pubs.aip.org/aip/jcp/article-pdf/doi/10.1063/5.0004608/16740678/224108\_1\_online.pdf},
+            }""")
+
 

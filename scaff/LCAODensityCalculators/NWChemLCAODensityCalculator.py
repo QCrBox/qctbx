@@ -26,7 +26,23 @@ qm_defaults = {
     'ram': 2000,
     'ase_options': {}
 }
+nwchem_bibtex_key = NWChem
 
+nwchem_bibtex_entry = """
+@article{NWChem,
+    title = {NWChem: A comprehensive and scalable open-source solution for large scale molecular simulations},
+    journal = {Computer Physics Communications},
+    volume = {181},
+    number = {9},
+    pages = {1477-1489},
+    year = {2010},
+    issn = {0010-4655},
+    doi = {10.1016/j.cpc.2010.04.018},
+    url = {https://doi.org/10.1016/j.cpc.2010.04.018},
+    author = {M. Valiev and E.J. Bylaska and N. Govind and K. Kowalski and T.P. Straatsma and H.J.J. {Van Dam} and D. Wang and J. Nieplocha and E. Apra and T.L. Windus and W.A. {de Jong}},
+    keywords = {NWChem, DFT, Coupled cluster, QMMM, Plane wave methods}
+}
+""".strip()
 
 molden2aimfile = 'molden= -1\nwfn= 1\nwfncheck= 1\nwfx= 1\nwfxcheck= 1\nnbo= -1\nnbocheck= -1\nwbo= -1\nprogram=0\nedftyp=0\nallmo=1\nprspin=1\nunknown=1\ncarsph=0\nnbopro=0\nnosupp=1\ntitle=0\nclear=1\nansi=0\n'
 
@@ -137,7 +153,15 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
         return 'Implement me'
 
     def citation_strings(self) -> str:
-        # TODO: Add a short string with the citation as bib and a sentence what was done
-        return 'bib_string', 'sentence string'
+        self._calc_options = dict_merge(calc_defaults, self.calc_options)
+        self._qm_options = dict_merge(qm_defaults, self.qm_options)
+
+        software_name = f'ASE/NWChem'
+        ase_bibtex_key, ase_bibtex_entry = AseLCAOCalculator({}, {}).bibtex_strings()
+
+        software_key = ','.join((ase_bibtex_key, nwchem_bibtex_key))
+        software_bibtex_entry = '\n\n\n'.join((ase_bibtex_entry, nwchem_bibtex_entry))
+
+        return self.generate_description(software_name, software_key, software_bibtex_entry)
 
     

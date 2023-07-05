@@ -127,7 +127,7 @@ class TSCFile:
             The name of the file to write.
         """
         header_str = '\n'.join(f'{key}: {value}' for key, value in self.header.items())
-        data_iter = iter(f"{hkl[0]} {hkl[1]} {hkl[2]} {' '.join(f'{np.real(val):.8e},{np.imag(val):.8e}' for val in values)}" for hkl, values in self.data.items())
+        data_iter = iter(f"{int(hkl[0])} {int(hkl[1])} {int(hkl[2])} {' '.join(f'{np.real(val):.8e},{np.imag(val):.8e}' for val in values)}" for hkl, values in self.data.items())
         data_str = '\n'.join(data_iter)
 
         with open(filename, 'w') as fo:

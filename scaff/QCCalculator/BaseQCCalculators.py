@@ -1,6 +1,7 @@
 import numpy as np
 import os
 from ..conversions import cell_dict2atom_sites_dict
+from abc import abstractmethod
 
 class BaseQCCalculator:
     _positions_cart = np.empty((0,3))
@@ -44,6 +45,11 @@ class BaseQCCalculator:
         assert len(symbols) == pos.shape[0], ' The number of entries in positions_cart and elements needs to be identical'
         self.positions_cart = pos
         self.symbols = symbols
+
+    @abstractmethod
+    def bibtex_strings(self):
+        "Method need to return a string containing a bibtex naming key and the corresponding complete bibtex entry as string"
+        pass
 
 
 class LCAOQCCalculator(BaseQCCalculator):
@@ -98,7 +104,7 @@ class LCAOQCCalculator(BaseQCCalculator):
         assert '_atom_site_Cartn_x' in value, 'Atom site dict needs to contain positions in cartesian coordinates'
         assert '_atom_site_type_symbol' in value, 'Atom site dict needs to contain type symbols'
         self.positions_cart = np.stack(
-            (np.array(value[f'_atom_site_Cartn_{coord}']) for coord in ('x', 'y', 'z')), axis=-1
+            tuple(np.array(value[f'_atom_site_Cartn_{coord}']) for coord in ('x', 'y', 'z')), axis=-1
         )
         self.symbols = list(value['_atom_site_type_symbol'])
 
@@ -171,7 +177,7 @@ class RegGrQCCalculator(BaseQCCalculator):
         if all(key in new_dict for key in cartn_keys):
             self.positions_cart = np.stack(tuple(np.array(new_dict[key]) for key in cartn_keys), axis=-1)
         elif all(key in new_dict for key in fract_keys):
-            self.positions_frac = np.stack((np.array(new_dict[key]) for key in fract_keys), axis=-1)
+            self.positions_frac = np.stack(tuple(np.array(new_dict[key]) for key in fract_keys), axis=-1)
         else:
             raise KeyError('atomic positions need to be present using either the _atom_site_Cartn or the _atom_site_fract keys')
         

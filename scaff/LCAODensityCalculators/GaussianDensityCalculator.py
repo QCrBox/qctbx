@@ -4,6 +4,8 @@ import platform
 import pathlib
 from .LCAODensityCalculatorBase import LCAODensityCalculator
 from ..QCCalculator.GaussianCalculator import GaussianCalculator
+from ..util import dict_merge
+
 
 
 calc_defaults = {
@@ -36,23 +38,28 @@ class GaussianDensityCalculator(LCAODensityCalculator):
         return self._calculator.check_availability()
 
     def calculate_density(self, elements, xyz, cluster_charge_dict={}):
-        qm_options = qm_defaults.copy()
-        qm_options.update(self.qm_options)
+        self._qm_options = qm_defaults.copy()
+        self._qm_options.update(self.qm_options)
 
-        calc_options = calc_defaults.copy()
-        calc_options.update(self.calc_options)
+        self._calc_options = calc_defaults.copy()
+        self._calc_options.update(self.calc_options)
 
-        format_standardise = calc_options['output_format'].lower().replace('.', '')
+        format_standardise = self._calc_options['output_format'].lower().replace('.', '')
         if format_standardise == 'wfn':
-            #subprocess.check_output(['formchk', f"{calc_options['filebase']}.chk", f"{calc_options['filebase']}.wfn"])
-            return calc_options['filebase'] + '.wfn'
+            #subprocess.check_output(['formchk', f" {self._calc_options['filebase']}.chk", f" {self._calc_options['filebase']}.wfn"])
+            return self._calc_options['filebase'] + '.wfn'
         elif format_standardise == 'wfx':
-            #subprocess.check_output(['formchk', '-3', f"{calc_options['filebase']}.chk", f"{calc_options['filebase']}.wfx"])
-            return calc_options['filebase'] + '.wfn'
+            #subprocess.check_output(['formchk', '-3', f" {self._calc_options['filebase']}.chk", f" {self._calc_options['filebase']}.wfx"])
+            return self._calc_options['filebase'] + '.wfn'
         else:
             raise NotImplementedError('output_format from GaussianDensityCalculator is not implemented. Choose wfn or wfx')
 
 
     def cif_output(self) -> str:
-        # TODO: Implement the logic to generate a CIF output from the calculation
-        return 'Someone needs to implement this before production'
+
+        self._calc_options = dict_merge(calc_defaults, self.calc_options)
+        self._qm_options = dict_merge(qm_defaults, self.qm_options)
+
+        software_bibtex_key, sofware_bibtex_entry = self._calculator.bibtex_strings()
+        software_name = f'Gaussian {software_bibtex_key[-2:]}' #TODO determine and add version
+        return self.generate_description(software_name, software_bibtex_key, sofware_bibtex_entry)
