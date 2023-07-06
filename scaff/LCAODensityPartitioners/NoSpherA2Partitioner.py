@@ -9,6 +9,8 @@ import subprocess
 import numpy as np
 from iotbx import cif
 from typing import Tuple, List, Dict, Any, Optional
+from ..citations import get_partitioning_citation
+
 
 defaults = {
     'nosphera2_path': './NoSpherA2',
@@ -16,6 +18,23 @@ defaults = {
     'nosphera2_accuracy': 2,
     'calc_folder': '.'
 }
+
+nosphera2_bibtex_key = 'NoSpherA2'
+
+nosphera2_bibtex_entry = """
+@article{NoSpherA2,
+    author ="Kleemiss, Florian and Dolomanov, Oleg V. and Bodensteiner, Michael and Peyerimhoff, Norbert and Midgley, Laura and Bourhis, Luc J. and Genoni, Alessandro and Malaspina, Lorraine A. and Jayatilaka, Dylan and Spencer, John L. and White, Fraser and Grundkötter-Stock, Bernhard and Steinhauer, Simon and Lentz, Dieter and Puschmann, Horst and Grabowsky, Simon",
+    title  ="Accurate crystal structures and chemical properties from NoSpherA2",
+    journal  ="Chem. Sci.",
+    year  ="2021",
+    volume  ="12",
+    issue  ="5",
+    pages  ="1675-1692",
+    publisher  ="The Royal Society of Chemistry",
+    doi  ="10.1039/D0SC05526C",
+    url  ="http://dx.doi.org/10.1039/D0SC05526C"
+}
+""".strip()
 
 
 def symm_to_matrix_vector(instruction: str) -> Tuple[np.ndarray, np.ndarray]:
@@ -200,8 +219,13 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
         return f0j, np.array([charge_dict[label] for label in atom_labels])
 
     def citation_strings(self) -> str:
-        # TODO: Add a short string with the citation as bib and a sentence what was done
-        return 'bib_string', 'sentence string'
+        method_bibtex_key, method_bibtex_entry = get_partitioning_citation('hirshfeld')
+        description_string = (
+            f'The moleculear electron density was partitioning using Hirshfeld partitioning [{method_bibtex_key}]'
+            + f' with the NoSpherA2 [{nosphera2_bibtex_key}] program.'
+        )
+        bibtex_string = '\n\n\n'.join((method_bibtex_entry, nosphera2_bibtex_entry))
+        return description_string, bibtex_string
     
     def cif_output(self) -> str:
         return 'To be implemented'
