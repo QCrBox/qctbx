@@ -12,6 +12,7 @@ from ..conversions import cell_dict2atom_sites_dict
 from ..constants import ANGSTROM_PER_BOHR
 from ..util import batched
 from typing import Dict, Any, List, Optional
+from ..citations import get_partitioning_citation
 
 defaults = {
     'method': 'mbis',
@@ -19,6 +20,16 @@ defaults = {
     'hkl_batch_size': 2000,
     'log_file': 'horton.log'
 }
+
+horton_bibtex_key = 'HORTON'
+
+horton_bibtex_entry = """
+@misc{HORTON,
+    author={Toon Verstraelen and Pawel Tecmer and Farnaz Heidar-Zadeh and Cristina E. González-Espinoza and Matthew Chan and Taewon D. Kim and Katharina Boguslawski and Stijn Fias and Steven Vandenbrande and Diego Berrocal and Paul W. Ayers},
+    title={HORTON 2.1.1},
+    year={2017},
+    url={http://theochem.github.com/horton/}
+}""".strip()
 
 class HortonPartitioner(LCAODensityPartitioner):
     wpart = None
@@ -161,8 +172,25 @@ class HortonPartitioner(LCAODensityPartitioner):
         return f0j, np.array([self.wpart['charges'][idx] for idx in atom_indexes])
 
     def citation_strings(self) -> str:
-        # TODO: Add a short string with the citation as bib and a sentence what was done
-        return 'bib_string', 'sentence string'
+        if self.options.lower() == 'hirshfeld':
+            method_bibtex_key, method_bibtex_entry = get_partitioning_citation('hirshfeld')
+            method_string = f'Hirshfeld partitioning [{method_bibtex_key}]'
+        elif self.options.lower() == 'hirshfeld-i':
+            method_bibtex_key, method_bibtex_entry = get_partitioning_citation('hirshfeld-i')
+            method_string = 'Iterative Hirshfeld partitioning  [{method_bibtex_key}]'
+        elif self.options.lower() == 'iterative-stockholder':
+            method_bibtex_key, method_bibtex_entry = get_partitioning_citation('iterstockholder')
+            method_string = 'Iterative Stockholder partitioning  [{method_bibtex_key}]'
+        elif self.options.lower() == 'iterative-stockholder':
+            method_bibtex_key, method_bibtex_entry = get_partitioning_citation('mbis')
+            method_string = 'Minimal Basis Iterative Stockholder partitioning  [{method_bibtex_key}]'
+
+        description_string = (
+            f'The moleculear electron density was partitioning using {method_string}'
+            + f' with the HORTON python library [{horton_bibtex_key}].'
+        )
+        bibtex_string = '\n\n\n'.join((method_bibtex_entry, horton_bibtex_entry))
+        return description_string, bibtex_string
     
     def cif_output(self) -> str:
         return 'To be implemented'

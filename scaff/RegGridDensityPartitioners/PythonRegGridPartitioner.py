@@ -8,6 +8,7 @@ from ..conversions import cell_dict2atom_sites_dict, expand_atom_site_table_symm
 from itertools import product
 from copy import deepcopy
 from typing import Dict, Any, List, Optional
+from ..citations import get_partitioning_citation
 import numpy as np
 
 defaults = {
@@ -233,8 +234,12 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
         return f0j, charges
     
     def citation_strings(self) -> str:
-        # TODO: Add a short string with the citation as bib and a sentence what was done
-        return 'bib_string', 'sentence string'
+        method_bibtex_key, method_bibtex_entry = get_partitioning_citation('hirshfeld')
+        description_string = (
+            f'The moleculear electron density was partitioning using Hirshfeld partitioning [{method_bibtex_key}]'
+            + 'using the buildin routine of qctbx'
+        )
+        return description_string, method_bibtex_entry
     
     def cif_output(self) -> str:
         return 'To be implemented'
