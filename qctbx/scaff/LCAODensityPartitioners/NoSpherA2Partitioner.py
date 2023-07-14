@@ -151,6 +151,9 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
 
         self.options = options
 
+    def check_availability(self) -> bool:
+        return os.path.exists(self.options['nosphera2_path'])
+
     def run_nospherA2(
         self,
         atom_labels: List[int],

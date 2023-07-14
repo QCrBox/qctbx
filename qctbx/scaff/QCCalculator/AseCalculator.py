@@ -53,7 +53,7 @@ class AseLCAOCalculator(LCAOQCCalculator):
 
         atoms = ase.Atoms(
             symbols=self.symbols,
-            positions_cart=self.positions_cart,
+            positions=self.positions_cart,
         )
         atoms.set_calculator(self.calc)
         atoms.get_potential_energy()
