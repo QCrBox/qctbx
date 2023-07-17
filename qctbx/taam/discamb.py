@@ -17,20 +17,6 @@ bibtex_entry = """
 	issn = {2053-2733},
 	url = {https://scripts.iucr.org/cgi-bin/paper?S2053273319000482},
 	doi = {10.1107/S2053273319000482},
-	abstract = {The transferable aspherical pseudoatom data bank, UBDB2018, is extended with over 130 new atom types present in small and biological molecules of great importance in biology and chemistry. UBDB2018 can be applied either as a source of aspherical atomic scattering factors in a standard X-ray experiment (
-              d
-              min
-              ≃ 0.8 Å) instead of the independent atom model (IAM), and can therefore enhance the final crystal structure geometry and refinement parameters; or as a tool to reconstruct the molecular charge-density distribution and derive the electrostatic properties of chemical systems for which 3D structural data are available. The extended data bank has been extensively tested, with the focus being on the accuracy of the molecular electrostatic potential computed for important drug-like molecules, namely the HIV-1 protease inhibitors. The UBDB allows the reconstruction of the reference B3LYP/6-31G** potentials, with a root-mean-squared error of 0.015 e bohr
-              −1
-              computed for entire potential grids which span values from
-              ca
-              200 e bohr
-              −1
-              to
-              ca
-              −0.1 e bohr
-              −1
-              and encompass both the inside and outside regions of a molecule. UBDB2018 is shown to be applicable to enhancing the physical meaning of the molecular electrostatic potential descriptors used to construct predictive quantitative structure–activity relationship/quantitative structure–property relationship (QSAR/QSPR) models for drug discovery studies. In addition, it is suggested that electron structure factors computed from UBDB2018 may significantly improve the interpretation of electrostatic potential maps measured experimentally by means of electron diffraction or single-particle cryo-EM methods.},
 	number = {2},
 	urldate = {2023-07-17},
 	journal = {Acta Crystallogr A Found Adv},
@@ -47,11 +33,6 @@ bibtex_entry = """
 	shorttitle = {\textit{{DiSCaMB}}},
 	url = {https://scripts.iucr.org/cgi-bin/paper?S1600576717015825},
 	doi = {10.1107/S1600576717015825},
-	abstract = {It has been recently established that the accuracy of structural parameters from X-ray refinement of crystal structures can be improved by using a bank of aspherical pseudoatoms instead of the classical spherical model of atomic form factors. This comes, however, at the cost of increased complexity of the underlying calculations. In order to facilitate the adoption of this more advanced electron density model by the broader community of crystallographers, a new software implementation called
-              DiSCaMB
-              , `densities in structural chemistry and molecular biology', has been developed. It addresses the challenge of providing for high performance on modern computing architectures. With parallelization options for both multi-core processors and graphics processing units (using CUDA), the library features calculation of X-ray scattering factors and their derivatives with respect to structural parameters, gives access to intermediate steps of the scattering factor calculations (thus allowing for experimentation with modifications of the underlying electron density model), and provides tools for basic structural crystallographic operations. Permissively (MIT) licensed,
-              DiSCaMB
-              is an open-source C++ library that can be embedded in both academic and commercial tools for X-ray structure refinement.},
 	number = {1},
 	urldate = {2023-07-17},
 	journal = {J Appl Crystallogr},
@@ -68,13 +49,6 @@ bibtex_entry = """
 	shorttitle = {\textit{iotbx.cif}},
 	url = {https://scripts.iucr.org/cgi-bin/paper?S0021889811041161},
 	doi = {10.1107/S0021889811041161},
-	abstract = {iotbx.cif
-              is a new software module for the development of applications that make use of the CIF format. Comprehensive tools are provided for input, output and validation of CIFs, as well as for interconversion with high-level
-              cctbx
-              [Grosse-Kunstleve, Sauter, Moriarty \& Adams (2002).
-              J. Appl. Cryst.
-              35
-              , 126–136] crystallographic objects. The interface to the library is written in Python, whilst parsing is carried out using a compiled parser, combining the performance of a compiled language (C++) with the benefits of using an interpreted language.},
 	number = {6},
 	urldate = {2023-07-17},
 	journal = {J Appl Crystallogr},
