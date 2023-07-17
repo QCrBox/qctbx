@@ -125,6 +125,6 @@ class MATTSF0jSource(F0jSource):
         return f0j
 
     def citation_strings(self):
-        description_string = 'Aspherical atomic form factors were generated using the MATTS interface of discamb2tsc [{bibtex_key}]'
+        description_string = f'Aspherical atomic form factors were generated using the MATTS interface of discamb2tsc [{bibtex_key}]'
 
         return description_string, bibtex_entry
