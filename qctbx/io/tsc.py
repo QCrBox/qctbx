@@ -278,6 +278,4 @@ class TSCBFile(TSCBase):
             fo.write(header_string.encode('ASCII'))
             fo.write(self.header['SCATTERERS'].encode('ASCII'))
             fo.write(struct.pack('i', len(self.data)))
-            for hkl, f0js in self.data.items():
-                fo.write(struct.pack('3i', *hkl))
-                fo.write(f0js.tobytes())
+            fo.write(bytes().join(struct.pack('3i', *hkl) + f0js.tobytes() for hkl, f0js in self.data.items()))
