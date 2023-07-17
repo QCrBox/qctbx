@@ -104,6 +104,14 @@ class TSCFile:
         header_split = iter(val.split(':') for val in header_str.strip().split('\n'))
 
         new_obj = cls()
+        key = None
+        for line_split in header_split:
+            if len(line_split) == 2 and key is not None:
+                new_obj.header[key] = entry
+                key, entry = line_split
+            else:
+                entry = '\n' + line_split[0]
+        new_obj.header[key] = entry
 
         new_obj.header.update({key: val.strip() for key, val in header_split})
 

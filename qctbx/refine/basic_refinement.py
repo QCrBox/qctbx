@@ -5,7 +5,7 @@ from smtbx.refinement import least_squares
 from .normal_eqns import build_refinement_wrapper, normal_eqns
 from cctbx.xray.structure import structure 
 from cctbx import miller
-from ..scaff.ScaffF0j import F0jEvaluation
+from ..F0jSourceBase import F0jSource
 from typing import Dict, Union
 from .normal_eqns import normal_eqns
 from smtbx.refinement import constraints
@@ -90,7 +90,7 @@ def check_convergence_har(
 def basic_refinement(
     xray_structure: structure,
     miller_array: miller.array,
-    f0jeval: F0jEvaluation,
+    f0jeval: F0jSource,
     har_convergence_conditions: Dict[str, Union[float, int]] = default_har_convergence_conditions,
     constraints_list=[],
     restraints_manager=None,

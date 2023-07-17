@@ -10,7 +10,7 @@ from ..io.tsc import TSCFile
 
 class DiscambF0jSource(F0jSource):
     def __init__(self, discamb_path, work_folder='./discamb_files', filebase='discamb'):
-        self.discamb_path = discamb_path
+        self.discamb_path = os.path.abspath(discamb_path)
         self.work_folder = work_folder
         self.filebase=filebase
 
@@ -33,9 +33,9 @@ class DiscambF0jSource(F0jSource):
             symm_mat_vec2str(*symm_to_matrix_vector(symm_string)) for symm_string in cleaned_sg_dict['_space_group_symop_operation_xyz']
         ]
 
-        write_mock_hkl(os.path.join(self.work_folder, self.filebase + '.hkl'))
+        write_mock_hkl(os.path.join(self.work_folder, self.filebase + '.hkl'), refln_dict)
         write_minimal_cif(os.path.join(self.work_folder, self.filebase + '.cif'), cell_dict, cleaned_sg_dict, atom_site_dict)
-        with open(self.work_folder, f'{self.filebase}_cli.out', 'w') as fo:
+        with open(os.path.join(self.work_folder, f'{self.filebase}_cli.out'), 'w') as fo:
             subprocess.run([self.discamb_path], cwd=self.work_folder, stdout=fo)
 
         tsc = TSCFile.from_file(os.path.join(self.work_folder, self.filebase + '.tsc'))
