@@ -46,6 +46,12 @@ class ScaffF0jSource(F0jSource):
         )
 
         return f0j
+    
+    def citation_strings(self):
+        density_str, density_bib = self.density_calculator.citation_strings()
+        part_str, part_bib = self.partitioner.citation_strings()
+
+        return ' '.join((density_str, part_str)), '\n\n\n'.join(density_bib, part_bib)
 
 
 
