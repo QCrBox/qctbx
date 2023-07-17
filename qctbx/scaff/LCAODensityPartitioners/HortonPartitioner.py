@@ -8,7 +8,7 @@ import numpy as np
 import sys
 from copy import deepcopy
 from contextlib import redirect_stdout
-from ..conversions import cell_dict2atom_sites_dict
+from ...conversions import cell_dict2atom_sites_dict
 from ..constants import ANGSTROM_PER_BOHR
 from ..util import batched
 from typing import Dict, Any, List, Optional

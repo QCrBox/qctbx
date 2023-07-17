@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from ..conversions import cell_dict2atom_sites_dict
+from ...conversions import cell_dict2atom_sites_dict
 from abc import abstractmethod
 
 class BaseQCCalculator:

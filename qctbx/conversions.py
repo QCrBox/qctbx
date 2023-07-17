@@ -2,6 +2,7 @@ from typing import List, Dict, Union, Tuple, Optional, Any
 from collections import OrderedDict
 from copy import deepcopy
 import numpy as np
+import fractions
 import re
 
 def cell_dict2atom_sites_dict(
@@ -285,3 +286,26 @@ def create_hkl_dmin(
         '_refln_index_k': refln_dict['_refln_index_k'][condition].copy(),
         '_refln_index_l': refln_dict['_refln_index_l'][condition].copy(),
     }
+
+def symm_mat_vec2str(symm_mat, symm_vec):
+    symm_string = ''
+    for symm_parts, add in zip(symm_mat, symm_vec):
+        symm_string_add = str(fractions.Fraction(add).limit_denominator(50))
+        if symm_string_add != '0':
+            symm_string += symm_string_add 
+        for symm_part, symbol in zip(symm_parts, ['X', 'Y', 'Z']):
+            if abs(symm_part) < 1e-10:
+                continue
+            if abs(1 - abs(symm_part)) < 1e-10:
+                if symm_part > 0:
+                    symm_string += f'+{symbol}'
+                else:
+                    symm_string += f'-{symbol}'
+            else:
+                fraction = fractions.Fraction(symm_part).limit_denominator(50)
+                if str(fraction).startswith('-'):
+                    symm_string += f'{str(fraction)}*{symbol}'
+                else:
+                    symm_string += f'+{str(fraction)}*{symbol}'
+        symm_string += ','
+    return symm_string[:-1]

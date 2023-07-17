@@ -1,6 +1,6 @@
 from .LCAODensityCalculatorBase import LCAODensityCalculator
 from ..util import batched
-from ..conversions import add_cart_pos
+from ...conversions import add_cart_pos
 from ..QCCalculator.ORCACalculator import ORCACalculator
 from ..util import dict_merge
 import subprocess

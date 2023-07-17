@@ -5,7 +5,7 @@ from smtbx.refinement import least_squares
 from .normal_eqns import build_refinement_wrapper, normal_eqns
 from cctbx.xray.structure import structure 
 from cctbx import miller
-from ..scaff.F0jCalculator import F0jEvaluation
+from ..scaff.ScaffF0j import F0jEvaluation
 from typing import Dict, Union
 from .normal_eqns import normal_eqns
 from smtbx.refinement import constraints

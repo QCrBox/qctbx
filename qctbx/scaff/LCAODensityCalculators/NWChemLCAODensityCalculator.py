@@ -2,7 +2,7 @@ import ase
 from .LCAODensityCalculatorBase import LCAODensityCalculator
 from ..QCCalculator.AseCalculator import AseLCAOCalculator
 from ..util import dict_merge
-from ..conversions import add_cart_pos
+from ...conversions import add_cart_pos
 from ase.calculators.nwchem import NWChem
 from typing import Dict, List, Union, Any
 import os

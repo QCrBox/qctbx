@@ -1,5 +1,5 @@
 from .BaseQCCalculators import LCAOQCCalculator, RegGrQCCalculator
-from ..conversions import cell_dict2atom_sites_dict
+from ...conversions import cell_dict2atom_sites_dict
 import ase
 import numpy as np
 from ase.spacegroup import crystal

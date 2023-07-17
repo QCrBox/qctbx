@@ -1,16 +1,15 @@
 from .LCAODensityPartitionerBase import LCAODensityPartitioner
-from ..conversions import cell_dict2atom_sites_dict
+from ...conversions import cell_dict2atom_sites_dict
 from ...io.tsc import TSCFile
 from copy import deepcopy
 import os
 import re
-import fractions
 import subprocess
 import numpy as np
-from iotbx import cif
 from typing import Tuple, List, Dict, Any, Optional
 from ..citations import get_partitioning_citation
-
+from ...io.minimal_files import write_mock_hkl, write_minimal_cif
+from ...conversions import symm_to_matrix_vector, symm_mat_vec2str
 
 defaults = {
     'nosphera2_path': './NoSpherA2',
@@ -35,110 +34,6 @@ nosphera2_bibtex_entry = """
     url  ="http://dx.doi.org/10.1039/D0SC05526C"
 }
 """.strip()
-
-
-def symm_to_matrix_vector(instruction: str) -> Tuple[np.ndarray, np.ndarray]:
-    """Converts a symmetry instruction into a symmetry matrix and a translation
-    vector for that symmetry element.
-
-    Parameters
-    ----------
-    instruction : str
-        Instruction string containing symmetry instruction for all three 
-        coordinates separated by comma signs (e.g -x, -y, 0.5+z)
-
-    Returns
-    -------
-    symm_matrix: np.ndarray, 
-        size (3, 3) array containing the symmetry matrix for the symmetry element
-    symm_vector: np.ndarray
-        size (3) array containing the translation vector for the symmetry element
-    """    
-    instruction_strings = [val.replace(' ', '').upper() for val in instruction.split(',')]
-    matrix = np.zeros((3,3), dtype=np.float64)
-    vector = np.zeros(3, dtype=np.float64)
-    for xyz, element in enumerate(instruction_strings):
-        # search for fraction in a/b notation
-        fraction1 = re.search(r'(-{0,1}\d{1,3})/(\d{1,3})(?![XYZ])', element)
-        # search for fraction in 0.0 notation
-        fraction2 = re.search(r'(-{0,1}\d{0,1}\.\d{1,4})(?![XYZ])', element)
-        # search for whole numbers
-        fraction3 = re.search(r'(-{0,1}\d)(?![XYZ])', element)
-        if fraction1:
-            vector[xyz] = float(fraction1.group(1)) / float(fraction1.group(2))
-        elif fraction2:
-            vector[xyz] = float(fraction2.group(1))
-        elif fraction3:
-            vector[xyz] = float(fraction3.group(1))
-
-        symm = re.findall(r'-{0,1}[\d\.]{0,8}[XYZ]', element)
-        for xyz_match in symm:
-            if len(xyz_match) == 1:
-                sign = 1
-            elif xyz_match[0] == '-' and len(xyz_match) == 2:
-                sign = -1
-            else:
-                sign = float(xyz_match[:-1])
-            if xyz_match[-1] == 'X':
-                matrix[xyz, 0] = sign
-            if xyz_match[-1] == 'Y':
-                matrix[xyz, 1] = sign
-            if xyz_match[-1] == 'Z':
-                matrix[xyz, 2] = sign
-    return matrix, vector
-
-def symm_mat_vec2str(symm_mat, symm_vec):
-    symm_string = ''
-    for symm_parts, add in zip(symm_mat, symm_vec):
-        symm_string_add = str(fractions.Fraction(add).limit_denominator(50))
-        if symm_string_add != '0':
-            symm_string += symm_string_add 
-        for symm_part, symbol in zip(symm_parts, ['X', 'Y', 'Z']):
-            if abs(symm_part) < 1e-10:
-                continue
-            if abs(1 - abs(symm_part)) < 1e-10:
-                if symm_part > 0:
-                    symm_string += f'+{symbol}'
-                else:
-                    symm_string += f'-{symbol}'
-            else:
-                fraction = fractions.Fraction(symm_part).limit_denominator(50)
-                if str(fraction).startswith('-'):
-                    symm_string += f'{str(fraction)}*{symbol}'
-                else:
-                    symm_string += f'+{str(fraction)}*{symbol}'
-        symm_string += ','
-    return symm_string[:-1]
-
-def write_nospa2_cif(filename, cell_dict, space_group_dict, atom_site_dict):
-    new_block = cif.model.block()
-    for key, value in cell_dict.items():
-        new_block[key] = value
-        
-    new_loop = cif.model.loop()    
-    for key, value in space_group_dict.items():
-        new_loop.add_column(key, list(value))
-    
-    new_block.add_loop(new_loop)
-    
-    new_loop = cif.model.loop()    
-    for key, value in atom_site_dict.items():
-        new_loop.add_column(key, list(value))
-    
-    new_block.add_loop(new_loop)
-
-    new_model = cif.model.cif()
-    new_model['nospa2'] = new_block
-
-    with open(filename, 'w') as fo:
-        fo.write(str(new_model))
-
-
-def write_mock_hkl(filename, refln_dict):
-    with open(filename, 'w') as fo:
-        for h, k, l in zip(refln_dict['_refln_index_h'], refln_dict['_refln_index_k'], refln_dict['_refln_index_l']):
-            fo.write(f'{int(h): 4d}{int(k): 4d}{int(l): 4d}{0.0: 8.2f}{0.0: 8.2f}\n')
-
 
 class NoSpherA2Partitioner(LCAODensityPartitioner):
     accepts_input = ('wfn', 'wfx')
@@ -178,8 +73,8 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
         select_atom_site_dict = {
             key: [value[i] for i in atom_indexes] for key, value in atom_site_dict.items()
         }
-        write_nospa2_cif('npa2.cif', cell_dict, cleaned_sg_dict, atom_site_dict)
-        write_nospa2_cif('npa2_asym.cif', cell_dict, cleaned_sg_dict, select_atom_site_dict)
+        write_minimal_cif('npa2.cif', cell_dict, cleaned_sg_dict, atom_site_dict)
+        write_minimal_cif('npa2_asym.cif', cell_dict, cleaned_sg_dict, select_atom_site_dict)
         write_mock_hkl('mock.hkl', refln_dict)
 
         pass_options = deepcopy(self.options)
