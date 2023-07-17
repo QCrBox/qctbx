@@ -72,16 +72,16 @@ def check_convergence_har(
                     max_uij_esd_atom = sc.label
     conditions = [True] * 4
     if max_dist_abs > har_convergence_conditions['position(abs)']:
-        print(f"Positions have not converged (max:{max_dist_abs:.6f}, {max_dist_atom}, citerion:<{har_convergence_conditions['position(abs)']}")
+        print(f"Positions have not converged (max:{max_dist_abs:.6f}, {max_dist_atom}, criterion:<{har_convergence_conditions['position(abs)']}")
         conditions[0] = False
     if max_dist_ov_esd > har_convergence_conditions['position/esd']:
-        print(f"Positions/esd have not converged (max:{max_dist_ov_esd:.6f}, {max_dist_esd_atom}, citerion:<{har_convergence_conditions['position/esd']}")
+        print(f"Positions/esd have not converged (max:{max_dist_ov_esd:.6f}, {max_dist_esd_atom}, criterion:<{har_convergence_conditions['position/esd']}")
         conditions[1] = False
     if max_uij_abs > har_convergence_conditions['uij(abs)']:
-        print(f"Displacement parameters have not converged (max:{max_uij_abs:.6f}, {max_uij_atom}, citerion:<{har_convergence_conditions['uij(abs)']}")
+        print(f"Displacement parameters have not converged (max:{max_uij_abs:.6f}, {max_uij_atom}, criterion:<{har_convergence_conditions['uij(abs)']}")
         conditions[2] = False
     if max_uij_ov_esd > har_convergence_conditions['uij/esd']:
-        print(f"Displacement parameters/esd have not converged (max:{max_uij_ov_esd:.6f}, {max_uij_esd_atom}, citerion:<{har_convergence_conditions['uij/esd']}")
+        print(f"Displacement parameters/esd have not converged (max:{max_uij_ov_esd:.6f}, {max_uij_esd_atom}, criterion:<{har_convergence_conditions['uij/esd']}")
         conditions[3] = False
 
     return all(conditions)
