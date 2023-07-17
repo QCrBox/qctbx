@@ -8,6 +8,8 @@ from cctbx import miller
 from ..scaff.F0jCalculator import F0jEvaluation
 from typing import Dict, Union
 from .normal_eqns import normal_eqns
+from smtbx.refinement import constraints
+
 
 default_har_convergence_conditions = {
     'position(abs)': 1e-4,
@@ -90,7 +92,7 @@ def basic_refinement(
     miller_array: miller.array,
     f0jeval: F0jEvaluation,
     har_convergence_conditions: Dict[str, Union[float, int]] = default_har_convergence_conditions,
-    constraints=[],
+    constraints_list=[],
     restraints_manager=None,
     solver_name='Gauss-Newton',
     tsc_path='qctbx.tsc'
@@ -102,7 +104,7 @@ def basic_refinement(
 
         reparametrisation = constraints.reparametrisation(
             xray_structure, 
-            [],
+            constraints_list,
             smtbx.utils.connectivity_table(xray_structure)
         )
         
