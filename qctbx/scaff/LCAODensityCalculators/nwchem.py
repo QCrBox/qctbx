@@ -1,5 +1,5 @@
 import ase
-from .LCAODensityCalculatorBase import LCAODensityCalculator
+from .base import LCAODensityCalculator
 from ..QCCalculator.AseCalculator import AseLCAOCalculator
 from ..util import dict_merge
 from ...conversions import add_cart_pos

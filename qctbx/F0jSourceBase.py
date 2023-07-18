@@ -3,7 +3,7 @@ import numpy as np
 import re
 from copy import deepcopy
 from collections import OrderedDict
-from .io.tsc import TSCFile
+from .io.tsc import TSCFile, TSCBFile
 from .conversions import expand_atom_site_table_symm
 from abc import abstractmethod
 
@@ -86,8 +86,10 @@ class F0jSource:
         #TODO: Implement culling of inversion equivalent reflections
 
         f0j = self.calc_f0j(atom_site_dict, cell_dict, space_group_dict, refln_dict)
-
-        new_tsc = TSCFile()
+        if tsc_filename.endswith('.tscb'):
+            new_tsc = TSCBFile()
+        else:
+            new_tsc = TSCFile()
 
         new_tsc.scatterers = list(atom_site_dict['_atom_site_label'])
 

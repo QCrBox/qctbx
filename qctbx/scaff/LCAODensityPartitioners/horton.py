@@ -1,4 +1,4 @@
-from .LCAODensityPartitionerBase import LCAODensityPartitioner
+from .base import LCAODensityPartitioner
 try:
     import horton
 except:

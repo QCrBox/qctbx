@@ -239,12 +239,11 @@ class TSCBFile(TSCBase):
         Returns
         -------
         TSCFile
-            A TSCFile instance with data loaded from the file.
+            A TSCBFile instance with data loaded from the file.
         """
         new_obj = cls()
         with open(filename, 'rb') as fo:
             additional_header_size, n_bytes_labels = struct.unpack('2i', fo.read(8))
-            #b_start2 = fo.read(4)
             if additional_header_size > 0:
                 header_str = fo.read(additional_header_size).decode('ASCII')
 
@@ -260,9 +259,9 @@ class TSCBFile(TSCBase):
 
     def to_file(self, filename: str) -> None:
         """
-        Writes the TSCFile object to a file.
+        Writes the TSCBFile object to a file.
 
-        The function formats the header and data sections of the TSCFile object
+        The function formats the header and data sections of the TSCBFile object
         and writes them to a file. Currently no safety checks are implemented
         SCATTERERS and data need to match
 

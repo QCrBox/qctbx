@@ -3,7 +3,7 @@ import numpy as np
 import re
 from copy import deepcopy
 from collections import OrderedDict
-from .RegGridDensityCalculators.RegGridDensityCalculatorBase import RegGridDensityCalculator
+from .RegGridDensityCalculators.base import RegGridDensityCalculator
 from ..io.tsc import TSCFile
 from ..conversions import expand_atom_site_table_symm
 from ..F0jSourceBase import F0jSource

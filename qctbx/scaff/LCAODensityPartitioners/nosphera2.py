@@ -1,4 +1,4 @@
-from .LCAODensityPartitionerBase import LCAODensityPartitioner
+from .base import LCAODensityPartitioner
 from ...conversions import cell_dict2atom_sites_dict
 from ...io.tsc import TSCFile
 from copy import deepcopy

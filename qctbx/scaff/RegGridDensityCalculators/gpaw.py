@@ -1,4 +1,4 @@
-from . RegGridDensityCalculatorBase import RegGridDensityCalculator
+from .base import RegGridDensityCalculator
 from ..QCCalculator.AseCalculator import AsePBCCalculator
 from ..util import dict_merge
 

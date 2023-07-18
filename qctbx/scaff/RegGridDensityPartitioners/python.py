@@ -1,7 +1,7 @@
 from scipy.optimize import minimize_scalar
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.integrate import simps
-from .RegGridDensityPartitionerBase import RegGridDensityPartitioner
+from .base import RegGridDensityPartitioner
 from ..constants import ANGSTROM_PER_BOHR, ATOMIC_MASSES
 from .cubetools import read_cube
 from ...conversions import cell_dict2atom_sites_dict, expand_atom_site_table_symm

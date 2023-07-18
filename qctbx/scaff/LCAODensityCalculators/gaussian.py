@@ -2,7 +2,7 @@ import shutil
 import subprocess
 import platform
 import pathlib
-from .LCAODensityCalculatorBase import LCAODensityCalculator
+from .base import LCAODensityCalculator
 from ..QCCalculator.GaussianCalculator import GaussianCalculator
 from ..util import dict_merge
 

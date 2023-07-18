@@ -126,4 +126,4 @@ def basic_refinement(
         if check_convergence_har(xray_structure, xray_structure0, norm_eq, har_convergence_conditions):
             break
         print('-' * 20)
-    return structure, norm_eq
+    return xray_structure, norm_eq
