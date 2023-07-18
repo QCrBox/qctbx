@@ -270,6 +270,8 @@ class TSCBFile(TSCBase):
         filename : str
             The name of the file to write.
         """
+        if not next(iter(self.data.values())).dtype == np.complex128:
+            self.data = {key: value.astype(np.complex128) for key, value in self.data.items()} 
         omitted_header_entries = ('SCATTERERS', 'TITLE', 'SYMM')
         header_string = '\n'.join(f'{name}: {entry}' for name, entry in self.header.items() if name not in omitted_header_entries)
         with open(filename, 'wb') as fo:
