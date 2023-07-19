@@ -4,6 +4,21 @@ from collections.abc import Iterable
 from typing import Tuple, List, Union, Dict
 from abc import abstractclassmethod, ABC, abstractmethod
 
+def parse_header(header_str):
+    header = {}
+    header_split = iter(val.split(':') for val in header_str.strip().split('\n'))
+
+    header_key = None
+    for line_split in header_split:
+        if len(line_split) == 2 and header_key is not None:
+            header[header_key] = header_entry
+        if len(line_split) == 2:
+            header_key, header_entry = line_split
+        else:
+            header_entry += '\n' + line_split[0]
+    header[header_key] = header_entry
+    return header
+
 def parse_tsc_data_line(
         line: str
     ) -> Tuple[Tuple[int, int, int], np.ndarray]:
@@ -60,18 +75,6 @@ class TSCBase(ABC):
             An iterable of scatterer names.
         """
         self.header['SCATTERERS'] = ' '.join(str(val) for val in scatterers)
-
-    def _parse_header(self, header_str):
-        header_split = iter(val.split(':') for val in header_str.strip().split('\n'))
-
-        key = None
-        for line_split in header_split:
-            if len(line_split) == 2 and key is not None:
-                self.header[key] = entry
-                key, entry = line_split
-            else:
-                entry = '\n' + line_split[0]
-        self.header[key] = entry
 
     def __getitem__(
         self,
@@ -173,7 +176,7 @@ class TSCFile(TSCBase):
 
         new_obj = cls()
 
-        new_obj._parse_header(header_str)
+        new_obj.header.update(parse_header(header_str))
 
         parsed_iter = iter(parse_tsc_data_line(line) for line in data_str.strip().split('\n'))
 
@@ -247,7 +250,7 @@ class TSCBFile(TSCBase):
             if additional_header_size > 0:
                 header_str = fo.read(additional_header_size).decode('ASCII')
 
-                new_obj._parse_header(header_str)
+                new_obj.header.update(parse_header(header_str))
             new_obj.header['SCATTERERS'] = fo.read(n_bytes_labels).decode('ASCII')
             
             n_refln = struct.unpack('i', fo.read(4))[0]

@@ -84,22 +84,18 @@ class F0jSource:
         tsc_title='qctbx-export'
     ):
         #TODO: Implement culling of inversion equivalent reflections
-
         f0j = self.calc_f0j(atom_site_dict, cell_dict, space_group_dict, refln_dict)
         if tsc_filename.endswith('.tscb'):
             new_tsc = TSCBFile()
         else:
             new_tsc = TSCFile()
-
+        new_tsc.header = {}
         new_tsc.scatterers = list(atom_site_dict['_atom_site_label'])
-
         new_data = {
             (h, k, l): form_factors for h, k, l, form_factors in zip(refln_dict['_refln_index_h'], refln_dict['_refln_index_k'], refln_dict['_refln_index_l'], f0j.T)
         }
         new_tsc.header['TITLE'] = tsc_title
-
         new_tsc.data = new_data
-
         new_tsc.to_file(tsc_filename)
 
 
