@@ -29,7 +29,8 @@ defaults = {
     'gpaw_options' : {
         'xc': 'PBE',
         'txt': 'gpaw_partition.txt'
-    }
+    },
+    'gridinterpolation': 2
 }
 
 class HirshfeldDensity(RealSpaceDensity):
@@ -164,7 +165,11 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
         cube = read_cube(density_path)
         density = cube[0] / ANGSTROM_PER_BOHR**3 * np.linalg.det(np.stack(tuple((cube[1]['xvec'], cube[1]['yvec'], cube[1]['zvec']))) * ANGSTROM_PER_BOHR)
 
-        calc = GPAW(gpts=density.shape, **options['gpaw_options'])
+        assert np.all((np.round((np.array(density.shape) / options['gridinterpolation']), 10) % 1.0) == 0.0), 'gridinterpolation produces a remainder for size of cube file density grid'
+
+        coarse_grid_size = tuple(int(val / options['gridinterpolation']) for val in density.shape)
+
+        calc = GPAW(gpts=coarse_grid_size, **options['gpaw_options'])
         atoms.set_calculator(calc)
         calc.initialize(atoms)
         calc.set_positions(atoms)
@@ -174,8 +179,8 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
             splines = {setup.symbol: (setup.get_partial_waves()[2], setup.rgd.r_g) for setup in calc.density.setups}
             qubox_density_atomic_dicts = {
                 symbol: {
-                    '_qubox_density_atomic_rgrid': rgrid,
-                    '_qubox_density_atomic_core': spline.map(rgrid)
+                    '_qubox_density_atomic_rgrid': rgrid * ANGSTROM_PER_BOHR**3,
+                    '_qubox_density_atomic_core': spline.map(rgrid) / ANGSTROM_PER_BOHR**3
                 } for symbol, (spline, rgrid) in splines.items()
             }
             
@@ -186,7 +191,7 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
             raise NotImplementedError('partition setting in options needs to either valence or total.')
 
         all_atom_weights = 1.0 / hdens_obj.get_density(
-            gridrefinement=1, 
+            gridrefinement=options['gridinterpolation'], 
             skip_core=skip_core
         )[0]
         all_atom_weights[np.logical_not(np.isfinite(all_atom_weights))] = 0.0
@@ -203,7 +208,7 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
             frac_position = fract_xyz[atom_index]
             atom_type = atom_types[atom_index]
             phase_to_zero = np.exp(-2j * np.pi * (frac_position[0] * h + frac_position[1] * k + frac_position[2] * l))
-            atom_weight = hdens_obj.get_density([atom_index], gridrefinement=1, skip_core=skip_core)[0]
+            atom_weight = hdens_obj.get_density([atom_index], gridrefinement=options['gridinterpolation'], skip_core=skip_core)[0]
             f0j_atom = np.fft.ifftn(density * atom_weight * all_atom_weights) * np.prod(density.shape)
             f0j[atom_index] = f0j_atom[h, k, l] * phase_to_zero
             charges[atom_index] = ATOMIC_N_ELEC[atom_type] - np.real(f0j_atom[0, 0, 0])
