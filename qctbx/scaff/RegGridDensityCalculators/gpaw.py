@@ -61,7 +61,8 @@ qm_defaults = {
     'kpoints': (1,1,1),
     'gpaw_options': {
         'convergence':{'density': 1e-6},
-        'symmetry':{'symmorphic': False}
+        'symmetry':{'symmorphic': False},
+        'txt': 'gpaw_calculation.txt'
     }
 }
 

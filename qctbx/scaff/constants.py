@@ -30,3 +30,5 @@ ATOMIC_MASSES = {
      'Mt': np.nan, 'Ds': np.nan, 'Rg': np.nan, 'Cn': np.nan, 'Nh': np.nan, 'Fl': np.nan, 
      'Mc': np.nan, 'Lv': np.nan, 'Ts': np.nan, 'Og': np.nan
 }
+
+ATOMIC_N_ELEC = {symbol: index + 1 for index, symbol in enumerate(ATOMIC_MASSES.keys())}

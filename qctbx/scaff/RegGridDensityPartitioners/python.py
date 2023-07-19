@@ -1,7 +1,6 @@
 from scipy.optimize import minimize_scalar
 from scipy.interpolate import InterpolatedUnivariateSpline
-from scipy.integrate import simps
-from .base import RegGridDensityPartitioner
+from .base import RegGridDensityPartitioner, calc_f0j_core
 from ..constants import ANGSTROM_PER_BOHR, ATOMIC_MASSES
 from .cubetools import read_cube
 from ...conversions import cell_dict2atom_sites_dict, expand_atom_site_table_symm
@@ -115,39 +114,6 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
             self.atom_splines[element] = atom_density_spline
             self.atom_n_elec[element] = atom_shell_spline.integral(0.0, atomic_entries['_qubox_density_atomic_rgrid'][-1])
 
-
-    def calc_f0j_core(
-        self,
-        cell_dict: Dict[str, Any],
-        refln_dict: Dict[str, Any],
-    ):
-        """
-        Calculates the core density in Fourier space.
-
-        Args:
-            cell_dict (Dict[str, Any]): A dictionary representing the unit cell.
-            refln_dict (Dict[str, Any]): A dictionary representing the reflection data.
-
-        Returns:
-            Dict[str, Any]: A dictionary of core density values in Fourier space, keyed by element.
-        """
-        cell_mat_m = cell_dict2atom_sites_dict(cell_dict)['_atom_sites_Cartn_tran_matrix']
-        cell_mat_f = np.linalg.inv(cell_mat_m).T
-        hkl = np.stack(tuple((np.array(refln_dict[f'_refln_index_{idx}']) for idx in ('h', 'k', 'l'))), axis=1)
-        g_ks = np.linalg.norm(np.einsum('xy, zy -> zx', cell_mat_f, hkl), axis=-1)
-
-        f0j_core_dict = {}
-        for element, atomic_entries in self.options['atomic_densities_dict'].items():
-            r = np.array(atomic_entries['_qubox_density_atomic_rgrid'])
-            core_density = np.array(atomic_entries['_qubox_density_atomic_core'])
-            gr = r[None,:] * g_ks[:,None]
-            j0 = np.zeros_like(gr)
-            j0[gr != 0] = np.sin(2 * np.pi * gr[gr != 0]) / (2 * np.pi * gr[gr != 0])
-            j0[gr == 0] = 1
-            y00_factor = 0.5 * np.pi**(-0.5)
-            f0j_core_dict[element] = simps(4 * np.pi * r**2  * core_density * j0, x=r) * y00_factor
-        return f0j_core_dict
-
     def calc_f0j(
         self,
         atom_labels: List[int],
@@ -159,7 +125,8 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
     ) -> np.ndarray:
         
         if self.options['partition'] == 'valence':
-            f0j_core_dict = self.calc_f0j_core(cell_dict, refln_dict)
+            qubox_density_atom_dict = self.options['atomic_densities_dict']
+            f0j_core_dict = calc_f0j_core(cell_dict, refln_dict, qubox_density_atom_dict)
         elif self.options['partition'] != 'total':
             raise NotImplementedError('Only options for partition are valence (core is transformed separately) or total')
         
@@ -171,10 +138,7 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
         linspaces = (np.linspace(0.0, 1.0, npoints, endpoint=False) for npoints in density.shape)
         xyz_cart_cell = np.einsum('xy, abcy -> abcx', cell_mat_m, np.stack(np.meshgrid(*linspaces, indexing='ij'), axis=-1))
 
-        expand_positions = {op: 'all' for op in space_group_dict['_space_group_symop_operation_xyz']}
-        atom_site_dict_exp = expand_atom_site_table_symm(atom_site_dict, expand_positions, cell_dict)
-
-        atom_site_pivot = [{key: atom_site_dict_exp[key][index] for key in atom_site_dict_exp.keys()} for index in range(len(atom_site_dict_exp['_atom_site_type_symbol']))]
+        atom_site_pivot = [{key: atom_site_dict[key][index] for key in atom_site_dict.keys()} for index in range(len(atom_site_dict['_atom_site_type_symbol']))]
         partioned_atoms = [entry for entry in atom_site_pivot if entry['_atom_site_label'] in atom_labels]
 
         # we need 1 / sum(promol) but only for points where there is density of an evaluated atom otherwise the weight of all evaluated atoms has to be zero
