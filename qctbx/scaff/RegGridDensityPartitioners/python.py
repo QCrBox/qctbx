@@ -1,7 +1,7 @@
 from scipy.optimize import minimize_scalar
 from scipy.interpolate import InterpolatedUnivariateSpline
 from .base import RegGridDensityPartitioner, calc_f0j_core
-from ..constants import ANGSTROM_PER_BOHR, ATOMIC_MASSES
+from ..constants import ANGSTROM_PER_BOHR
 from .cubetools import read_cube
 from ...conversions import cell_dict2atom_sites_dict, expand_atom_site_table_symm
 from itertools import product
@@ -126,7 +126,7 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
         
         if self.options['partition'] == 'valence':
             qubox_density_atom_dict = self.options['atomic_densities_dict']
-            f0j_core_dict = calc_f0j_core(cell_dict, refln_dict, qubox_density_atom_dict)
+            f0j_core_dict, _ = calc_f0j_core(cell_dict, refln_dict, qubox_density_atom_dict)
         elif self.options['partition'] != 'total':
             raise NotImplementedError('Only options for partition are valence (core is transformed separately) or total')
         

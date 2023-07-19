@@ -31,6 +31,7 @@ def calc_f0j_core(
     g_ks = np.linalg.norm(np.einsum('xy, zy -> zx', cell_mat_f, hkl), axis=-1)
 
     f0j_core_dict = {}
+    n_elec_core = {}
     for element, atomic_entries in qubox_density_atomic_dicts.items():
         r = np.array(atomic_entries['_qubox_density_atomic_rgrid'])
         core_density = np.array(atomic_entries['_qubox_density_atomic_core'])
@@ -40,7 +41,8 @@ def calc_f0j_core(
         j0[gr == 0] = 1
         y00_factor = 0.5 * np.pi**(-0.5)
         f0j_core_dict[element] = simps(4 * np.pi * r**2  * core_density * j0, x=r) * y00_factor
-    return f0j_core_dict
+        n_elec_core[element] = simps(4 * np.pi * r**2  * core_density, x=r)
+    return f0j_core_dict, n_elec_core
 
 class RegGridDensityPartitioner(DensityPartitioner):
     pass

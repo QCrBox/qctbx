@@ -10,7 +10,7 @@ from ase.spacegroup import crystal
 from gpaw import GPAW
 
 from ...conversions import cell_dict2atom_sites_dict, expand_atom_site_table_symm
-from ..constants import ANGSTROM_PER_BOHR
+from ..constants import ANGSTROM_PER_BOHR, ATOMIC_N_ELEC
 from .cubetools import read_cube
 
 from copy import deepcopy
@@ -179,7 +179,7 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
                 } for symbol, (spline, rgrid) in splines.items()
             }
             
-            f0j_core_dict = calc_f0j_core(cell_dict, refln_dict, qubox_density_atomic_dicts)
+            f0j_core_dict, n_elec_core = calc_f0j_core(cell_dict, refln_dict, qubox_density_atomic_dicts)
         elif options['partition'] == 'total':
             skip_core = False
         else:
@@ -198,17 +198,19 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
         l = np.array(refln_dict['_refln_index_l'], dtype=np.int64)
 
         f0j = np.empty((len(atom_labels), h.shape[0]), dtype=np.complex128)
-
+        charges = np.empty(len(atom_labels), dtype=np.float64)
         for atom_index in atom_indexes:
             frac_position = fract_xyz[atom_index]
+            atom_type = atom_types[atom_index]
             phase_to_zero = np.exp(-2j * np.pi * (frac_position[0] * h + frac_position[1] * k + frac_position[2] * l))
             atom_weight = hdens_obj.get_density([atom_index], gridrefinement=1, skip_core=skip_core)[0]
             f0j_atom = np.fft.ifftn(density * atom_weight * all_atom_weights) * np.prod(density.shape)
             f0j[atom_index] = f0j_atom[h, k, l] * phase_to_zero
+            charges[atom_index] = ATOMIC_N_ELEC[atom_type] - np.real(f0j_atom[0, 0, 0])
             if skip_core:
-                f0j[atom_index] += f0j_core_dict[atom_types[atom_index]]
-
-        return f0j, None
+                f0j[atom_index] += f0j_core_dict[atom_type]
+                charges[atom_index] -= n_elec_core[atom_type]
+        return f0j, charges
     
     def citation_strings(self) -> str:
         method_bibtex_key, method_bibtex_entry = get_partitioning_citation('hirshfeld')
