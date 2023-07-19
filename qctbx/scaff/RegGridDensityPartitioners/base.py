@@ -39,8 +39,7 @@ def calc_f0j_core(
         j0 = np.zeros_like(gr)
         j0[gr != 0] = np.sin(2 * np.pi * gr[gr != 0]) / (2 * np.pi * gr[gr != 0])
         j0[gr == 0] = 1
-        y00_factor = 0.5 * np.pi**(-0.5)
-        f0j_core_dict[element] = simps(4 * np.pi * r**2  * core_density * j0, x=r) * y00_factor
+        f0j_core_dict[element] = simps(4 * np.pi * r**2  * core_density * j0, x=r)
         n_elec_core[element] = simps(4 * np.pi * r**2  * core_density, x=r)
     return f0j_core_dict, n_elec_core
 

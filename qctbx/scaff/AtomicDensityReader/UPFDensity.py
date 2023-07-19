@@ -6,7 +6,6 @@ import numpy as np
 
 from ..constants import ANGSTROM_PER_BOHR
 
-
 def upf_file2atomic_densities(
         filename: Path, 
         atom_type: str
