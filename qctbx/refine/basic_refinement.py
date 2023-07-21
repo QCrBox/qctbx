@@ -123,6 +123,7 @@ def basic_refinement(
         RefinementWrapper =  build_refinement_wrapper(solver_name)
         rfn_wrapper = RefinementWrapper(norm_eq)
         print('-' * 20)
+        print('wR2: ', norm_eq.wR2())
         if check_convergence_har(xray_structure, xray_structure0, norm_eq, har_convergence_conditions):
             break
         print('-' * 20)
