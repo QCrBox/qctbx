@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 from ..F0jSourceBase import F0jSource
 import os
 from copy import deepcopy
@@ -63,6 +63,16 @@ bibtex_entry = """
 
 
 class MATTSF0jSource(F0jSource):
+    """
+    Attributes
+    ----------
+    discamb_path : Path
+        Absolute path to the discamb executable.
+    work_folder : Path
+        Path to the working directory.
+    filebase : str
+        The base of the filename to use when creating files.
+    """
     def __init__(
         self, 
         discamb_path: Path, 
@@ -78,11 +88,36 @@ class MATTSF0jSource(F0jSource):
 
     def calc_f0j(
             self,
-            atom_site_dict: Dict[str, List[Any]],
-            cell_dict: Dict[str, Any],
-            space_group_dict: Dict[str, Any], 
-            refln_dict: Dict[str, Any]
-        ):
+            atom_site_dict: Dict[str, List[Dict[str, Any]]],  # List of atom site dictionaries
+            cell_dict: Dict[str, float],  # Dictionary containing cell parameters
+            space_group_dict: Dict[str, Union[List[int], List[str]]],  # Dictionary containing space group parameters
+            refln_dict: Dict[str, List[int]]  # Dictionary containing reflection parameters
+    ) -> np.ndarray:
+        """
+        Calculate the aspherical atomic form factors using the MATTS interface of Discamb.
+
+        Parameters
+        ----------
+        atom_site_dict : Dict[str, List[Any]]
+            Dictionary containing information about the atomic sites.
+            Required keys: '_atom_site_label', '_atom_site_type_symbol',
+            '_atom_site_fract_x', '_atom_site_fract_y', '_atom_site_fract_z'.
+        cell_dict : Dict[str, Union[int, float]]
+            A dictionary representing cell parameters.
+            Required keys: '_cell_length_a', '_cell_length_b', '_cell_length_c',
+            '_cell_angle_alpha', '_cell_angle_beta', '_cell_angle_gamma'.
+        space_group_dict : Dict[str, Union[int, str, List[str]]]
+            A dictionary representing space group parameters. Needs to contain key: 
+            '_space_group_symop_operation_xyz
+        refln_dict : Dict[str, Union[int, float, List[int]]]
+            A dictionary representing reflection parameters.
+            Required keys: '_refln_index_h', '_refln_index_k', '_refln_index_l'.
+
+        Returns
+        -------
+        np.ndarray
+            The calculated aspherical atomic form factors.
+        """
         atom_sites_dict = cell_dict2atom_sites_dict(cell_dict)
         cell_dict['_cell_volume'] = np.linalg.det(atom_sites_dict['_atom_sites_Cartn_tran_matrix'])
         
@@ -106,6 +141,14 @@ class MATTSF0jSource(F0jSource):
         return f0j
 
     def citation_strings(self):
+        """
+        Generate strings describing the approach to calculation and BibTeX formatted citations.
+
+        Returns
+        -------
+        Tuple[str, str]
+            A tuple containing the description and the bibtex entries required.
+        """
         description_string = f'Aspherical atomic form factors were generated using the MATTS interface of discamb2tsc [{bibtex_key}]'
 
         return description_string, bibtex_entry

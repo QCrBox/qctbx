@@ -10,15 +10,37 @@ from abc import abstractmethod
 from .custom_typing import Path
 
 class F0jSource:
-
-    @abstractmethod          
+    """
+    Abstract base class for a F0jSource object, used for calculating structure 
+    factors and writing them to a file in the .tsc or .tscb format.
+    """
+    @abstractmethod
     def calc_f0j(
         self,
         atom_site_dict: Dict[str, List[Any]],
         cell_dict: Dict[str, Any],
         space_group_dict: Dict[str, Any],
         refln_dict: Dict[str, Any]
-    ):
+    ) -> np.ndarray:
+        """
+        Abstract method to calculate structure factors.
+
+        Parameters
+        ----------
+        atom_site_dict : Dict[str, List[Any]]
+            Dictionary containing information about the atomic sites.
+        cell_dict : Dict[str, Any]
+            Dictionary containing cell parameters.
+        space_group_dict : Dict[str, Any]
+            Dictionary containing information about the space group.
+        refln_dict : Dict[str, Any]
+            Dictionary containing reflection indices.
+
+        Returns
+        -------
+        np.ndarray
+            Calculated structure factors.
+        """
         pass
 
     def write_tsc(
@@ -28,8 +50,33 @@ class F0jSource:
         cell_dict: Dict[str, Any],
         space_group_dict: Dict[str, Any],
         refln_dict: Dict[str, Any],
-        tsc_title='qctbx-export'
-    ):
+        tsc_title: str = 'qctbx-export'
+    ) -> None:
+        """
+        Write structure factors to a .tsc or .tscb file.
+
+        Parameters
+        ----------
+        tsc_filename : Path
+            File path to the .tsc or .tscb file to be written.
+        atom_site_dict : Dict[str, List[Any]]
+            Dictionary containing information about the atomic sites.
+            Required keys: '_atom_site_label', '_atom_site_type_symbol',
+            '_atom_site_fract_x', '_atom_site_fract_y', '_atom_site_fract_z'.
+        cell_dict : Dict[str, Any]
+            Dictionary containing cell parameters.
+            Required keys: '_cell_length_a', '_cell_length_b', '_cell_length_c',
+            '_cell_angle_alpha', '_cell_angle_beta', '_cell_angle_gamma'.
+        space_group_dict : Dict[str, Any]
+            Dictionary containing information about the space group.
+            Required keys: '_space_group_symop_id', '_space_group_symop_operation_xyz'.
+        refln_dict : Dict[str, Any]
+            Dictionary containing reflection indices.
+            Required keys: '_refln_index_h', '_refln_index_k', '_refln_index_l'.
+        tsc_title : str, optional
+            Title to be written in the file header, by default 'qctbx-export'.
+        """
+
         #TODO: Implement culling of inversion equivalent reflections
         f0j = self.calc_f0j(atom_site_dict, cell_dict, space_group_dict, refln_dict)
         if tsc_filename.endswith('.tscb'):
@@ -46,15 +93,30 @@ class F0jSource:
 
     def cctbx2tsc(
         self, 
-        structure,
-        miller_array,
+        structure: Any,
+        miller_array: Any,
         tsc_filename: Path,
-        tsc_title='qctbx tsc file'
-    ):
-        # to not be limited by accuracy of cif block strings
+        tsc_title: str = 'qctbx tsc file'
+    ) -> None:
+        """
+        Convert data from CCTBX objects to a .tsc file.
+
+        Parameters
+        ----------
+        structure : Any
+            CCTBX structure object containing atomic site information.
+        miller_array : Any
+            CCTBX miller array object containing reflection indices.
+        tsc_filename : Path
+            File path to the .tsc file to be written.
+        tsc_title : str, optional
+            Title to be written in the file header, by default 'qctbx tsc file'.
+        """
+
         labels = [sc.label for sc in structure.scatterers()]
         type_symbols = [sc.element_symbol() for sc in structure.scatterers()]
 
+        # to not be limited by accuracy of cif block strings
         fract_x = np.empty(len(structure.scatterers()))
         fract_y = np.empty(len(structure.scatterers()))
         fract_z = np.empty(len(structure.scatterers()))
@@ -105,8 +167,22 @@ class F0jSource:
         cif_filename: Path,
         cif_dataset: str,
         tsc_filename: Path,
-        tsc_title='qctbx-export'
-    ):
+        tsc_title: str = 'qctbx-export'
+    ) -> None:
+        """
+        Convert data from a CIF file to a .tsc file. Uses cctbx.iotbx.cif
+
+        Parameters
+        ----------
+        cif_filename : Path
+            File path to the CIF file.
+        cif_dataset : str
+            Dataset from the CIF file to be converted.
+        tsc_filename : Path
+            File path to the .tsc file to be written.
+        tsc_title : str, optional
+            Title to be written in the file header, by default 'qctbx-export'.
+        """
         from iotbx import cif
 
         cif_model = cif.reader(cif_filename).model()

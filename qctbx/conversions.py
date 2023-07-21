@@ -254,16 +254,25 @@ def create_hkl_dmin(
     ) -> Dict[str, np.ndarray]:
     """
     Generate a dictionary of h, k, and l indices of reflections for a crystal lattice specified by cell_dict, 
-    considering reflections with d-spacing greater than or equal to d_min.
+    considering reflections with d-spacing greater than or equal to the provided minimum.
 
-    Args:
-        cell_dict (Dict[str, Union[float, np.ndarray]]): A dictionary representing a unit cell. It should contain the following keys:
-            '_atom_sites_Cartn_tran_matrix': a transformation matrix from fractional to Cartesian coordinates.
-        d_min (float): The minimum d-spacing for the reflections in angstrom. 
+    Parameters
+    ----------
+    cell_dict : Dict[str, Union[float, np.ndarray]]
+        Dictionary containing the unit cell parameters. It should contain the following keys: 
+        '_cell_length_a', '_cell_length_b', '_cell_length_c', '_cell_angle_alpha', '_cell_angle_beta', 
+        '_cell_angle_gamma'. The corresponding values should be floats representing the cell lengths 
+        (a, b, c) in angstroms and the cell angles (alpha, beta, gamma) in degrees.
 
-    Returns:
-        Dict[str, np.ndarray]: A dictionary containing the h, k, and l indices of the reflections. The keys of the dictionary are 
-        '_refln_index_h', '_refln_index_k', and '_refln_index_l'. The corresponding values are 1D numpy arrays of integers.
+    d_min : float
+        The minimum d-spacing to consider for the reflections.
+
+    Returns
+    -------
+    Dict[str, np.ndarray]
+        Dictionary containing arrays of Miller indices (h, k, l) for the generated reflections. The keys 
+        of the dictionary are '_refln_index_h', '_refln_index_k', and '_refln_index_l'. Each value is 
+        an array of integers representing the corresponding Miller indices of the reflections.
     """
     atom_sites_dict = cell_dict2atom_sites_dict(cell_dict)
     cell_mat_m = atom_sites_dict['_atom_sites_Cartn_tran_matrix']
@@ -287,7 +296,25 @@ def create_hkl_dmin(
         '_refln_index_l': refln_dict['_refln_index_l'][condition].copy(),
     }
 
-def symm_mat_vec2str(symm_mat, symm_vec):
+def symm_mat_vec2str(
+    symm_mat: np.ndarray, 
+    symm_vec: np.ndarray
+) -> str:
+    """
+    Converts symmetry matrix and symmetry vector into string representation.
+
+    Parameters
+    ----------
+    symm_mat : np.ndarray
+        2D array representing the symmetry matrix.
+    symm_vec : np.ndarray
+        1D array representing the symmetry vector.
+
+    Returns
+    -------
+    str
+        String representation of the symmetry matrix and vector.
+    """
     symm_string = ''
     for symm_parts, add in zip(symm_mat, symm_vec):
         symm_string_add = str(fractions.Fraction(add).limit_denominator(50))
