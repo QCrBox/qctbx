@@ -40,12 +40,13 @@ def parse_tsc_data_line(
     return (int(h_str), int(k_str), int(l_str)), f0js
 
 class TSCBase(ABC):
-    header = {
-        'TITLE': 'generic_tsc',
-        'SYMM': 'expanded',
-        'SCATTERERS' : ''        
-    }
-    data = {}
+    def __init__(self):
+        self.header = {
+            'TITLE': 'generic_tsc',
+            'SYMM': 'expanded',
+            'SCATTERERS' : ''        
+        }
+        self.data = {}
     
     @property
     def scatterers(self) -> List[str]:
