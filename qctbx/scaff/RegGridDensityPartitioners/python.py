@@ -8,6 +8,8 @@ from itertools import product
 from copy import deepcopy
 from typing import Dict, Any, List, Optional
 from ..citations import get_partitioning_citation
+from ...custom_typing import Path
+
 import numpy as np
 
 defaults = {
@@ -121,7 +123,7 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
         cell_dict: Dict[str, Any],
         space_group_dict: Dict[str, Any],
         refln_dict: Dict[str, Any],
-        density_path: str
+        density_path: Path
     ) -> np.ndarray:
         
         if self.options['partition'] == 'valence':

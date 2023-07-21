@@ -23,6 +23,8 @@ from .base import RegGridDensityPartitioner, calc_f0j_core
 from ..RegGridDensityCalculators.gpaw import gpaw_bibtex_key, gpaw_bibtex_entry
 from ..citations import get_partitioning_citation
 from ..util import dict_merge
+from ...custom_typing import Path
+
 
 defaults = {
     'partition': 'valence',
@@ -148,7 +150,7 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
         cell_dict: Dict[str, Any],
         space_group_dict: Dict[str, Any],
         refln_dict: Dict[str, Any],
-        density_path: str
+        density_path: Path
     ) -> np.ndarray:
         options = dict_merge(defaults, self.options)
 

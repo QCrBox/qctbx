@@ -3,6 +3,7 @@ import struct
 from collections.abc import Iterable
 from typing import Tuple, List, Union, Dict
 from abc import abstractclassmethod, ABC, abstractmethod
+from ..custom_typing import Path
 
 def parse_header(header_str):
     header = {}
@@ -125,11 +126,11 @@ class TSCBase(ABC):
             raise ValueError(f'Unknown atom label(s) used for lookup from TSCFile: {" ".join(unknown)}')
         
     @abstractclassmethod
-    def from_file(cls, filename: str):
+    def from_file(cls, filename: Path):
         pass
 
     @abstractmethod
-    def to_file(self, filename: str):
+    def to_file(self, filename: Path):
         pass
 
 class TSCFile(TSCBase):
@@ -154,7 +155,7 @@ class TSCFile(TSCBase):
     """
     
     @classmethod
-    def from_file(cls, filename: str) -> "TSCFile":
+    def from_file(cls, filename: Path) -> "TSCFile":
         """
         Constructs a TSCFile object from a file.
 
@@ -163,7 +164,7 @@ class TSCFile(TSCBase):
 
         Parameters
         ----------
-        filename : str
+        filename : Path
             The name of the TSC file to read.
 
         Returns
@@ -185,7 +186,7 @@ class TSCFile(TSCBase):
 
         return new_obj
 
-    def to_file(self, filename: str) -> None:
+    def to_file(self, filename: Path) -> None:
         """
         Writes the TSCFile object to a file.
 
@@ -195,7 +196,7 @@ class TSCFile(TSCBase):
 
         Parameters
         ----------
-        filename : str
+        filename : Path
             The name of the file to write.
         """
         header_str = '\n'.join(f'{key}: {value}' for key, value in self.header.items())
@@ -228,7 +229,7 @@ class TSCBFile(TSCBase):
     """
     
     @classmethod
-    def from_file(cls, filename: str) -> "TSCBFile":
+    def from_file(cls, filename: Path) -> "TSCBFile":
         """
         Constructs a TSCFile object from a file.
 
@@ -237,7 +238,7 @@ class TSCBFile(TSCBase):
 
         Parameters
         ----------
-        filename : str
+        filename : Path
             The name of the TSC file to read.
 
         Returns
@@ -261,7 +262,7 @@ class TSCBFile(TSCBase):
             }
         return new_obj
 
-    def to_file(self, filename: str) -> None:
+    def to_file(self, filename: Path) -> None:
         """
         Writes the TSCBFile object to a file.
 

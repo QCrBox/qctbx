@@ -7,6 +7,8 @@ import subprocess
 from ..conversions import symm_mat_vec2str, symm_to_matrix_vector, cell_dict2atom_sites_dict
 from ..io.minimal_files import write_minimal_cif, write_mock_hkl
 from ..io.tsc import TSCFile
+from ..custom_typing import Path
+
 
 bibtex_key = 'MATTS,DiSCaMB,iotbxcif'
 
@@ -61,7 +63,12 @@ bibtex_entry = """
 
 
 class MATTSF0jSource(F0jSource):
-    def __init__(self, discamb_path, work_folder='./discamb_files', filebase='discamb'):
+    def __init__(
+        self, 
+        discamb_path: Path, 
+        work_folder: Path ='./discamb_files', 
+        filebase='discamb'
+    ):
         self.discamb_path = os.path.abspath(discamb_path)
         self.work_folder = work_folder
         self.filebase=filebase

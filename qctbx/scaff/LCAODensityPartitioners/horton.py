@@ -13,6 +13,8 @@ from ..constants import ANGSTROM_PER_BOHR
 from ..util import batched
 from typing import Dict, Any, List, Optional
 from ..citations import get_partitioning_citation
+from ...custom_typing import Path
+
 
 defaults = {
     'method': 'mbis',
@@ -73,7 +75,7 @@ class HortonPartitioner(LCAODensityPartitioner):
         """
         return horton is not None
     
-    def partition(self, density_path: str):
+    def partition(self, density_path: Path):
         """
         Perform partitioning using HORTON's methods given a path to the density 
         data. 

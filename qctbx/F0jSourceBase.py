@@ -1,4 +1,5 @@
 from typing import Dict, List, Any, Tuple
+from pathlib import Path
 import numpy as np
 import re
 from copy import deepcopy
@@ -6,13 +7,48 @@ from collections import OrderedDict
 from .io.tsc import TSCFile, TSCBFile
 from .conversions import expand_atom_site_table_symm
 from abc import abstractmethod
+from .custom_typing import Path
 
 class F0jSource:
+
+    @abstractmethod          
+    def calc_f0j(
+        self,
+        atom_site_dict: Dict[str, List[Any]],
+        cell_dict: Dict[str, Any],
+        space_group_dict: Dict[str, Any],
+        refln_dict: Dict[str, Any]
+    ):
+        pass
+
+    def write_tsc(
+        self,
+        tsc_filename: Path,
+        atom_site_dict: Dict[str, List[Any]],
+        cell_dict: Dict[str, Any],
+        space_group_dict: Dict[str, Any],
+        refln_dict: Dict[str, Any],
+        tsc_title='qctbx-export'
+    ):
+        #TODO: Implement culling of inversion equivalent reflections
+        f0j = self.calc_f0j(atom_site_dict, cell_dict, space_group_dict, refln_dict)
+        if tsc_filename.endswith('.tscb'):
+            new_tsc = TSCBFile()
+        else:
+            new_tsc = TSCFile()
+        new_tsc.scatterers = list(atom_site_dict['_atom_site_label'])
+        new_data = {
+            (h, k, l): form_factors for h, k, l, form_factors in zip(refln_dict['_refln_index_h'], refln_dict['_refln_index_k'], refln_dict['_refln_index_l'], f0j.T)
+        }
+        new_tsc.header['TITLE'] = tsc_title
+        new_tsc.data = new_data
+        new_tsc.to_file(tsc_filename)
+
     def cctbx2tsc(
         self, 
         structure,
         miller_array,
-        tsc_filename,
+        tsc_filename: Path,
         tsc_title='qctbx tsc file'
     ):
         # to not be limited by accuracy of cif block strings
@@ -64,38 +100,11 @@ class F0jSource:
             tsc_title
         )
 
-    @abstractmethod          
-    def calc_f0j(
-        self,
-        atom_site_dict: Dict[str, List[Any]],
-        cell_dict: Dict[str, Any],
-        space_group_dict: Dict[str, Any],
-        refln_dict: Dict[str, Any]
+    def cif2tsc(
+        cif_filename: Path,
+        cif_dataset: str
     ):
         pass
-
-    def write_tsc(
-        self,
-        tsc_filename: str,
-        atom_site_dict: Dict[str, List[Any]],
-        cell_dict: Dict[str, Any],
-        space_group_dict: Dict[str, Any],
-        refln_dict: Dict[str, Any],
-        tsc_title='qctbx-export'
-    ):
-        #TODO: Implement culling of inversion equivalent reflections
-        f0j = self.calc_f0j(atom_site_dict, cell_dict, space_group_dict, refln_dict)
-        if tsc_filename.endswith('.tscb'):
-            new_tsc = TSCBFile()
-        else:
-            new_tsc = TSCFile()
-        new_tsc.scatterers = list(atom_site_dict['_atom_site_label'])
-        new_data = {
-            (h, k, l): form_factors for h, k, l, form_factors in zip(refln_dict['_refln_index_h'], refln_dict['_refln_index_k'], refln_dict['_refln_index_l'], f0j.T)
-        }
-        new_tsc.header['TITLE'] = tsc_title
-        new_tsc.data = new_data
-        new_tsc.to_file(tsc_filename)
 
 
 

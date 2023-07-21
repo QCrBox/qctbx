@@ -10,6 +10,8 @@ from typing import Tuple, List, Dict, Any, Optional
 from ..citations import get_partitioning_citation
 from ...io.minimal_files import write_mock_hkl, write_minimal_cif
 from ...conversions import symm_to_matrix_vector, symm_mat_vec2str
+from ...custom_typing import Path
+
 
 defaults = {
     'nosphera2_path': './NoSpherA2',
@@ -56,7 +58,7 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
         cell_dict: Dict[str, Any],
         space_group_dict: Dict[str, Any],
         refln_dict: Dict[str, Any],
-        density_path: str
+        density_path: Path
     ):
 
         atom_sites_dict = cell_dict2atom_sites_dict(cell_dict)
@@ -90,7 +92,7 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
         cell_dict: Dict[str, Any],
         space_group_dict: Dict[str, Any],
         refln_dict: Dict[str, Any],
-        density_path: str
+        density_path: Path
     ):
         self.run_nospherA2(atom_labels, atom_site_dict, cell_dict, space_group_dict, refln_dict, density_path)
 
