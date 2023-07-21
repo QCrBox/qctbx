@@ -1,4 +1,4 @@
-import typing
+from typing import TypeVar, Union
 import os
 
-Path = typing.Union(str, os.PathLike)
+Path = TypeVar('Path', bound=Union[str, os.PathLike])

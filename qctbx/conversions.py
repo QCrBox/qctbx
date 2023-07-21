@@ -309,3 +309,35 @@ def symm_mat_vec2str(symm_mat, symm_vec):
                     symm_string += f'+{str(fraction)}*{symbol}'
         symm_string += ','
     return symm_string[:-1]
+
+def split_error(string: str) -> Union[Tuple[float, float], Tuple[int, int]]:
+    """Helper function to split a string containing a value with error in
+    brackets to a value-esd pair
+
+    Parameters
+    ----------
+    string : str
+        Input string containing the value to be split
+
+    Returns
+    -------
+    Union[Tuple[float, float], Tuple[int, int]]
+        Pair of floats if a '.' was present in string, otherwise a pair of ints
+        containing the value and its esd
+    """    
+    int_search = re.search(r'([\-\d]*)\((\d*)\)', string)
+    search = re.search(r'(\-{0,1})([\d]*)\.(\d*)\((\d*)\)', string)
+    if search is not None:
+        # we have found a float
+        sign, before_dot, after_dot, err = search.groups()
+        if sign == '-':
+            return -1 * (int(before_dot) + int(after_dot) * 10**(-len(after_dot))), int(err) * 10**(-len(after_dot))
+        else:
+            return int(before_dot) + int(after_dot) * 10**(-len(after_dot)), int(err) * 10**(-len(after_dot))
+    elif int_search is not None:
+        # we have found an int
+        value, error = int_search.groups()
+        return int(value), int(error)
+    else:
+        # no error found
+        return float(string), 0.0  
