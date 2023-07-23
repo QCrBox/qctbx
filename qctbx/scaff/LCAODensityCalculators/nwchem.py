@@ -70,7 +70,7 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
         self,
         atom_site_dict: Dict[str, Union[float, str]],
         cell_dict: Dict[str, float],
-        cluster_charge_dict: Dict[str, List[float]] = {}
+        cluster_charge_dict: Dict[str, List[float]] = None
     ):
         """
         Calculate the electronic density for a given atomic configuration using NWChem.
@@ -86,6 +86,8 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
                 n sized array with the charges under 'charges'.
                 Defaults to an empty dict for no cluster charges.
         """
+        if cluster_charge_dict is None:
+            cluster_charge_dict = {}
         assert len(cluster_charge_dict) == 0, 'Cluster charges are currently not supported'
         try:
             positions_cart = np.array([atom_site_dict[f'_atom_site_Cartn_{coord}'] for coord in ('x', 'y', 'z')]).T

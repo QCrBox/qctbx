@@ -1,7 +1,6 @@
 from typing import Dict, List, Any, Union
 from .RegGridDensityCalculators.base import RegGridDensityCalculator
-from .density_calculator_base import DensityCalculator
-from .density_partitioner_base import DensityPartitioner
+from .base_classes import DensityCalculator, DensityPartitioner
 from ..conversions import expand_atom_site_table_symm
 from ..f0j_source_base import F0jSource
 
@@ -28,7 +27,7 @@ class ScaffF0jSource(F0jSource):
         self,
         density_calculator: DensityCalculator,
         partitioner: DensityPartitioner,
-        expand_positions: Dict[str, Union[str, List[str]]] = {},
+        expand_positions: Dict[str, Union[str, List[str]]] = None,
         use_charges: bool=False
     ):
         """
@@ -54,7 +53,10 @@ class ScaffF0jSource(F0jSource):
         """
         self.density_calculator = density_calculator
         self.partitioner = partitioner
-        self.expand_positions = expand_positions
+        if expand_positions is not None:
+            self.expand_positions = expand_positions
+        else:
+            self.expand_positions ={}
         self.use_charges = use_charges
         if use_charges:
             raise NotImplementedError('cluster charge calculations are not implemented yet')

@@ -19,8 +19,8 @@ class ORCACalculator(LCAOQCCalculator):
         self,
         *args,
         abs_orca_path: Optional[str] = None,
-        keywords = [],
-        blocks = {},
+        keywords = None,
+        blocks = None,
         label = 'orca',
         **kwargs
     ):
@@ -45,9 +45,14 @@ class ORCACalculator(LCAOQCCalculator):
         else:
             #assume linux
             self.abs_orca_path = shutil.which('orca')
-
-        self.keywords = keywords
-        self.blocks = blocks
+        if keywords is None:
+            self.keywords = []
+        else:
+            self.keywords = keywords
+        if blocks is None:
+            self.blocks = {}
+        else:
+            self.blocks = blocks
         self.label = label
 
     def check_availability(self) -> bool:

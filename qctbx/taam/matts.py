@@ -132,7 +132,7 @@ class MATTSF0jSource(F0jSource):
         write_mock_hkl(os.path.join(self.work_folder, self.filebase + '.hkl'), refln_dict)
         write_minimal_cif(os.path.join(self.work_folder, self.filebase + '.cif'), cell_dict, cleaned_sg_dict, atom_site_dict)
         with open(os.path.join(self.work_folder, f'{self.filebase}_cli.out'), 'w') as fo:
-            subprocess.run([self.discamb_path], cwd=self.work_folder, stdout=fo)
+            subprocess.run([self.discamb_path], cwd=self.work_folder, stdout=fo, check=True)
 
         tsc = TSCFile.from_file(os.path.join(self.work_folder, self.filebase + '.tsc'))
 

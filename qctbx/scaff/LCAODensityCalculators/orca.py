@@ -93,7 +93,7 @@ class ORCADensityCalculator(LCAODensityCalculator):
             self,
             atom_site_dict: Dict[str, Union[float, str]],
             cell_dict: Dict[str, float],
-            cluster_charge_dict: Dict[str, List[float]] = {}
+            cluster_charge_dict: Dict[str, List[float]]=None
         ):
         """
         Calculate the electronic density for a given atomic configuration using ORCA.
@@ -109,6 +109,8 @@ class ORCADensityCalculator(LCAODensityCalculator):
                 n sized array with the charges under 'charges'.
                 Defaults to an empty dict for no cluster charges.
         """
+        if cluster_charge_dict is None:
+            cluster_charge_dict = {}
         self._qm_options = dict_merge(qm_defaults, self.qm_options, case_sensitive=False)
 
         self._calc_options = dict_merge(calc_defaults, self.calc_options, case_sensitive=True)

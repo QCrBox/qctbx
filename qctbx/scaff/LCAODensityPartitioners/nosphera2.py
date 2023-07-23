@@ -41,8 +41,11 @@ nosphera2_bibtex_entry = """
 class NoSpherA2Partitioner(LCAODensityPartitioner):
     accepts_input = ('wfn', 'wfx')
 
-    def __init__(self, options={}):
-        options = deepcopy(options)
+    def __init__(self, options=None):
+        if options is None:
+            options = {}
+        else:
+            options = deepcopy(options)
         for key, value in defaults.items():
             if key not in options:
                 options[key] = value

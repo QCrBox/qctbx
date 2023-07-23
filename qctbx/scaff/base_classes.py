@@ -1,9 +1,27 @@
-"""Refinement against Partitioned Calculated Molecular Densities"""
-from typing import List, Dict, Any, Optional
-
 from abc import abstractmethod, ABC
+from typing import List, Dict, Any, Union
+
+from ..custom_typing import Path
+
 import numpy as np
 
+class DensityCalculator(ABC):
+
+    @abstractmethod
+    def check_availability(self) -> bool:
+        pass
+
+    @abstractmethod
+    def calculate_density(
+        self,
+        atom_site_dict: Dict[str, Union[float, str]],
+        cell_dict: Dict[str, float]
+    ):
+        pass
+
+    @abstractmethod
+    def cif_output(self) -> str:
+        pass
 
 class DensityPartitioner(ABC):
     @abstractmethod
@@ -18,7 +36,7 @@ class DensityPartitioner(ABC):
         cell_dict: Dict[str, Any],
         space_group_dict: Dict[str, Any],
         refln_dict: Dict[str, Any],
-        density_path: Optional[str] = None
+        density_path: Path
     ) -> np.ndarray:
         pass
 

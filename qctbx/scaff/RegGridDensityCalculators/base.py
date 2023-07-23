@@ -1,9 +1,8 @@
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict
 
-from ..citations import get_basis_citation, get_functional_citation
-from ..density_calculator_base import DensityCalculator
+from ..citations import get_functional_citation
+from ..base_classes import DensityCalculator
 
 
 @dataclass
@@ -20,7 +19,6 @@ class RegGridDensityCalculator(DensityCalculator):
         software_bibtex_entry
     ):
         method_bibtex_key, method_bibtex_entry = get_functional_citation(self._qm_options['method'])
-        basis_bibtex_key, basis_bibtex_entry = get_basis_citation(self._qm_options['basis_set'])
         if all(point == 1 for point in self._qm_options['kpoints']):
             k_string = ' at the Gamma point'
         else:
@@ -33,4 +31,4 @@ class RegGridDensityCalculator(DensityCalculator):
             + k_string
             + f" in {software_name} [{software_bibtex_key}]"
         )
-        return report_string, '\n\n\n'.join((software_bibtex_entry, method_bibtex_entry, basis_bibtex_entry))
+        return report_string, '\n\n\n'.join((software_bibtex_entry, method_bibtex_entry))

@@ -90,12 +90,14 @@ def basic_refinement(
     xray_structure: structure,
     miller_array: miller.array,
     f0jeval: F0jSource,
-    har_convergence_conditions: Dict[str, Union[float, int]] = default_har_convergence_conditions,
-    constraints_list=[],
+    har_convergence_conditions: Dict[str, Union[float, int]]=default_har_convergence_conditions,
+    constraints_list=None,
     restraints_manager=None,
     solver_name='Gauss-Newton',
     tsc_path='qctbx.tsc'
 ):
+    if constraints_list is None:
+        constraints_list = []
 
     for _ in range(har_convergence_conditions['max(cycles)']):
         xray_structure0 = deepcopy(xray_structure)

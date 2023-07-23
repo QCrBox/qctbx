@@ -4,7 +4,7 @@ import numpy as np
 from scipy.integrate import simps
 
 from ...conversions import cell_dict2atom_sites_dict
-from ..density_partitioner_base import DensityPartitioner
+from ..base_classes import DensityPartitioner
 
 
 def calc_f0j_core(

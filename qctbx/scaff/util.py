@@ -18,7 +18,7 @@ def batched(iterable: Iterable, n:int) -> iter:
     Example:
         batched('ABCDEFG', 3) --> ABC DEF G
     """
-    
+
     if n < 1:
         raise ValueError('n must be at least one')
     it = iter(iterable)
@@ -28,35 +28,35 @@ def batched(iterable: Iterable, n:int) -> iter:
 def dict_merge(*args: Dict[str, Any], case_sensitive: bool=True) -> Dict[str, Any]:
     """
     Merge multiple input dictionaries into a single dictionary.
-    
-    This function handles nested dictionaries and lists within those 
-    dictionaries. It merges keys from each dictionary into the first one. 
-    If a key exists in both dictionaries and both values are dictionaries, 
-    the function recursively merges the nested dictionaries. If both 
-    values are lists, it combines them, removing duplicates. If the values 
-    are of the same type, it overwrites the value in the first dictionary 
-    with the value from the second. If the key exists in the second 
-    dictionary but not the first, it adds the key-value pair to the first 
+
+    This function handles nested dictionaries and lists within those
+    dictionaries. It merges keys from each dictionary into the first one.
+    If a key exists in both dictionaries and both values are dictionaries,
+    the function recursively merges the nested dictionaries. If both
+    values are lists, it combines them, removing duplicates. If the values
+    are of the same type, it overwrites the value in the first dictionary
+    with the value from the second. If the key exists in the second
+    dictionary but not the first, it adds the key-value pair to the first
     dictionary.
 
-    Note: The function raises an exception if it encounters mismatched 
+    Note: The function raises an exception if it encounters mismatched
     value types for the same key in different dictionaries.
 
     Args:
         *args: A variable number of dictionaries to be merged.
-        case_sensitive (bool): if True case sensitivity will be obeyed in the 
-            merging of dictionaries and lists. If False, the merging will be 
-            done with the assumption that different case strings are equal. 
+        case_sensitive (bool): if True case sensitivity will be obeyed in the
+            merging of dictionaries and lists. If False, the merging will be
+            done with the assumption that different case strings are equal.
             Resulting strings will come from the latest dict in args.
 
     Returns:
-        A single dictionary that is the result of merging all input 
+        A single dictionary that is the result of merging all input
         dictionaries.
 
     Raises:
         Exception: If a key in the dictionaries has mismatched value types.
 
-    Adapted from: 
+    Adapted from:
     https://stackoverflow.com/questions/7204805/how-to-merge-dictionaries-of-dictionaries
     """
 
@@ -100,9 +100,9 @@ def dict_merge(*args: Dict[str, Any], case_sensitive: bool=True) -> Dict[str, An
                         del(a[a_key])
                     a[b_key] = b[b_key]
                 else:
-                    raise Exception(f"Types of entries do not match at {'.'.join(path + [str(b_key)])}, type1 {str(type(b[b_key]))}, type2 {str(type(a[a_key]))}")
+                    raise ValueError(f"Types of entries do not match at {'.'.join(path + [str(b_key)])}, type1 {str(type(b[b_key]))}, type2 {str(type(a[a_key]))}")
             else:
                 a[b_key] = b[b_key]
         return a
-    
+
     return reduce(inner_merge, iter(deepcopy(arg) if i == 0 else arg for i, arg in enumerate(args)))

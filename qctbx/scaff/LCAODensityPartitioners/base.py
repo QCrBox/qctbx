@@ -1,4 +1,4 @@
-from ..density_partitioner_base import DensityPartitioner
+from ..base_classes import DensityPartitioner
 
 class LCAODensityPartitioner(DensityPartitioner):
     pass

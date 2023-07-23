@@ -42,9 +42,9 @@ class HirshfeldDensity(RealSpaceDensity):
                                     redistributor=dens.redistributor)
         except:
             RealSpaceDensity.__init__(self, dens.gd, dens.finegd,
-                                    dens.nspins, collinear=True, charge=0.0,
-                                    stencil=2,
-                                    redistributor=dens.redistributor)
+                                      dens.nspins, collinear=True, charge=0.0,
+                                      stencil=2,
+                                      redistributor=dens.redistributor)
         self.log = GPAWLogger(world=world)
         if log is None:
             self.log.fd = None

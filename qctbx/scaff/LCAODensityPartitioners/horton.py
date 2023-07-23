@@ -38,7 +38,7 @@ class HortonPartitioner(LCAODensityPartitioner):
 
     accepts_input = ('mkl', 'wfn')
 
-    def __init__(self, options: Dict[str, Any] = {}):
+    def __init__(self, options: Dict[str, Any]=None):
         """
         Initialize HortonPartitioner with given options. Default options will be used if not provided.
 
@@ -46,7 +46,10 @@ class HortonPartitioner(LCAODensityPartitioner):
             options (Dict[str, Any], optional): Options for HortonPartitioner. Defaults to {}.
         """
         super().__init__()
-        options = deepcopy(options)
+        if options is None:
+            options = {}
+        else:
+            options = deepcopy(options)
         for key, value in defaults.items():
             if key not in options:
                 options[key] = value

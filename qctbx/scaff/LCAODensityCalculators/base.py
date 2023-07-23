@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Union, List
 
 from ..citations import get_basis_citation, get_functional_citation
-from ..density_calculator_base import DensityCalculator
+from ..base_classes import DensityCalculator
 
 
 @dataclass
@@ -18,7 +18,7 @@ class LCAODensityCalculator(DensityCalculator):
         self,
         atom_site_dict: Dict[str, Union[float, str]],
         cell_dict: Dict[str, float],
-        cluster_charge_dict: Dict[str, List[float]] = {}
+        cluster_charge_dict: Dict[str, List[float]]=None
     ):
         pass
 
