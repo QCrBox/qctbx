@@ -1,12 +1,8 @@
-import shutil
-import subprocess
-import platform
-import pathlib
-from .base import LCAODensityCalculator
-from ..QCCalculator.GaussianCalculator import GaussianCalculator
+from typing import Dict, Union, List
+
+from ..QCCalculator.gaussian import GaussianCalculator
 from ..util import dict_merge
-
-
+from .base import LCAODensityCalculator
 
 calc_defaults = {
     'filebase': 'gaussian',
@@ -30,6 +26,7 @@ class GaussianDensityCalculator(LCAODensityCalculator):
 
     def __init__(self, *args, gauss_path=None, **kwargs):
         super().__init__(*args, **kwargs)
+        raise NotImplementedError("This class is currently a non-working stub")
         self._calculator = GaussianCalculator(
             gauss_path=gauss_path
         )
@@ -37,7 +34,26 @@ class GaussianDensityCalculator(LCAODensityCalculator):
     def check_availability(self) -> bool:
         return self._calculator.check_availability()
 
-    def calculate_density(self, elements, xyz, cluster_charge_dict={}):
+    def calculate_density(
+            self,
+            atom_site_dict: Dict[str, Union[float, str]],
+            cell_dict: Dict[str, float],
+            cluster_charge_dict: Dict[str, List[float]] = {}
+        ):
+        """
+        Calculate the electronic density for a given atomic configuration using Gaussian.
+
+        Args:
+            atom_site_dict (Dict[str, Union[float, str]]): Dictionary containing
+                the atomic configuration information.
+                Required keys: '_atom_site_type_symbol', '_atom_site_Cartn_x',
+                '_atom_site_Cartn_y', '_atom_site_Cartn_z'
+            cluster_charge_dict (Dict[str, List[float]], optional): Dictionary
+                containing cluster charge information. provide a n, 3 numpy
+                array under 'positions_cart' for the charge positions and a
+                n sized array with the charges under 'charges'.
+                Defaults to an empty dict for no cluster charges.
+        """
         self._qm_options = qm_defaults.copy()
         self._qm_options.update(self.qm_options)
 

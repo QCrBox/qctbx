@@ -1,13 +1,13 @@
-from .base import LCAODensityCalculator
-from ..util import batched
-from ...conversions import add_cart_pos
-from ..QCCalculator.ORCACalculator import ORCACalculator
-from ..util import dict_merge
-import subprocess
-import numpy as np
 import os
+import subprocess
+from typing import Dict, List, Optional, Union
 
-from typing import Dict, List, Union, Optional
+import numpy as np
+
+from ...conversions import add_cart_pos
+from ..QCCalculator.orca import ORCACalculator
+from ..util import dict_merge
+from .base import LCAODensityCalculator
 
 calc_defaults = {
     'label': 'orca',
@@ -28,7 +28,7 @@ qm_defaults = {
 
 class ORCADensityCalculator(LCAODensityCalculator):
     """
-    A specialized calculator for using the ORCA quantum chemistry package that inherits from LCAODensityCalculator. 
+    A specialized calculator for using the ORCA quantum chemistry package that inherits from LCAODensityCalculator.
     This class provides methods to generate input files, execute ORCA, and process the output.
 
     Attributes:
@@ -37,15 +37,15 @@ class ORCADensityCalculator(LCAODensityCalculator):
             Keys:
                 'method': Either functional or orther quantum chemical method
                     for the density calculation. Default: 'PBE'
-                'basis_set': Basis set for the wavefunction description. 
+                'basis_set': Basis set for the wavefunction description.
                     Default: 'def2-SVP'
                 'multiplicity': spin multiplicity of the system. Default: 1
                 'charge': charge of the system. Default: 0
-                'keywords': List of additional keywords that will be added to 
+                'keywords': List of additional keywords that will be added to
                     after the '!' in the ORCA input file.
                 'blocks': everything that is included into the ORCA input file
-                    using a % sign. If a newline is present in the included 
-                    string an entry will be concluded with 'end' in the input 
+                    using a % sign. If a newline is present in the included
+                    string an entry will be concluded with 'end' in the input
                     file otherwise a single line entry without end will be
                     produced. If cluster charges are included, an existing
                     'pointcharges' entry will be overwritten.
@@ -53,10 +53,10 @@ class ORCADensityCalculator(LCAODensityCalculator):
             keys such as 'label', 'work_directory' and 'output_format'.
     """
     provides_output = ('mkl', 'wfn')
-    
+
     def __init__(
         self,
-        *args, 
+        *args,
         abs_orca_path: Optional[str] = None,
         **kwargs
     ):
@@ -65,8 +65,8 @@ class ORCADensityCalculator(LCAODensityCalculator):
 
         Args:
             *args: Variable length argument list.
-            abs_orca_path (Optional[str]): The absolute path of the ORCA 
-                executable. Defaults to None, in this case the absolute path 
+            abs_orca_path (Optional[str]): The absolute path of the ORCA
+                executable. Defaults to None, in this case the absolute path
                 is determined from an orca executable in PATH.
             **kwargs: Arbitrary keyword arguments.
         """
@@ -91,7 +91,7 @@ class ORCADensityCalculator(LCAODensityCalculator):
 
     def calculate_density(
             self,
-            atom_site_dict: Dict[str, Union[float, str]], 
+            atom_site_dict: Dict[str, Union[float, str]],
             cell_dict: Dict[str, float],
             cluster_charge_dict: Dict[str, List[float]] = {}
         ):
@@ -101,11 +101,11 @@ class ORCADensityCalculator(LCAODensityCalculator):
         Args:
             atom_site_dict (Dict[str, Union[float, str]]): Dictionary containing
                 the atomic configuration information.
-                Required keys: '_atom_site_type_symbol', '_atom_site_Cartn_x', 
+                Required keys: '_atom_site_type_symbol', '_atom_site_Cartn_x',
                 '_atom_site_Cartn_y', '_atom_site_Cartn_z'
-            cluster_charge_dict (Dict[str, List[float]], optional): Dictionary 
-                containing cluster charge information. provide a n, 3 numpy 
-                array under 'positions_cart' for the charge positions and a 
+            cluster_charge_dict (Dict[str, List[float]], optional): Dictionary
+                containing cluster charge information. provide a n, 3 numpy
+                array under 'positions_cart' for the charge positions and a
                 n sized array with the charges under 'charges'.
                 Defaults to an empty dict for no cluster charges.
         """
@@ -161,7 +161,7 @@ class ORCADensityCalculator(LCAODensityCalculator):
     def cif_output(self) -> str:
         # TODO: Implement the logic to generate a CIF output from the calculation
         return 'Someone needs to implement this before production'
-    
+
 
     def citation_strings(self):
         self._calc_options = dict_merge(calc_defaults, self.calc_options)
@@ -170,11 +170,10 @@ class ORCADensityCalculator(LCAODensityCalculator):
         software_bibtex_key, sofware_bibtex_entry = self._calculator.bibtex_strings()
         software_name = 'ORCA' #TODO determine and add version
         return self.generate_description(software_name, software_bibtex_key, sofware_bibtex_entry)
-        
-
-        
 
 
 
 
-        
+
+
+

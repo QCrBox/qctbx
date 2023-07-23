@@ -1,14 +1,16 @@
-from typing import Any, Dict, List, Union
-from ..F0jSourceBase import F0jSource
 import os
-from copy import deepcopy
-import numpy as np
 import subprocess
-from ..conversions import symm_mat_vec2str, symm_to_matrix_vector, cell_dict2atom_sites_dict
+from copy import deepcopy
+from typing import Any, Dict, List, Union
+
+import numpy as np
+
+from ..conversions import (cell_dict2atom_sites_dict, symm_mat_vec2str,
+                           symm_to_matrix_vector)
+from ..custom_typing import Path
+from ..f0j_source_base import F0jSource
 from ..io.minimal_files import write_minimal_cif, write_mock_hkl
 from ..io.tsc import TSCFile
-from ..custom_typing import Path
-
 
 bibtex_key = 'MATTS,DiSCaMB,iotbxcif'
 
@@ -74,9 +76,9 @@ class MATTSF0jSource(F0jSource):
         The base of the filename to use when creating files.
     """
     def __init__(
-        self, 
-        discamb_path: Path, 
-        work_folder: Path ='./discamb_files', 
+        self,
+        discamb_path: Path,
+        work_folder: Path ='./discamb_files',
         filebase='discamb'
     ):
         self.discamb_path = os.path.abspath(discamb_path)
@@ -107,7 +109,7 @@ class MATTSF0jSource(F0jSource):
             Required keys: '_cell_length_a', '_cell_length_b', '_cell_length_c',
             '_cell_angle_alpha', '_cell_angle_beta', '_cell_angle_gamma'.
         space_group_dict : Dict[str, Union[int, str, List[str]]]
-            A dictionary representing space group parameters. Needs to contain key: 
+            A dictionary representing space group parameters. Needs to contain key:
             '_space_group_symop_operation_xyz
         refln_dict : Dict[str, Union[int, float, List[int]]]
             A dictionary representing reflection parameters.
@@ -120,9 +122,9 @@ class MATTSF0jSource(F0jSource):
         """
         atom_sites_dict = cell_dict2atom_sites_dict(cell_dict)
         cell_dict['_cell_volume'] = np.linalg.det(atom_sites_dict['_atom_sites_Cartn_tran_matrix'])
-        
+
         cleaned_sg_dict = deepcopy(space_group_dict)
-        
+
         cleaned_sg_dict['_space_group_symop_operation_xyz'] = [
             symm_mat_vec2str(*symm_to_matrix_vector(symm_string)) for symm_string in cleaned_sg_dict['_space_group_symop_operation_xyz']
         ]
@@ -134,10 +136,11 @@ class MATTSF0jSource(F0jSource):
 
         tsc = TSCFile.from_file(os.path.join(self.work_folder, self.filebase + '.tsc'))
 
+        hkl_zip = zip(refln_dict['_refln_index_h'], refln_dict['_refln_index_k'], refln_dict['_refln_index_l'])
         f0j = np.array([
-            tsc.data[(h, k, l)] if (h, k, l) in tsc.data.keys() else np.conj(tsc.data[(-h, -k, -l)]) for h, k, l in zip(refln_dict['_refln_index_h'], refln_dict['_refln_index_k'], refln_dict['_refln_index_l'])
+            tsc.data[(h, k, l)] if (h, k, l) in tsc.data.keys() else np.conj(tsc.data[(-h, -k, -l)]) for h, k, l in hkl_zip
         ]).T
-        
+
         return f0j
 
     def citation_strings(self):

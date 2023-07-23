@@ -54,7 +54,7 @@ def get_functional_citation(name):
     if name.lower() in functionals_bibtex:
         bibtex_key, bibtex_entry = functionals_bibtex[name.lower()]
         return bibtex_key, dedent(bibtex_entry).strip()
-    
+
     warnings.warn(f'No library bibtex entry found for {name}. You need to add the source manually.')
     return name + '??', ''
 
@@ -91,10 +91,10 @@ def get_basis_citation(name):
     if name.lower() in basis_set_bibtex:
         bibtex_key, bibtex_entry = basis_set_bibtex[name.lower()]
         return bibtex_key, dedent(bibtex_entry).strip()
-    
+
     warnings.warn(f'No library bibtex entry found for {name}. You need to add the source manually.')
     return name + '??', ''
-    
+
 partitioning_bibtex = {
     'hirshfeld': (
         'Hirshfeld',
@@ -114,7 +114,7 @@ partitioning_bibtex = {
     ),
     'hirshfeld-i': (
         'Hirshfeld-I',
-        """"
+        r""""
         @article{Hirshfeld-I,
             author = {Bultinck, Patrick and Van Alsenoy, Christian and Ayers, Paul W. and Carbó-Dorca, Ramon},
             title = "{Critical analysis and extension of the Hirshfeld atoms in molecules}",
@@ -176,6 +176,6 @@ def get_partitioning_citation(name):
     if name.lower() in partitioning_bibtex:
         bibtex_key, bibtex_entry = partitioning_bibtex[name.lower()]
         return bibtex_key, dedent(bibtex_entry).strip()
-    
+
     warnings.warn(f'No library bibtex entry found for {name}. You need to add the source manually.')
     return name + '??', ''

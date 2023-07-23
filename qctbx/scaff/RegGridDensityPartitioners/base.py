@@ -1,9 +1,11 @@
-from ..DensityPartitionerBase import DensityPartitioner
-from ...conversions import cell_dict2atom_sites_dict
+from typing import Any, Dict
 
-from scipy.integrate import simps
 import numpy as np
-from typing import Dict, Any
+from scipy.integrate import simps
+
+from ...conversions import cell_dict2atom_sites_dict
+from ..density_partitioner_base import DensityPartitioner
+
 
 def calc_f0j_core(
     cell_dict: Dict[str, Any],
@@ -16,10 +18,10 @@ def calc_f0j_core(
     Args:
         cell_dict (Dict[str, Any]): A dictionary representing the unit cell.
         refln_dict (Dict[str, Any]): A dictionary representing the reflection data.
-        qubox_density_atomic_dict (Dict[str, Dict[str, Any]]): A dictionary of 
+        qubox_density_atomic_dict (Dict[str, Dict[str, Any]]): A dictionary of
             dictionaries with elements as key and the entries being dictionaries
             containing the atomic density on a real-space grid. Used entries within
-            the individual elements are _qubox_density_atomic_rgrid and 
+            the individual elements are _qubox_density_atomic_rgrid and
             _qubox_density_atomic_core
 
     Returns:

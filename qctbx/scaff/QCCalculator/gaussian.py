@@ -1,4 +1,4 @@
-from .BaseQCCalculators import LCAOQCCalculator
+from .base import LCAOQCCalculator
 import platform
 import shutil
 import pathlib
@@ -36,7 +36,7 @@ class GaussianCalculator(LCAOQCCalculator):
                     break
             else:
                 self.gauss_path = None
-        
+
         self.link0 = link0
         self.route_section = route_section
         self.appendix = appendix
@@ -47,7 +47,7 @@ class GaussianCalculator(LCAOQCCalculator):
             return path.exists()
         else:
             return False
-        
+
 
     def run_calculation(self):
         input_content = self._generate_gaussian_input()
@@ -63,7 +63,7 @@ class GaussianCalculator(LCAOQCCalculator):
                 stdout=fo,
                 stderr=subprocess.STDOUT
             )
-        
+
 
     def _generate_gaussian_input(self):
         charge_mult = f"{self.charge} {self.multiplicity}"
@@ -117,4 +117,3 @@ class GaussianCalculator(LCAOQCCalculator):
             warnings.warn('Bibtex string for this Gaussian Version not implemented, you need to add the version manually')
             return gname, ''
 
-    

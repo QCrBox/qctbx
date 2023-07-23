@@ -1,13 +1,14 @@
-import platform
+import os
 import pathlib
+import platform
 import shutil
 import subprocess
-import os
-from .BaseQCCalculators import LCAOQCCalculator
-from typing import Dict, List, Union, Optional
-import numpy as np
-from ..util import batched
 import textwrap
+from typing import Optional
+
+from ..util import batched
+from .base import LCAOQCCalculator
+
 
 class ORCACalculator(LCAOQCCalculator):
     cluster_charge_dict = {}
@@ -16,7 +17,7 @@ class ORCACalculator(LCAOQCCalculator):
 
     def __init__(
         self,
-        *args, 
+        *args,
         abs_orca_path: Optional[str] = None,
         keywords = [],
         blocks = {},
@@ -28,8 +29,8 @@ class ORCACalculator(LCAOQCCalculator):
 
         Args:
             *args: Variable length argument list.
-            abs_orca_path (Optional[str]): The absolute path of the ORCA 
-                executable. Defaults to None, in this case the absolute path 
+            abs_orca_path (Optional[str]): The absolute path of the ORCA
+                executable. Defaults to None, in this case the absolute path
                 is determined from an orca executable in PATH.
             **kwargs: Arbitrary keyword arguments.
         """
@@ -61,16 +62,16 @@ class ORCACalculator(LCAOQCCalculator):
             return path.exists()
         else:
             return False
-        
+
     def run_calculation(self):
         if len(self.cluster_charge_dict.get('charges', [])) > 0:
-            cc_file = self._generate_cluster_charge_file(self.cluster_charge_dict)
+            cc_file = self._generate_cluster_charge_file()
             cc_filename = f"{self.label}.pc"
             with open(cc_filename, 'w') as fo:
                 fo.write(cc_file)
 
             self.blocks['pointcharges'] = f"{cc_filename}"
- 
+
         # Create the input file content
         input_content = self._generate_orca_input()
 
@@ -79,7 +80,7 @@ class ORCACalculator(LCAOQCCalculator):
         with open(os.path.join(self.directory, input_filename), 'w') as fo:
             fo.write(input_content)
 
-        #Execute ORCA with the generated input file 
+        #Execute ORCA with the generated input file
         out_filename = os.path.join(self.directory, f"{self.label}.out")
         with open(out_filename, 'w') as fo:
             subprocess.call(
@@ -107,10 +108,10 @@ class ORCACalculator(LCAOQCCalculator):
         )
 
         charge_block = '\n'.join(
-            f'{charge: 9.6f} {pos_string}' for charge, pos_string 
+            f'{charge: 9.6f} {pos_string}' for charge, pos_string
             in zip(self.cluster_charge_dict['charges'], position_strings)
         )
-        
+
         return f"{len(self.cluster_charge_dict['charges'])}\n{charge_block}\n"
 
     def _generate_orca_input(
@@ -130,12 +131,12 @@ class ORCACalculator(LCAOQCCalculator):
         header = ''
         # Set up the ORCA input file header
         for entries in batched(self.keywords, 5):
-            header += '\n!' + ' '.join(entries)      
+            header += '\n!' + ' '.join(entries)
 
         blocks = ''.join(
-            f'\n%{key}\n{entry}\nend\n' if ' ' in entry.strip() 
+            f'\n%{key}\n{entry}\nend\n' if ' ' in entry.strip()
             else f'\n%{key} {entry}\n'
-            for key, entry in self.blocks.items() 
+            for key, entry in self.blocks.items()
         )
 
         charge_mult = f"*xyz {self.charge} {self.multiplicity}"
@@ -147,9 +148,9 @@ class ORCACalculator(LCAOQCCalculator):
         # Combine sections into a complete input file
         orca_input = f"{header}\n{blocks}\n{charge_mult}\n{coordinates_section}\n*\n"
         return orca_input
-    
+
     def bibtex_strings(self) -> str:
-        return 'ORCA2020', textwrap.dedent("""
+        return 'ORCA2020', textwrap.dedent(r"""
             @article{ORCA2020,
                 author = {Neese, Frank and Wennmohs, Frank and Becker, Ute and Riplinger, Christoph},
                 title = "{The ORCA quantum chemistry program package}",

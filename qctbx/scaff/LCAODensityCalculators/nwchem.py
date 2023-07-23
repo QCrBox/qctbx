@@ -1,15 +1,16 @@
-import ase
-from .base import LCAODensityCalculator
-from ..QCCalculator.AseCalculator import AseLCAOCalculator
-from ..util import dict_merge
-from ...conversions import add_cart_pos
-from ase.calculators.nwchem import NWChem
-from typing import Dict, List, Union, Any
 import os
 import pathlib
-import numpy as np
 import subprocess
 import warnings
+from typing import Dict, List, Union
+
+import numpy as np
+from ase.calculators.nwchem import NWChem
+
+from ...conversions import add_cart_pos
+from ..QCCalculator.ase import AseLCAOCalculator
+from ..util import dict_merge
+from .base import LCAODensityCalculator
 
 calc_defaults = {
     'label': 'nwchem',
@@ -21,12 +22,12 @@ qm_defaults = {
     'method': 'hcth407p',
     'basis_set': 'def2-SVP',
     'multiplicity': 1,
-    'charge': 0,                       
+    'charge': 0,
     'n_core': 1,
     'ram': 2000,
     'ase_options': {}
 }
-nwchem_bibtex_key = NWChem
+nwchem_bibtex_key = 'nwchem'
 
 nwchem_bibtex_entry = """
 @article{NWChem,
@@ -48,7 +49,7 @@ molden2aimfile = 'molden= -1\nwfn= 1\nwfncheck= 1\nwfx= 1\nwfxcheck= 1\nnbo= -1\
 
 class NWChemLCAODensityCalculator(LCAODensityCalculator):
     xyz_format = 'cartesian'
-    provides_output = ('wfn')
+    provides_output = tuple(('wfn'))
 
     def __init__(self, *args, nwchem_path='nwchem', molden2aimpath=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -66,27 +67,26 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
         return path.exists()
 
     def calculate_density(
-            self,
-            atom_site_dict: Dict[str, Union[float, str]], 
-            cell_dict: Dict[str, float],
-            cluster_charge_dict: Dict[str, List[float]] = {}
-        ):
+        self,
+        atom_site_dict: Dict[str, Union[float, str]],
+        cell_dict: Dict[str, float],
+        cluster_charge_dict: Dict[str, List[float]] = {}
+    ):
         """
         Calculate the electronic density for a given atomic configuration using NWChem.
 
         Args:
             atom_site_dict (Dict[str, Union[float, str]]): Dictionary containing
                 the atomic configuration information.
-                Required keys: '_atom_site_type_symbol', '_atom_site_Cartn_x', 
+                Required keys: '_atom_site_type_symbol', '_atom_site_Cartn_x',
                 '_atom_site_Cartn_y', '_atom_site_Cartn_z'
-            cluster_charge_dict (Dict[str, List[float]], optional): Dictionary 
-                containing cluster charge information. provide a n, 3 numpy 
-                array under 'positions_cart' for the charge positions and a 
+            cluster_charge_dict (Dict[str, List[float]], optional): Dictionary
+                containing cluster charge information. provide a n, 3 numpy
+                array under 'positions_cart' for the charge positions and a
                 n sized array with the charges under 'charges'.
                 Defaults to an empty dict for no cluster charges.
         """
         assert len(cluster_charge_dict) == 0, 'Cluster charges are currently not supported'
-        symbols = list(atom_site_dict['_atom_site_type_symbol'])
         try:
             positions_cart = np.array([atom_site_dict[f'_atom_site_Cartn_{coord}'] for coord in ('x', 'y', 'z')]).T
         except KeyError:
@@ -95,7 +95,7 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
 
         used_qm_options = dict_merge(qm_defaults, self.qm_options)
         used_calc_options = dict_merge(calc_defaults, self.calc_options)
-        
+
         ase_options = used_qm_options['ase_options']
         ase_options['dft'] = {
             'xc': used_qm_options['method'],
@@ -119,7 +119,7 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
 
         if used_qm_options['n_core'] > 1:
             ase_options['command'] = f'mpirun -n {used_qm_options["n_core"]} {self.nwchem_path}]'
-     
+
         nwchem = NWChem(**ase_options)
 
         calculator = AseLCAOCalculator(
@@ -129,7 +129,7 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
         )
 
         calculator.run_calculation()
-        
+
         if self.molden2aimpath is not None:
             self._write_molden2aim_ini()
             abs_path = pathlib.Path(self.molden2aimpath).resolve()
@@ -156,12 +156,10 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
         self._calc_options = dict_merge(calc_defaults, self.calc_options)
         self._qm_options = dict_merge(qm_defaults, self.qm_options)
 
-        software_name = f'ASE/NWChem'
+        software_name = 'ASE/NWChem'
         ase_bibtex_key, ase_bibtex_entry = AseLCAOCalculator({}, {}).bibtex_strings()
 
         software_key = ','.join((ase_bibtex_key, nwchem_bibtex_key))
         software_bibtex_entry = '\n\n\n'.join((ase_bibtex_entry, nwchem_bibtex_entry))
 
         return self.generate_description(software_name, software_key, software_bibtex_entry)
-
-    

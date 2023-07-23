@@ -1,4 +1,4 @@
-"""This module has the building blocks for a basic refinement. The main part is 
+"""This module has the building blocks for a basic refinement. The main part is
 basically copied from Olex2 with only omissions and tiny modifications.
 Currently, it only works with the cctbx fork from https://github.com/pcxod/cctbx_project"""
 
@@ -20,7 +20,7 @@ import logging
 class normal_eqns(least_squares.crystallographic_ls_class()):
     log = None
     std_observations = None
-    
+
     def __init__(self, observations, refinement, table_file_name=None, **kwds):
         super(normal_eqns, self).__init__(
             observations, refinement.reparametrisation, initial_scale_factor=1.0,
@@ -53,7 +53,7 @@ class normal_eqns(least_squares.crystallographic_ls_class()):
                                         self.f_mask.indices(),
                                         self.f_mask.data())
         self.n_current_cycle = 0
-    
+
     def get_std_DM(self):
         cl = least_squares.crystallographic_ls_class()
         self.reparametrisation.linearise()
@@ -70,11 +70,11 @@ class normal_eqns(least_squares.crystallographic_ls_class()):
             return args
         self.data = build_design_matrix(*args()) #lock destruction
         return self.data
-    
+
     def build_up(self, objective_only):
         super(normal_eqns, self).build_up(objective_only)
         return
-    
+
     def step_forward(self):
         self.n_current_cycle += 1
         self.xray_structure_pre_cycle = self.xray_structure.deep_copy_scatterers()
@@ -85,11 +85,11 @@ class normal_eqns(least_squares.crystallographic_ls_class()):
         self.xray_structure, f=self.log)
         self.show_cycle_summary()
         return self
-    
+
     def step_backward(self):
         super(normal_eqns, self).step_backward()
         return self
-    
+
     def analyse_shifts(self):
         self.max_shift_esd = None
         self.max_shift_esd_item = None
@@ -101,7 +101,7 @@ class normal_eqns(least_squares.crystallographic_ls_class()):
             self.max_shift_esd_item = self.iterations_object.max_shift_for
         except Exception as s:
             print(s)
-    
+
     def show_cycle_summary(self, log=None):
         if log is None: log = sys.stdout
         # self.reparametrisation.n_independents + OSF
@@ -109,7 +109,7 @@ class normal_eqns(least_squares.crystallographic_ls_class()):
         max_shift_u = self.max_shift_u()
         self.analyse_shifts()
         print_tabular = True
-    
+
         if print_tabular:
             header = "  % 5i    % 6.2f    % 6.2f    % 6.2f    % 8.3f %-11s  % 8.2e %-11s  % 8.2e %-11s"
             params = (self.n_current_cycle,
@@ -127,7 +127,7 @@ class normal_eqns(least_squares.crystallographic_ls_class()):
                 header += "  % 8.2e"
                 params += (self.iterations_object.mu,)
             print(header %params, file=log)
-            
+
         else:
             print("wR2 = %.4f | GooF = %.4f for %i data and %i parameters" %(
                 self.wR2(),
@@ -135,9 +135,9 @@ class normal_eqns(least_squares.crystallographic_ls_class()):
                 self.observations.fo_sq.size(),
                 self.reparametrisation.n_independents + 1,
             ), file=log)
-            
+
             print("Max shifts: ", end=' ', file=log)
-            
+
             print("Site: %.4f A for %s |" %(
                 max_shift_site[0],
                 max_shift_site[1].label
@@ -146,19 +146,19 @@ class normal_eqns(least_squares.crystallographic_ls_class()):
                 max_shift_u[0],
                 max_shift_u[1].label,
             ), file=log)
-    
-    
+
+
     def max_shift_site(self):
         return next(self.iter_shifts_sites(max_items=1))
-    
+
     def max_shift_u(self):
         return next(self.iter_shifts_u(max_items=1))
-    
+
     def max_shift_esd(self):
         self.get_shifts()
         return next(self.iter_shifts_u(max_items=1))
-    
-    
+
+
     def iter_shifts_sites(self, max_items=None):
         scatterers = self.xray_structure.scatterers()
         sites_shifts = (
@@ -170,11 +170,11 @@ class normal_eqns(least_squares.crystallographic_ls_class()):
             i_distances_sorted = i_distances_sorted[:max_items]
         for i_seq in iter(i_distances_sorted):
             yield distances[i_seq], scatterers[i_seq]
-    
+
     def iter_shifts_u(self, max_items=None):
         scatterers = self.xray_structure.scatterers()
         adp_shifts = (
-            self.xray_structure.extract_u_cart_plus_u_iso() 
+            self.xray_structure.extract_u_cart_plus_u_iso()
             - self.xray_structure_pre_cycle.extract_u_cart_plus_u_iso()
         )
         norms = adp_shifts.norms()
@@ -183,7 +183,7 @@ class normal_eqns(least_squares.crystallographic_ls_class()):
             i_adp_shifts_sorted = i_adp_shifts_sorted[:max_items]
         for i_seq in iter(i_adp_shifts_sorted):
             yield norms[i_seq], scatterers[i_seq]
-    
+
     def show_log(self, f=None):
         import sys
         if self.log is sys.stdout:
@@ -191,7 +191,7 @@ class normal_eqns(least_squares.crystallographic_ls_class()):
         if f is None:
             f = sys.stdout
         print(self.log.getvalue(), file=f)
-    
+
     def show_sorted_shifts(self, max_items=None, log=None):
         import sys
         if log is None:
@@ -202,7 +202,7 @@ class normal_eqns(least_squares.crystallographic_ls_class()):
         for distance, scatterer in self.iter_shifts_sites(max_items=max_items):
             n_not_shown -= 1
             print("%5.3f %s" %(distance, scatterer.label), file=log)
-            if round(distance, 3) == 0: 
+            if round(distance, 3) == 0:
                 break
         if n_not_shown != 0:
             print("... (remaining %d not shown)" % n_not_shown, file=log)
@@ -217,7 +217,7 @@ class normal_eqns(least_squares.crystallographic_ls_class()):
                 break
         if n_not_shown != 0:
             print("... (remaining %d not shown)" % n_not_shown, file=log)
-        
+
     def show_shifts(self, log=None):
         import sys
         if log is None:
@@ -242,7 +242,7 @@ class normal_eqns(least_squares.crystallographic_ls_class()):
             if sc.flags.grad_u_aniso() and sc.flags.use_u_aniso():
                 n = op.adp_constraints().n_independent_params()
                 print(
-                    (("u_aniso:" + "%6.3f, "*(n-1) + "%6.3f") % tuple(self.shifts[-1][i:i+n])), 
+                    (("u_aniso:" + "%6.3f, "*(n-1) + "%6.3f") % tuple(self.shifts[-1][i:i+n])),
                     file=log
                 )
                 i += n

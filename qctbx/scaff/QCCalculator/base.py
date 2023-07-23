@@ -1,7 +1,10 @@
-import numpy as np
 import os
-from ...conversions import cell_dict2atom_sites_dict
 from abc import abstractmethod
+
+import numpy as np
+
+from ...conversions import cell_dict2atom_sites_dict
+
 
 class BaseQCCalculator:
     _positions_cart = np.empty((0,3))
@@ -34,7 +37,7 @@ class BaseQCCalculator:
     @property
     def directory(self):
         return self._directory
-    
+
     @directory.setter
     def directory(self, path):
         assert os.path.exists(path), 'The set directory does not exist: ' + str(path)
@@ -49,7 +52,6 @@ class BaseQCCalculator:
     @abstractmethod
     def bibtex_strings(self):
         "Method need to return a string containing a bibtex naming key and the corresponding complete bibtex entry as string"
-        pass
 
 
 class LCAOQCCalculator(BaseQCCalculator):
@@ -80,7 +82,7 @@ class LCAOQCCalculator(BaseQCCalculator):
     def multiplicity(self, value):
         assert int(value) == value, 'The multiplicity can only be integer'
         self._multiplicity = value
-    
+
     @property
     def charge(self):
         return self._charge
@@ -98,7 +100,7 @@ class LCAOQCCalculator(BaseQCCalculator):
             '_atom_site_Cartn_y': self.positions_cart[:,1],
             '_atom_site_Cartn_z': self.positions_cart[:,2],
         }
-    
+
     @atom_site_dict.setter
     def atom_site_dict(self, value):
         assert '_atom_site_Cartn_x' in value, 'Atom site dict needs to contain positions in cartesian coordinates'
@@ -114,7 +116,7 @@ class RegGrQCCalculator(BaseQCCalculator):
     _cell_mat_m = np.empty((3,3))
     def __init__(
         self,
-        *args, 
+        *args,
         cell_parameters=None,
         cell_dict=None,
         atom_site_dict=None,
@@ -131,7 +133,7 @@ class RegGrQCCalculator(BaseQCCalculator):
     @property
     def cell_parameters(self):
         return self._cell_parameters
-    
+
     @cell_parameters.setter
     def cell_parameters(self, value):
         assert len(value) == 6, 'There are always six cell parameters'
@@ -142,7 +144,7 @@ class RegGrQCCalculator(BaseQCCalculator):
     def cell_dict(self):
         keys = ('_cell_length_a', '_cell_length_b', '_cell_length_c', '_cell_angle_alpha', '_cell_angle_beta', '_cell_angle_gamma')
         return {key: value for key, value in zip(keys, self.cell_parameters)}
-    
+
     @cell_dict.setter
     def cell_dict(self, value):
         keys = ('_cell_length_a', '_cell_length_b', '_cell_length_c', '_cell_angle_alpha', '_cell_angle_beta', '_cell_angle_gamma')
@@ -151,7 +153,7 @@ class RegGrQCCalculator(BaseQCCalculator):
     @property
     def positions_frac(self):
         return np.einsum('xy, zy -> zx', np.linalg.inv(self._cell_mat_m), self.positions_cart)
-    
+
     @positions_frac.setter
     def positions_frac(self, value):
         self.positions_cart = np.einsum('xy, zy -> zx', self._cell_mat_m, value)
@@ -173,14 +175,14 @@ class RegGrQCCalculator(BaseQCCalculator):
     def atom_site_dict(self, new_dict):
         cartn_keys = tuple(f'_atom_site_Cartn_{coord}' for coord in ('x', 'y', 'z'))
         fract_keys = tuple(f'_atom_site_fract_{coord}' for coord in ('x', 'y', 'z'))
-        
+
         if all(key in new_dict for key in cartn_keys):
             self.positions_cart = np.stack(tuple(np.array(new_dict[key]) for key in cartn_keys), axis=-1)
         elif all(key in new_dict for key in fract_keys):
             self.positions_frac = np.stack(tuple(np.array(new_dict[key]) for key in fract_keys), axis=-1)
         else:
             raise KeyError('atomic positions need to be present using either the _atom_site_Cartn or the _atom_site_fract keys')
-        
+
         self.symbols = list(new_dict['_atom_site_type_symbol'])
-    
+
 

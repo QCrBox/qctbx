@@ -7,14 +7,14 @@ import numpy as np
 from ..constants import ANGSTROM_PER_BOHR
 
 def upf_file2atomic_densities(
-        filename: Path, 
+        filename: Path,
         atom_type: str
     ) -> Dict[str, List[Union[str, float]]]:
     """
     Parses an UltraSoft Pseudopotential (UPF) file suitable for PAW calculations
     to extract atomic densities, including valence, core, and total densities.
     The function returns a dictionary containing these densities along with
-    the atom type and distance grid values. All densities are in (absolute) 
+    the atom type and distance grid values. All densities are in (absolute)
     elemental charges per cubic angstrom.
     Parameters
     ----------
@@ -63,7 +63,7 @@ def upf_file2atomic_densities(
     core_density = np.array(ae_nlcc) / ANGSTROM_PER_BOHR**3
     total_density = valence_density + core_density
     atom_types = [atom_type] * distance_grid.shape[0]
-    
+
     return {
         '_qubox_density_atomic_atom_type': atom_types,
         '_qubox_density_atomic_rgrid': list(distance_grid),

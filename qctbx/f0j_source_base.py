@@ -1,13 +1,14 @@
-from typing import Dict, List, Any, Tuple
-from pathlib import Path
-import numpy as np
-import re
-from copy import deepcopy
-from collections import OrderedDict
-from .io.tsc import TSCFile, TSCBFile
-from .conversions import expand_atom_site_table_symm, split_error, cell_dict2atom_sites_dict, create_hkl_dmin
 from abc import abstractmethod
+from pathlib import Path
+from typing import Any, Dict, List
+
+import numpy as np
+
+from .conversions import (cell_dict2atom_sites_dict, create_hkl_dmin,
+                          split_error)
 from .custom_typing import Path
+from .io.tsc import TSCBFile, TSCFile
+
 
 class F0jSource:
     """
@@ -41,7 +42,6 @@ class F0jSource:
         np.ndarray
             Calculated structure factors.
         """
-        pass
 
     def write_tsc(
         self,
@@ -84,15 +84,19 @@ class F0jSource:
         else:
             new_tsc = TSCFile()
         new_tsc.scatterers = list(atom_site_dict['_atom_site_label'])
-        new_data = {
-            (h, k, l): form_factors for h, k, l, form_factors in zip(refln_dict['_refln_index_h'], refln_dict['_refln_index_k'], refln_dict['_refln_index_l'], f0j.T)
-        }
+        hkl_zip = zip(
+            refln_dict['_refln_index_h'],
+            refln_dict['_refln_index_k'],
+            refln_dict['_refln_index_l'],
+            f0j.T
+        )
+        new_data = {(h, k, l): form_factors for h, k, l, form_factors in hkl_zip}
         new_tsc.header['TITLE'] = tsc_title
         new_tsc.data = new_data
         new_tsc.to_file(tsc_filename)
 
     def cctbx2tsc(
-        self, 
+        self,
         structure: Any,
         miller_array: Any,
         tsc_filename: Path,
@@ -122,9 +126,9 @@ class F0jSource:
         fract_z = np.empty(len(structure.scatterers()))
         occupancies = np.empty(len(structure.scatterers()))
 
-        for index, sc in enumerate(structure.scatterers()):
-            fract_x[index], fract_y[index], fract_z[index] = sc.site
-            occupancies[index] = sc.occupancy
+        for index, scatterer in enumerate(structure.scatterers()):
+            fract_x[index], fract_y[index], fract_z[index] = scatterer.site
+            occupancies[index] = scatterer.occupancy
 
         atom_site_dict = {
             '_atom_site_label': labels,
@@ -145,12 +149,10 @@ class F0jSource:
             key.replace('.', '_'): list(value) for key, value in cif_dict.items() if key.startswith('_space_group_')
         }
 
-        h, k, l = np.array(miller_array.expand_to_p1().indices()).T
+        hkl = np.array(miller_array.expand_to_p1().indices()).T
 
         refln_dict = {
-            '_refln_index_h': h,
-            '_refln_index_k': k,
-            '_refln_index_l': l,
+            f'_refln_index{mil}': vals for mil, vals in zip(('h', 'k', 'l'), hkl)
         }
 
         self.write_tsc(

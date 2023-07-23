@@ -1,8 +1,7 @@
-from .BaseQCCalculators import LCAOQCCalculator, RegGrQCCalculator
-from ...conversions import cell_dict2atom_sites_dict
 import ase
-import numpy as np
 from ase.spacegroup import crystal
+
+from .base import LCAOQCCalculator, RegGrQCCalculator
 
 ase_bibtex_string = """
 @article{ase-paper,
@@ -40,15 +39,15 @@ class AseLCAOCalculator(LCAOQCCalculator):
     @charge.setter
     def charge(self, value):
         raise ValueError('The overall charge is set in the calculator object in ase')
-    
+
     @property
     def multiplicity(self):
         raise ValueError('The multiplicity is set in the calculator object in ase')
-    
+
     @multiplicity.setter
     def multiplicity(self, value):
         raise ValueError('The multiplicity is set in the calculator object in ase')
-    
+
     def run_calculation(self):
 
         atoms = ase.Atoms(
@@ -57,7 +56,7 @@ class AseLCAOCalculator(LCAOQCCalculator):
         )
         atoms.set_calculator(self.calc)
         atoms.get_potential_energy()
-    
+
     def bibtex_strings(self) -> str:
         return 'ASE', ase_bibtex_string
 
@@ -79,6 +78,6 @@ class AsePBCCalculator(RegGrQCCalculator):
         atoms.get_potential_energy()
 
         return atoms, self.calc
-    
+
     def bibtex_strings(self) -> str:
         return 'ASE', ase_bibtex_string

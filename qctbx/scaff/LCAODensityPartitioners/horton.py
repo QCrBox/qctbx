@@ -1,20 +1,20 @@
-from .base import LCAODensityPartitioner
 try:
     import horton
 except:
     horton = None
-    
-import numpy as np
+
 import sys
 from copy import deepcopy
-from contextlib import redirect_stdout
+from typing import Any, Dict, List, Optional
+
+import numpy as np
+
 from ...conversions import cell_dict2atom_sites_dict
+from ...custom_typing import Path
+from ..citations import get_partitioning_citation
 from ..constants import ANGSTROM_PER_BOHR
 from ..util import batched
-from typing import Dict, Any, List, Optional
-from ..citations import get_partitioning_citation
-from ...custom_typing import Path
-
+from .base import LCAODensityPartitioner
 
 defaults = {
     'method': 'mbis',
@@ -37,7 +37,7 @@ class HortonPartitioner(LCAODensityPartitioner):
     wpart = None
 
     accepts_input = ('mkl', 'wfn')
-    
+
     def __init__(self, options: Dict[str, Any] = {}):
         """
         Initialize HortonPartitioner with given options. Default options will be used if not provided.
@@ -50,7 +50,7 @@ class HortonPartitioner(LCAODensityPartitioner):
         for key, value in defaults.items():
             if key not in options:
                 options[key] = value
-        
+
         if options['method'].lower().startswith('hirshfeld'):
             assert 'atomdb_path' in options, 'The Hirshfeld methods need a valid path to an an h5 file generated with horton-atomdb.py under the keyword "atomdb_path"'
         self.options = options
@@ -65,7 +65,7 @@ class HortonPartitioner(LCAODensityPartitioner):
         if self._log_fo is not None:
             self._log_fo.close()
             horton.log._file = sys.stdout
-    
+
     def check_availability(self) -> bool:
         """
         Check if the HORTON is available in the system.
@@ -74,21 +74,21 @@ class HortonPartitioner(LCAODensityPartitioner):
             bool: True if HORTON is available, False otherwise.
         """
         return horton is not None
-    
+
     def partition(self, density_path: Path):
         """
-        Perform partitioning using HORTON's methods given a path to the density 
-        data. 
+        Perform partitioning using HORTON's methods given a path to the density
+        data.
 
         Args:
             density_path (str): Path to the density data file.
         """
-        assert density_path is not None, 'So far density has not been partitioned, so a path is needed'    
+        assert density_path is not None, 'So far density has not been partitioned, so a path is needed'
 
         mol = horton.IOData.from_file(density_path)
         grid = horton.BeckeMolGrid(mol.coordinates, mol.numbers, mol.pseudo_numbers, mode='keep')
         moldens = mol.obasis.compute_grid_density_dm(mol.get_dm_full(), grid.points)
-        
+
         method = self.options['method']
 
         if method.lower() == 'hirshfeld':
@@ -104,9 +104,9 @@ class HortonPartitioner(LCAODensityPartitioner):
         else:
             raise NotImplementedError('Partitioning method not implemented. Use either Hirshfeld, Hirshfeld-I, Iterative-Stockholder or MBIS')
         wpart.do_partitioning()
-                
+
         self.wpart = wpart
-    
+
     def calc_f0j(
         self,
         atom_labels: List[int],
@@ -121,7 +121,7 @@ class HortonPartitioner(LCAODensityPartitioner):
         Perform partitioning first if not done before. If the par
 
         Args:
-            atom_labels (List[int]): Labels of atoms to be included in the 
+            atom_labels (List[int]): Labels of atoms to be included in the
                 partitioning.
             atom_site_dict (Dict[str, Any]): Dictionary of atom site entries,
                 needs to contain _atom_site_label
@@ -129,7 +129,7 @@ class HortonPartitioner(LCAODensityPartitioner):
                 parameters in with the keys being the CIF format entries.
             refln_dict (Dict[str, Any]): Miller indicees as refln_index keyed
                 lists or numpy arrays
-            density_path (Optional[str], optional): Path to the density data file. 
+            density_path (Optional[str], optional): Path to the density data file.
                 Defaults to None. Needed if partitioning was not done before
 
         Returns:
@@ -141,13 +141,13 @@ class HortonPartitioner(LCAODensityPartitioner):
         all_atom_labels = list(atom_site_dict['_atom_site_label'])
 
         atom_indexes = [all_atom_labels.index(label) for label in atom_labels]
-        
+
         index_vec_h = np.array((
             refln_dict['_refln_index_h'],
             refln_dict['_refln_index_k'],
             refln_dict['_refln_index_l']
         )).T
-        
+
         cell_mat_m = cell_dict2atom_sites_dict(cell_dict)['_atom_sites_Cartn_tran_matrix']
         cell_mat_f = np.linalg.inv(cell_mat_m).T
         f0j = np.zeros((len(atom_indexes), index_vec_h.shape[0]), dtype=np.complex128)
@@ -167,7 +167,7 @@ class HortonPartitioner(LCAODensityPartitioner):
                 else:
                     end = f0j.shape[1]
                 f0j[atom_index, start:end] = np.sum(
-                    (at_grid.weights * self.wpart[('at_weights', atom_index)] * self.wpart.get_moldens(atom_index))[None,:] * phase_factors, 
+                    (at_grid.weights * self.wpart[('at_weights', atom_index)] * self.wpart.get_moldens(atom_index))[None,:] * phase_factors,
                     axis=1)
             #print('')
 
@@ -193,7 +193,6 @@ class HortonPartitioner(LCAODensityPartitioner):
         )
         bibtex_string = '\n\n\n'.join((method_bibtex_entry, horton_bibtex_entry))
         return description_string, bibtex_string
-    
+
     def cif_output(self) -> str:
         return 'To be implemented'
-    

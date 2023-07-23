@@ -1,9 +1,9 @@
-from ..DensityCalculatorBase import DensityCalculator
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Any
-from ..citations import get_functional_citation, get_basis_citation
+from typing import Any, Dict
 
-from abc import abstractmethod, ABC
+from ..citations import get_basis_citation, get_functional_citation
+from ..density_calculator_base import DensityCalculator
 
 
 @dataclass

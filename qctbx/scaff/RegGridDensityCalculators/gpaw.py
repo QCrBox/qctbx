@@ -1,13 +1,14 @@
-from .base import RegGridDensityCalculator
-from ..QCCalculator.AseCalculator import AsePBCCalculator
-from ..util import dict_merge
-
 import os
+
+from ..QCCalculator.ase import AsePBCCalculator
+from ..util import dict_merge
+from .base import RegGridDensityCalculator
+
 try:
-    from gpaw import GPAW
     import gpaw
     from ase.io import write
-    from ase.units import Bohr, eV, Hartree
+    from ase.units import Bohr, Hartree
+    from gpaw import GPAW
     from gpaw.utilities.tools import cutoff2gridspacing, gridspacing2cutoff
     import_worked = True
 except:
@@ -77,12 +78,12 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
 
     def check_availability(self):
         return import_worked
-    
+
     def calculate_density(
         self,
         atom_site_dict,
         cell_dict
-    ):  
+    ):
         self._calc_options = dict_merge(calc_defaults, self.calc_options)
         self._qm_options = dict_merge(qm_defaults, self.qm_options)
         if 'xc' in self._qm_options['gpaw_options']:
@@ -109,12 +110,12 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
             density = calc.get_all_electron_density(gridrefinement=self._calc_options['grid_interpolation'])
         elif self._calc_options['output_type'] == 'valence':
             density = calc.get_all_electron_density(skip_core=True, gridrefinement=self._calc_options['grid_interpolation'])
-        else: 
+        else:
             raise NotImplementedError('output_type needs to be valence or total')
         path = os.path.join (self._calc_options['work_directory'], f" {self._calc_options['label']}.cube")
         write(path, atoms, data=density * Bohr**3)
         return path
-    
+
     def cif_output(self):
         return 'Implement me'
 
@@ -132,4 +133,3 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
         return self.generate_description(software_name, software_key, software_bibtex_entry)
 
 
-    

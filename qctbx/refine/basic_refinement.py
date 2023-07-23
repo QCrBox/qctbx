@@ -1,15 +1,14 @@
-import numpy as np
 from copy import deepcopy
-import smtbx
-from smtbx.refinement import least_squares
-from .normal_eqns import build_refinement_wrapper, normal_eqns
-from cctbx.xray.structure import structure 
-from cctbx import miller
-from ..F0jSourceBase import F0jSource
 from typing import Dict, Union
-from .normal_eqns import normal_eqns
-from smtbx.refinement import constraints
 
+import numpy as np
+import smtbx
+from cctbx import miller
+from cctbx.xray.structure import structure
+from smtbx.refinement import constraints, least_squares
+
+from ..f0j_source_base import F0jSource
+from .normal_eqns import build_refinement_wrapper, normal_eqns
 
 default_har_convergence_conditions = {
     'position(abs)': 1e-4,
@@ -21,8 +20,8 @@ default_har_convergence_conditions = {
 
 def check_convergence_har(
     xray_structure: structure,
-    xray_structure0: structure, 
-    norm_eq: normal_eqns, 
+    xray_structure0: structure,
+    norm_eq: normal_eqns,
     har_convergence_conditions: Dict[str, Union[float, int]]
 ):
     cov_annot = norm_eq.covariance_matrix_and_annotations()
@@ -35,7 +34,7 @@ def check_convergence_har(
     max_dist_esd_atom = ''
     max_uij_atom = ''
     max_uij_esd_atom = ''
-    
+
     for sc, sc0 in zip(xray_structure.scatterers(), xray_structure0.scatterers()):
         for coord_index, coordinate in enumerate(('x', 'y', 'z')):
             coord_label = f'{sc.label}.{coordinate}'
@@ -98,22 +97,22 @@ def basic_refinement(
     tsc_path='qctbx.tsc'
 ):
 
-    for i in range(har_convergence_conditions['max(cycles)']):
+    for _ in range(har_convergence_conditions['max(cycles)']):
         xray_structure0 = deepcopy(xray_structure)
         f0jeval.cctbx2tsc(xray_structure, miller_array, tsc_path)
 
         reparametrisation = constraints.reparametrisation(
-            xray_structure, 
+            xray_structure,
             constraints_list,
             smtbx.utils.connectivity_table(xray_structure)
         )
-        
+
         ls = least_squares.crystallographic_ls(
             miller_array.as_xray_observations(),
             reparametrisation,
             non_linear_ls_with_separable_scale_factor=least_squares.normal_eqns.non_linear_ls_with_separable_scale_factor_BLAS_2
         )
-        
+
         norm_eq = normal_eqns(
             miller_array.as_xray_observations(),
             ls,
@@ -121,7 +120,7 @@ def basic_refinement(
         )
         norm_eq.restraints_manager = restraints_manager
         RefinementWrapper =  build_refinement_wrapper(solver_name)
-        rfn_wrapper = RefinementWrapper(norm_eq)
+        _ = RefinementWrapper(norm_eq)
         print('-' * 20)
         print('wR2: ', norm_eq.wR2())
         if check_convergence_har(xray_structure, xray_structure0, norm_eq, har_convergence_conditions):

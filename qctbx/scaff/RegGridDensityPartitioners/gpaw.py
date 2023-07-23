@@ -1,30 +1,24 @@
+from typing import Any, Dict, List
+
+import numpy as np
+from ase.spacegroup import crystal
+from gpaw import GPAW
 from gpaw.density import RealSpaceDensity
-from gpaw.mpi import world
 from gpaw.io.logger import GPAWLogger
 from gpaw.lfc import BasisFunctions
+from gpaw.mpi import world
 from gpaw.setup import Setups
 from gpaw.utilities.partition import AtomPartition
 from gpaw.xc import XC
 
-from ase.spacegroup import crystal
-from gpaw import GPAW
-
-from ...conversions import cell_dict2atom_sites_dict, expand_atom_site_table_symm
-from ..constants import ANGSTROM_PER_BOHR, ATOMIC_N_ELEC
-from .cubetools import read_cube
-
-from copy import deepcopy
-import numpy as np
-import warnings
-from typing import List, Dict, Any
-
-
-from .base import RegGridDensityPartitioner, calc_f0j_core
-from ..RegGridDensityCalculators.gpaw import gpaw_bibtex_key, gpaw_bibtex_entry
-from ..citations import get_partitioning_citation
-from ..util import dict_merge
+from ...conversions import cell_dict2atom_sites_dict
 from ...custom_typing import Path
-
+from ..citations import get_partitioning_citation
+from ..constants import ANGSTROM_PER_BOHR, ATOMIC_N_ELEC
+from ..RegGridDensityCalculators.gpaw import gpaw_bibtex_entry, gpaw_bibtex_key
+from ..util import dict_merge
+from .base import RegGridDensityPartitioner, calc_f0j_core
+from .cubetools import read_cube
 
 defaults = {
     'partition': 'valence',
@@ -44,12 +38,12 @@ class HirshfeldDensity(RealSpaceDensity):
         try:
             RealSpaceDensity.__init__(self, dens.gd, dens.finegd,
                                     dens.nspins, collinear=True, charge=0.0,
-                                    stencil=dens.stencil, 
+                                    stencil=dens.stencil,
                                     redistributor=dens.redistributor)
         except:
             RealSpaceDensity.__init__(self, dens.gd, dens.finegd,
                                     dens.nspins, collinear=True, charge=0.0,
-                                    stencil=2, 
+                                    stencil=2,
                                     redistributor=dens.redistributor)
         self.log = GPAWLogger(world=world)
         if log is None:
@@ -132,7 +126,7 @@ class HirshfeldDensity(RealSpaceDensity):
                                                    gridrefinement,
                                                    skip_core=skip_core)
         return aed_sg.sum(axis=0), gd
-    
+
 
 class GPAWDensityPartitioner(RegGridDensityPartitioner):
 
@@ -186,7 +180,7 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
                     '_qubox_density_atomic_core': spline.map(rgrid) / ANGSTROM_PER_BOHR**3 * y00
                 } for symbol, (spline, rgrid) in splines.items()
             }
-            
+
             f0j_core_dict, n_elec_core = calc_f0j_core(cell_dict, refln_dict, qubox_density_atomic_dicts)
         elif options['partition'] == 'total':
             skip_core = False
@@ -194,7 +188,7 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
             raise NotImplementedError('partition setting in options needs to either valence or total.')
 
         all_atom_weights = 1.0 / hdens_obj.get_density(
-            gridrefinement=options['gridinterpolation'], 
+            gridrefinement=options['gridinterpolation'],
             skip_core=skip_core
         )[0]
         all_atom_weights[np.logical_not(np.isfinite(all_atom_weights))] = 0.0
@@ -219,7 +213,7 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
                 f0j[atom_index] += f0j_core_dict[atom_type]
                 charges[atom_index] -= n_elec_core[atom_type]
         return f0j, charges
-    
+
     def citation_strings(self) -> str:
         method_bibtex_key, method_bibtex_entry = get_partitioning_citation('hirshfeld')
         description_string = (
@@ -228,9 +222,9 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
         )
         bibtex_entry = '\n\n\n'.join((method_bibtex_entry, gpaw_bibtex_entry))
         return description_string, bibtex_entry
-    
+
     def cif_output(self) -> str:
         return 'To be implemented'
 
-        
+
 

@@ -1,9 +1,9 @@
 from typing import Dict, List, Any, Union
 from .RegGridDensityCalculators.base import RegGridDensityCalculator
-from .DensityCalculatorBase import DensityCalculator
-from .DensityPartitionerBase import DensityPartitioner
+from .density_calculator_base import DensityCalculator
+from .density_partitioner_base import DensityPartitioner
 from ..conversions import expand_atom_site_table_symm
-from ..F0jSourceBase import F0jSource
+from ..f0j_source_base import F0jSource
 
 class ScaffF0jSource(F0jSource):
     """
@@ -58,7 +58,7 @@ class ScaffF0jSource(F0jSource):
         self.use_charges = use_charges
         if use_charges:
             raise NotImplementedError('cluster charge calculations are not implemented yet')
-              
+
     def calc_f0j(
         self,
         atom_site_dict: Dict[str, List[Any]],
@@ -81,7 +81,7 @@ class ScaffF0jSource(F0jSource):
             Required keys: '_cell_length_a', '_cell_length_b', '_cell_length_c',
             '_cell_angle_alpha', '_cell_angle_beta', '_cell_angle_gamma'.
         space_group_dict : Dict[str, Union[int, str, List[str]]]
-            A dictionary representing space group parameters. Needs to contain key: 
+            A dictionary representing space group parameters. Needs to contain key:
             '_space_group_symop_operation_xyz
         refln_dict : Dict[str, Union[int, float, List[int]]]
             A dictionary representing reflection parameters.
@@ -114,7 +114,7 @@ class ScaffF0jSource(F0jSource):
             self._charge_dict = {atom_name: value for atom_name, value in zip(atom_site_dict['_atom_site_label'], charges)}
 
         return f0j
-    
+
     def citation_strings(self):
         """
         Generate strings describing the approach to calculation and BibTeX formatted citations.
@@ -127,7 +127,7 @@ class ScaffF0jSource(F0jSource):
         density_str, density_bib = self.density_calculator.citation_strings()
         part_str, part_bib = self.partitioner.citation_strings()
 
-        return ' '.join((density_str, part_str)), '\n\n\n'.join(density_bib, part_bib)
+        return ' '.join((density_str, part_str)), '\n\n\n'.join((density_bib, part_bib))
 
 
 

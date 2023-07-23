@@ -1,17 +1,18 @@
-from .base import LCAODensityPartitioner
-from ...conversions import cell_dict2atom_sites_dict
-from ...io.tsc import TSCFile
-from copy import deepcopy
 import os
 import re
 import subprocess
-import numpy as np
-from typing import Tuple, List, Dict, Any, Optional
-from ..citations import get_partitioning_citation
-from ...io.minimal_files import write_mock_hkl, write_minimal_cif
-from ...conversions import symm_to_matrix_vector, symm_mat_vec2str
-from ...custom_typing import Path
+from copy import deepcopy
+from typing import Any, Dict, List
 
+import numpy as np
+
+from ...conversions import (cell_dict2atom_sites_dict, symm_mat_vec2str,
+                            symm_to_matrix_vector)
+from ...custom_typing import Path
+from ...io.minimal_files import write_minimal_cif, write_mock_hkl
+from ...io.tsc import TSCFile
+from ..citations import get_partitioning_citation
+from .base import LCAODensityPartitioner
 
 defaults = {
     'nosphera2_path': './NoSpherA2',
@@ -63,15 +64,15 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
 
         atom_sites_dict = cell_dict2atom_sites_dict(cell_dict)
         cell_dict['_cell_volume'] = np.linalg.det(atom_sites_dict['_atom_sites_Cartn_tran_matrix'])
-        
+
         cleaned_sg_dict = deepcopy(space_group_dict)
-        
+
         cleaned_sg_dict['_space_group_symop_operation_xyz'] = [
             symm_mat_vec2str(*symm_to_matrix_vector(symm_string)) for symm_string in cleaned_sg_dict['_space_group_symop_operation_xyz']
         ]
 
         all_atom_labels = list(atom_site_dict['_atom_site_label'])
-        atom_indexes = [all_atom_labels.index(label) for label in atom_labels]     
+        atom_indexes = [all_atom_labels.index(label) for label in atom_labels]
         select_atom_site_dict = {
             key: [value[i] for i in atom_indexes] for key, value in atom_site_dict.items()
         }
@@ -83,8 +84,8 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
         pass_options['density_path'] = density_path
 
         subprocess.check_call('{nosphera2_path} -hkl mock.hkl -wfn {density_path} -cif npa2.cif -asym_cif npa2_asym.cif -acc {nosphera2_accuracy} -cores {n_cores}'.format(**pass_options), shell=True, stdout=subprocess.DEVNULL, cwd=self.options['calc_folder'])
-        
-        
+
+
     def calc_f0j(
         self,
         atom_labels: List[int],
@@ -104,9 +105,9 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
 
         with open(os.path.join(self.options['calc_folder'], 'NoSpherA2.log'), 'r') as fo:
             content = fo.read()
-        
+
         charge_table_match = re.search(r'Atom\s+Becke\s+Spherical\s+Hirshfeld(.*)\nTotal number of electrons', content, flags=re.DOTALL)
-        
+
         assert charge_table_match is not None, 'Could not find charge table in NoSpherA2.log, probably unexpected format'
 
         charge_table = charge_table_match.group(1)
@@ -126,6 +127,6 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
         )
         bibtex_string = '\n\n\n'.join((method_bibtex_entry, nosphera2_bibtex_entry))
         return description_string, bibtex_string
-    
+
     def cif_output(self) -> str:
         return 'To be implemented'

@@ -1,9 +1,9 @@
-from ..DensityCalculatorBase import DensityCalculator
-
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Any
-from ..citations import get_functional_citation, get_basis_citation
+from typing import Any, Dict, Union, List
+
+from ..citations import get_basis_citation, get_functional_citation
+from ..density_calculator_base import DensityCalculator
 
 
 @dataclass
@@ -12,6 +12,15 @@ class LCAODensityCalculator(DensityCalculator):
     calc_options: Dict[str, Any]
     _qm_options = None
     _calc_options = None
+
+    @abstractmethod
+    def calculate_density(
+        self,
+        atom_site_dict: Dict[str, Union[float, str]],
+        cell_dict: Dict[str, float],
+        cluster_charge_dict: Dict[str, List[float]] = {}
+    ):
+        pass
 
     def generate_description(
         self,
@@ -26,6 +35,4 @@ class LCAODensityCalculator(DensityCalculator):
             + f" in {software_name} [{software_bibtex_key}]"
         )
         return report_string, '\n\n\n'.join((software_bibtex_entry, method_bibtex_entry, basis_bibtex_entry))
-
-
 

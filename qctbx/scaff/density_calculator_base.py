@@ -7,7 +7,7 @@ class DensityCalculator(ABC):
         pass
 
     @abstractmethod
-    def calculate_density(self, elements, xyz):
+    def calculate_density(self, *args):
         pass
 
     @abstractmethod

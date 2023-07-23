@@ -1,6 +1,7 @@
-from .BaseQCCalculators import RegGrQCCalculator
-from ..constants import ANGSTROM_PER_BOHR, atomic_masses
 from typing import Union
+
+from ..constants import ANGSTROM_PER_BOHR
+from .base import RegGrQCCalculator
 
 #TODO Check for kpts 1,1,1. Exchange with explicit gamma
 

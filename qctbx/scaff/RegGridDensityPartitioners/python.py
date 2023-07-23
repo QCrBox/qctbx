@@ -1,16 +1,18 @@
-from scipy.optimize import minimize_scalar
-from scipy.interpolate import InterpolatedUnivariateSpline
-from .base import RegGridDensityPartitioner, calc_f0j_core
-from ..constants import ANGSTROM_PER_BOHR
-from .cubetools import read_cube
-from ...conversions import cell_dict2atom_sites_dict, expand_atom_site_table_symm
-from itertools import product
 from copy import deepcopy
-from typing import Dict, Any, List, Optional
-from ..citations import get_partitioning_citation
-from ...custom_typing import Path
+import functools
+from itertools import product
+from typing import Any, Dict, List, Optional
 
 import numpy as np
+from scipy.interpolate import InterpolatedUnivariateSpline
+from scipy.optimize import minimize_scalar
+
+from ...conversions import cell_dict2atom_sites_dict
+from ...custom_typing import Path
+from ..citations import get_partitioning_citation
+from ..constants import ANGSTROM_PER_BOHR
+from .base import RegGridDensityPartitioner, calc_f0j_core
+from .cubetools import read_cube
 
 defaults = {
     'partition': 'valence',
@@ -18,44 +20,47 @@ defaults = {
     'missing_e_atomic_max': 1e-4
 }
 
+def target_with_e_missing(cutoff, spline, spline_limit, missing_e):
+    return (spline.integral(cutoff, spline_limit) - missing_e)**2
+
 
 class PythonRegGridPartitioner(RegGridDensityPartitioner):
     """
-    PythonRegGridPartitioner is a class for partitioning atomic densities on a 
+    PythonRegGridPartitioner is a class for partitioning atomic densities on a
     regular grid.
 
     Attributes:
         atom_splines (dict): Storage for interpolated atomic density splines for
             each atomic element.
-        atom_n_elec (dict): Storage for total number of electrons within the 
+        atom_n_elec (dict): Storage for total number of electrons within the
             cutoff distance for each atomic element.
-        charges (np.ndarray): Storage for the resulting charges after 
+        charges (np.ndarray): Storage for the resulting charges after
             partitioning.
 
     Args:
         options (Dict[str, Any]): A dictionary of options for partitioning.
-            - 'atomic_densities_dict': (dict) Atomic densities in the ciflike 
-                format of AtomicDensityReaders. It is not optional. 
+            - 'atomic_densities_dict': (dict) Atomic densities in the ciflike
+                format of AtomicDensityReaders. It is not optional.
                 Each atomic element is a key, and the value is another dictionary
                 with the following structure:
-                    - '_qubox_density_atomic_rgrid': (list or np.ndarray) 
+                    - '_qubox_density_atomic_rgrid': (list or np.ndarray)
                         Radial grid for atomic densities.
-                    - '_qubox_density_atomic_valence': (list or np.ndarray) 
+                    - '_qubox_density_atomic_valence': (list or np.ndarray)
                         Valence atomic density, only needed for valence partitioning
-                    - '_qubox_density_atomic_total': (list or np.ndarray) 
+                    - '_qubox_density_atomic_total': (list or np.ndarray)
                         Total atomic density, only needed for total partitioning
-                    - '_qubox_density_atomic_core': (list or np.ndarray) 
+                    - '_qubox_density_atomic_core': (list or np.ndarray)
                         Core atomic density, only needed for valence partitioning
-            - 'partition': (str, optional) Type of atomic density partition. 
+            - 'partition': (str, optional) Type of atomic density partition.
                 Needs to match the density in the provided cube file.
-                It can be either 'valence', where the valence density is in the 
-                cube file and is partitioned, while the core density is 
+                It can be either 'valence', where the valence density is in the
+                cube file and is partitioned, while the core density is
                 evaluated separately on the spherical grid of the atomic density
-                and added to the atom completely or 'total', which means the 
-                cube file contains the all electron density. Default is 
+                and added to the atom completely or 'total', which means the
+                cube file contains the all electron density. Default is
                 'valence'.
-            - 'missing_e_atomic_max': (float, optional) Maximum allowed missing 
-                electrons for determining the distance cutoff of the atomic 
+            - 'missing_e_atomic_max': (float, optional) Maximum allowed missing
+                electrons for determining the distance cutoff of the atomic
                 densities. Default is 1e-4.
     """
 
@@ -71,13 +76,13 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
             bool: True
         """
         return True
-    
+
     def __init__(self, options: Dict[str, Any]):
         """
         Constructor for the PythonRegGridPartitioner class.
 
         Args:
-            options (Dict[str, Any]): A dictionary containing various options 
+            options (Dict[str, Any]): A dictionary containing various options
             for partitioning. See class docstring for explanation.
         """
         super().__init__()
@@ -109,9 +114,23 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
             raise NotImplementedError('partition can be either valence or total')
 
         for element, atomic_entries in self.options['atomic_densities_dict'].items():
-            atom_density_spline = InterpolatedUnivariateSpline(atomic_entries['_qubox_density_atomic_rgrid'], atomic_entries[f'_qubox_density_atomic_{density_type}'], ext=1)
-            atom_shell_spline = InterpolatedUnivariateSpline(atomic_entries['_qubox_density_atomic_rgrid'], 4 * np.pi * np.array(atomic_entries['_qubox_density_atomic_rgrid'])**2 * atomic_entries[f'_qubox_density_atomic_{density_type}'], ext=1)
-            cutoff = minimize_scalar(lambda x: (atom_shell_spline.integral(x, atomic_entries['_qubox_density_atomic_rgrid'][-1]) - self.options['missing_e_atomic_max'])**2).x
+            atom_density_spline = InterpolatedUnivariateSpline(
+                atomic_entries['_qubox_density_atomic_rgrid'],
+                atomic_entries[f'_qubox_density_atomic_{density_type}'],
+                ext=1
+            )
+            atom_shell_spline = InterpolatedUnivariateSpline(
+                atomic_entries['_qubox_density_atomic_rgrid'],
+                4 * np.pi * np.array(atomic_entries['_qubox_density_atomic_rgrid'])**2 * atomic_entries[f'_qubox_density_atomic_{density_type}'],
+                ext=1
+            )
+            used_target = functools.partial(
+                target_with_e_missing,
+                spline=atom_density_spline,
+                spline_limit=atomic_entries['_qubox_density_atomic_rgrid'][-1],
+                missing_e=self.options['missing_e_atomic_max']
+            )
+            cutoff = minimize_scalar(used_target).x
             atom_density_spline.cutoff = cutoff
             self.atom_splines[element] = atom_density_spline
             self.atom_n_elec[element] = atom_shell_spline.integral(0.0, atomic_entries['_qubox_density_atomic_rgrid'][-1])
@@ -125,13 +144,13 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
         refln_dict: Dict[str, Any],
         density_path: Path
     ) -> np.ndarray:
-        
+
         if self.options['partition'] == 'valence':
             qubox_density_atom_dict = self.options['atomic_densities_dict']
             f0j_core_dict, _ = calc_f0j_core(cell_dict, refln_dict, qubox_density_atom_dict)
         elif self.options['partition'] != 'total':
             raise NotImplementedError('Only options for partition are valence (core is transformed separately) or total')
-        
+
         cell_mat_m = cell_dict2atom_sites_dict(cell_dict)['_atom_sites_Cartn_tran_matrix']
         cell_lengths = np.array([cell_dict[f'_cell_length_{axis}'] for axis in ('a', 'b', 'c')])
 
@@ -196,9 +215,9 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
             f0j[atom_index, :] = f0j_atom[h, k, l] * phase_to_zero
             if self.options['partition'] == 'valence':
                 f0j[atom_index, :] += f0j_core_dict[atom_site['_atom_site_type_symbol']]
-        
+
         return f0j, charges
-    
+
     def citation_strings(self) -> str:
         method_bibtex_key, method_bibtex_entry = get_partitioning_citation('hirshfeld')
         description_string = (
@@ -206,7 +225,6 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
             + 'using the buildin routine of qctbx'
         )
         return description_string, method_bibtex_entry
-    
+
     def cif_output(self) -> str:
         return 'To be implemented'
-    

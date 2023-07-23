@@ -1,9 +1,12 @@
-import numpy as np
 import struct
+from abc import ABC, abstractmethod
 from collections.abc import Iterable
-from typing import Tuple, List, Union, Dict
-from abc import abstractclassmethod, ABC, abstractmethod
+from typing import Dict, List, Tuple, Union
+
+import numpy as np
+
 from ..custom_typing import Path
+
 
 def parse_header(header_str):
     header = {}
@@ -45,10 +48,10 @@ class TSCBase(ABC):
         self.header = {
             'TITLE': 'generic_tsc',
             'SYMM': 'expanded',
-            'SCATTERERS' : ''        
+            'SCATTERERS' : ''
         }
         self.data = {}
-    
+
     @property
     def scatterers(self) -> List[str]:
         """
@@ -68,7 +71,7 @@ class TSCBase(ABC):
         """
         Sets the scatterers in the TSC file.
 
-        The input scatterers are converted to a space-separated string and 
+        The input scatterers are converted to a space-separated string and
         stored in the header under the key 'SCATTERERS'.
 
         Parameters
@@ -85,7 +88,7 @@ class TSCBase(ABC):
         """
         Retrieves f0j values for a given atom site label.
 
-        The function allows indexing the TSCFile object by atom site label or a 
+        The function allows indexing the TSCFile object by atom site label or a
         list of labels. If the given label is not found among the scatterers,
         a ValueError is raised.
 
@@ -97,7 +100,7 @@ class TSCBase(ABC):
         Returns
         -------
         dict
-            A dictionary where each key is a tuple of indices (h, k, l) and the 
+            A dictionary where each key is a tuple of indices (h, k, l) and the
             corresponding value is a numpy array of f0j values for the given
             label(s).
 
@@ -116,16 +119,17 @@ class TSCBase(ABC):
             else:
                 index = self.scatterers.index(atom_site_label)
                 return {hkl: f0js[index] for hkl, f0js in self.data.items()}
-        except ValueError:
+        except ValueError as exc:
             if isinstance(atom_site_label, str):
                 unknown = [atom_site_label]
             elif isinstance(atom_site_label, Iterable):
                 unknown = [label for label in atom_site_label if label not in self.scatterers]
             else:
                 unknown = [atom_site_label]
-            raise ValueError(f'Unknown atom label(s) used for lookup from TSCFile: {" ".join(unknown)}')
-        
-    @abstractclassmethod
+            raise ValueError(f'Unknown atom label(s) used for lookup from TSCFile: {" ".join(unknown)}') from exc
+
+    @abstractmethod
+    @classmethod
     def from_file(cls, filename: Path):
         pass
 
@@ -137,11 +141,11 @@ class TSCFile(TSCBase):
     """
     A class representing a TSC file as defined in doi:10.48550/arXiv.1911.08847
 
-    A TSC file contains atomic form factors for a list of atoms and miller 
+    A TSC file contains atomic form factors for a list of atoms and miller
     indicees
 
     You can get data for atoms for example with tsc['C1'] or tsc[['C1', 'C2']]
-    currently setting is not implemented this way. All data is represented 
+    currently setting is not implemented this way. All data is represented
     in the data attribute
 
     Attributes
@@ -150,10 +154,10 @@ class TSCFile(TSCBase):
         A dictionary holding the header information from the TSC file.
     data : dict
         A dictionary mapping tuples (h, k, l) to numpy arrays of f0j values,
-        where the ordering of the values is given by the content of the 
+        where the ordering of the values is given by the content of the
         scatterers property / the SCATTERERS entry in the header.
     """
-    
+
     @classmethod
     def from_file(cls, filename: Path) -> "TSCFile":
         """
@@ -206,16 +210,16 @@ class TSCFile(TSCBase):
         with open(filename, 'w') as fo:
             fo.write(f'{header_str}\nDATA:\n{data_str}\n')
 
-        
+
 class TSCBFile(TSCBase):
     """
     A class representing a TSCB file used by for example NoSpherA2
 
-    A TSC file contains atomic form factors for a list of atoms and miller 
+    A TSC file contains atomic form factors for a list of atoms and miller
     indicees
 
     You can get data for atoms for example with tsc['C1'] or tsc[['C1', 'C2']]
-    currently setting is not implemented this way. All data is represented 
+    currently setting is not implemented this way. All data is represented
     in the data attribute
 
     Attributes
@@ -224,10 +228,10 @@ class TSCBFile(TSCBase):
         A dictionary holding the header information from the TSC file.
     data : dict
         A dictionary mapping tuples (h, k, l) to numpy arrays of f0j values,
-        where the ordering of the values is given by the content of the 
+        where the ordering of the values is given by the content of the
         scatterers property / the SCATTERERS entry in the header.
     """
-    
+
     @classmethod
     def from_file(cls, filename: Path) -> "TSCBFile":
         """
@@ -254,7 +258,7 @@ class TSCBFile(TSCBase):
 
                 new_obj.header.update(parse_header(header_str))
             new_obj.header['SCATTERERS'] = fo.read(n_bytes_labels).decode('ASCII')
-            
+
             n_refln = struct.unpack('i', fo.read(4))[0]
             n_atoms = len(new_obj.header['SCATTERERS'].split())
             new_obj.data = {
@@ -276,7 +280,7 @@ class TSCBFile(TSCBase):
             The name of the file to write.
         """
         if not next(iter(self.data.values())).dtype == np.complex128:
-            self.data = {key: value.astype(np.complex128) for key, value in self.data.items()} 
+            self.data = {key: value.astype(np.complex128) for key, value in self.data.items()}
         omitted_header_entries = ('SCATTERERS', 'TITLE', 'SYMM')
         header_string = '\n'.join(f'{name}: {entry}' for name, entry in self.header.items() if name not in omitted_header_entries)
         with open(filename, 'wb') as fo:
