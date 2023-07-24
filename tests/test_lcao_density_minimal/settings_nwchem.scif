@@ -8,7 +8,7 @@ _qctbx_lacowfn_software "NWChem"
 _qctbx_lcaowfn_method "hcth407p"
 _qctbx_lcaowfn_basisset "def2-SVP"
 _qctbx_lcaowfn_charge 0
-_qctbx_lcaowfn_multiplicity 0
+_qctbx_lcaowfn_multiplicity 1
 _qctbx_lcaowfn_n_core 1
 _qctbx_lcaowfn_ram_mb 2000
 _qctbx_lacowfn_specific_options

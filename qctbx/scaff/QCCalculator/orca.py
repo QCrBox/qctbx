@@ -87,6 +87,8 @@ class ORCACalculator(LCAOQCCalculator):
 
         #Execute ORCA with the generated input file
         out_filename = os.path.join(self.directory, f"{self.label}.out")
+        if self.abs_orca_path is None or not os.path.exists(self.abs_orca_path):
+            raise FileNotFoundError('Could not find ORCA executable. Set abs_orca_path manually.')
         with open(out_filename, 'w') as fo:
             subprocess.call(
                 [self.abs_orca_path, input_filename],
