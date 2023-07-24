@@ -54,7 +54,7 @@ class AseLCAOCalculator(LCAOQCCalculator):
             symbols=self.symbols,
             positions=self.positions_cart,
         )
-        atoms.set_calculator(self.calc)
+        atoms.calc = self.calc
         atoms.get_potential_energy()
 
     def bibtex_strings(self) -> str:

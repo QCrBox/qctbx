@@ -6,24 +6,24 @@ import numpy as np
 
 from ...conversions import add_cart_pos
 from ..QCCalculator.orca import ORCACalculator
-from ..util import dict_merge
 from .base import LCAODensityCalculator
 
-calc_defaults = {
-    'label': 'orca',
-    'work_directory': '.',
-    'output_format': 'mkl'
-}
-
-qm_defaults = {
+defaults = {
     'method': 'PBE',
     'basis_set': 'def2-SVP',
-    'multiplicity': 1,
     'charge': 0,
+    'multiplicity': 1,
     'n_core': 1,
-    'ram': 2000,
-    'keywords': [],
-    'blocks': {}
+    'ram_mb': 2000,
+    'specific_options': {
+        'keywords': [],
+        'blocks': {}
+    },
+    'calc_options': {
+        'label': 'orca',
+        'work_directory': '.',
+        'output_format': 'mkl'
+    }
 }
 
 class ORCADensityCalculator(LCAODensityCalculator):
@@ -33,14 +33,14 @@ class ORCADensityCalculator(LCAODensityCalculator):
 
     Attributes:
         provides_output (tuple): The output formats supported by the calculator.
-        qm_options (Dict[str, Any]): Quantum mechanics options for the ORCA calculation.
+        method: str: Either functional or orther quantum chemical method
+            for the density calculation. Default: 'PBE'
+        basis_set: str: Basis set for the wavefunction description.
+            Default: 'def2-SVP'
+        multiplicity: int: spin multiplicity of the system. Default: 1
+        charge: charge of the system. Default: 0
+        special_options (Dict[str, Any]): Additional quantum mechanics options for the ORCA calculation.
             Keys:
-                'method': Either functional or orther quantum chemical method
-                    for the density calculation. Default: 'PBE'
-                'basis_set': Basis set for the wavefunction description.
-                    Default: 'def2-SVP'
-                'multiplicity': spin multiplicity of the system. Default: 1
-                'charge': charge of the system. Default: 0
                 'keywords': List of additional keywords that will be added to
                     after the '!' in the ORCA input file.
                 'blocks': everything that is included into the ORCA input file
@@ -76,9 +76,7 @@ class ORCADensityCalculator(LCAODensityCalculator):
             abs_orca_path=abs_orca_path
         )
 
-        self._qm_options = dict_merge(qm_defaults, self.qm_options, case_sensitive=False)
-
-        self._calc_options = dict_merge(calc_defaults, self.calc_options, case_sensitive=True)
+        self.update_from_dict(defaults, update_if_present=False)
 
     def check_availability(self) -> bool:
         """
@@ -111,9 +109,7 @@ class ORCADensityCalculator(LCAODensityCalculator):
         """
         if cluster_charge_dict is None:
             cluster_charge_dict = {}
-        self._qm_options = dict_merge(qm_defaults, self.qm_options, case_sensitive=False)
-
-        self._calc_options = dict_merge(calc_defaults, self.calc_options, case_sensitive=True)
+        self.update_from_dict(defaults, update_if_present=False)
 
         try:
             positions_cart = np.array([atom_site_dict[f'_atom_site_Cartn_{coord}'] for coord in ('x', 'y', 'z')]).T
@@ -121,42 +117,42 @@ class ORCADensityCalculator(LCAODensityCalculator):
             new_atom_site_dict, _ = add_cart_pos(atom_site_dict, cell_dict)
             positions_cart = np.array([new_atom_site_dict[f'_atom_site_Cartn_{coord}'] for coord in ('x', 'y', 'z')]).T
 
-        keywords = [self._qm_options['method']]
+        keywords = [self.method]
         blocks = {}
 
-        if '\n' in self._qm_options['basis_set']:
-            blocks['basis'] = self._qm_options['basis_set']
+        if '\n' in self.basis_set:
+            blocks['basis'] = self.basis_set
         else:
-            keywords.append(self._qm_options['basis_set'])
+            keywords.append(self.basis_set)
 
         self._calculator.set_atoms(
             list(atom_site_dict['_atom_site_type_symbol']),
             positions_cart
         )
 
-        blocks['maxcore'] = str(self._qm_options['ram'] // self._qm_options['n_core'])
-        blocks['pal'] = f"nprocs {self._qm_options['n_core']}"
-        blocks.update(self._qm_options['blocks'])
+        blocks['maxcore'] = str(self.ram_mb // self.n_core)
+        blocks['pal'] = f"nprocs {self.n_core}"
+        blocks.update(self.specific_options['blocks'])
 
-        keywords = list(set(keywords + self._qm_options['keywords']))
+        keywords = list(set(keywords + self.specific_options['keywords']))
 
-        self._calculator.charge = self._qm_options['charge']
-        self._calculator.multiplicity = self._qm_options['multiplicity']
-        self._calculator.directory = self._calc_options['work_directory']
-        self._calculator.label = self._calc_options['label']
+        self._calculator.charge = self.charge
+        self._calculator.multiplicity = self.multiplicity
+        self._calculator.directory = self.calc_options['work_directory']
+        self._calculator.label = self.calc_options['label']
         self._calculator.cluster_charge_dict = cluster_charge_dict
         self._calculator.blocks = blocks
         self._calculator.keywords = keywords
 
         self._calculator.run_calculation()
 
-        format_standardise = self._calc_options['output_format'].lower().replace('.', '')
+        format_standardise = self.calc_options['output_format'].lower().replace('.', '')
         if  format_standardise == 'mkl':
-            subprocess.check_output(['orca_2mkl', self._calc_options['label']], cwd=self._calc_options['work_directory'])
-            return os.path.join(self._calc_options['work_directory'], self._calc_options['label'] + '.mkl')
+            subprocess.check_output(['orca_2mkl', self.calc_options['label']], cwd=self.calc_options['work_directory'])
+            return os.path.join(self.calc_options['work_directory'], self.calc_options['label'] + '.mkl')
         elif format_standardise == 'wfn':
-            subprocess.check_output(['orca_2aim', self._calc_options['label']], cwd=self._calc_options['work_directory'])
-            return os.path.join(self._calc_options['work_directory'], self._calc_options['label'] + '.wfn')
+            subprocess.check_output(['orca_2aim', self.calc_options['label']], cwd=self.calc_options['work_directory'])
+            return os.path.join(self.calc_options['work_directory'], self.calc_options['label'] + '.wfn')
         else:
             raise NotImplementedError('output_format from OrcaCalculator is not implemented. Choose either mkl or wfn')
 
@@ -166,8 +162,7 @@ class ORCADensityCalculator(LCAODensityCalculator):
 
 
     def citation_strings(self):
-        self._calc_options = dict_merge(calc_defaults, self.calc_options)
-        self._qm_options = dict_merge(qm_defaults, self.qm_options)
+        self.update_from_dict(defaults, update_if_present=False)
 
         software_bibtex_key, sofware_bibtex_entry = self._calculator.bibtex_strings()
         software_name = 'ORCA' #TODO determine and add version

@@ -1,0 +1,5 @@
+{
+    "cif_path": "../datasets/minimal_tests/Water.cif",
+    "cif_dataset": "Water",
+    "settings_path": "./settings.scif"
+}

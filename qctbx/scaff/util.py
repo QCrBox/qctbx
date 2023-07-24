@@ -1,7 +1,11 @@
-from itertools import islice
-from functools import reduce
+import os
+import tempfile
+from contextlib import contextmanager
 from copy import deepcopy
-from typing import Iterable, Dict, Any
+from functools import reduce
+from itertools import islice
+from typing import Any, Dict, Iterable
+
 
 def batched(iterable: Iterable, n:int) -> iter:
     """
@@ -21,8 +25,8 @@ def batched(iterable: Iterable, n:int) -> iter:
 
     if n < 1:
         raise ValueError('n must be at least one')
-    it = iter(iterable)
-    while batch := tuple(islice(it, n)):
+    new_iterable = iter(iterable)
+    while batch := tuple(islice(new_iterable, n)):
         yield batch
 
 def dict_merge(*args: Dict[str, Any], case_sensitive: bool=True) -> Dict[str, Any]:
@@ -64,12 +68,13 @@ def dict_merge(*args: Dict[str, Any], case_sensitive: bool=True) -> Dict[str, An
         "merges b into a"
 
         def lower_if_str(value):
-            if type(value) == str:
+            if isinstance(value, str):
                 return value.lower()
             else:
                 return value
 
-        if path is None: path = []
+        if path is None:
+            path = []
         if not case_sensitive:
             a_compare = list(lower_if_str(key) for key in a.keys())
         else:
@@ -106,3 +111,21 @@ def dict_merge(*args: Dict[str, Any], case_sensitive: bool=True) -> Dict[str, An
         return a
 
     return reduce(inner_merge, iter(deepcopy(arg) if i == 0 else arg for i, arg in enumerate(args)))
+
+
+@contextmanager
+def tempinput(data, suffix='.cif'):
+    """Creates a temporary file in a contextmanager in order to feed that file
+    with its filename to other functions.
+
+    Copied from Martijn Pieters answer in
+    https://stackoverflow.com/questions/11892623/
+    stringio-and-compatibility-with-with-statement-context-manager/11892712#11892712
+    """
+    temp = tempfile.NamedTemporaryFile(delete=False, mode='w', suffix=suffix)
+    temp.write(data)
+    temp.close()
+    try:
+        yield temp.name
+    finally:
+        os.unlink(temp.name)

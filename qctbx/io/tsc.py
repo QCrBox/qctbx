@@ -128,8 +128,8 @@ class TSCBase(ABC):
                 unknown = [atom_site_label]
             raise ValueError(f'Unknown atom label(s) used for lookup from TSCFile: {" ".join(unknown)}') from exc
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def from_file(cls, filename: Path):
         pass
 

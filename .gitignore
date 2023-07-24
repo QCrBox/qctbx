@@ -1,1 +1,6 @@
 *.pyc
+__pycache__
+
+.pytest_cache
+
+temp_calculation_dir
