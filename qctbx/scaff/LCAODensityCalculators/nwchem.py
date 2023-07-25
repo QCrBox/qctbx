@@ -140,11 +140,11 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
         if self.molden2aimpath is not None:
             self._write_molden2aim_ini()
             abs_path = pathlib.Path(self.molden2aimpath).resolve()
-            with open(os.path.join(self.calc_options['work_directory'], 'molden2aim.log'), 'w') as fo:
+            with open(os.path.join(self.calc_options['work_directory'], 'molden2aim.log'), 'w') as fobj:
                 subprocess.check_call(
                     [abs_path, '-i', f"{self.calc_options['label']}.molden"],
                     cwd=os.path.join(self.calc_options['work_directory'], self.calc_options['label']),
-                    stdout=fo
+                    stdout=fobj
                 )
         else:
             warnings.warn('The wfn output without molden2aim might not be compatible with all partitioners (NoSpherA2 should work)')
@@ -153,8 +153,8 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
 
     def _write_molden2aim_ini(self):
         self.update_from_dict(defaults, update_if_present=False)
-        with open(os.path.join(self.calc_options['work_directory'], self.calc_options['label'], 'm2a.ini'), 'w') as fo:
-            fo.write(molden2aimfile)
+        with open(os.path.join(self.calc_options['work_directory'], self.calc_options['label'], 'm2a.ini'), 'w') as fobj:
+            fobj.write(molden2aimfile)
 
     def cif_output(self):
         return 'Implement me'

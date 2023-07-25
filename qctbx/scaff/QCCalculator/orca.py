@@ -72,8 +72,8 @@ class ORCACalculator(LCAOQCCalculator):
         if len(self.cluster_charge_dict.get('charges', [])) > 0:
             cc_file = self._generate_cluster_charge_file()
             cc_filename = f"{self.label}.pc"
-            with open(cc_filename, 'w') as fo:
-                fo.write(cc_file)
+            with open(cc_filename, 'w') as fobj:
+                fobj.write(cc_file)
 
             self.blocks['pointcharges'] = f"{cc_filename}"
 
@@ -82,17 +82,17 @@ class ORCACalculator(LCAOQCCalculator):
 
         # Write the input file to disk
         input_filename = f"{self.label}.inp"
-        with open(os.path.join(self.directory, input_filename), 'w') as fo:
-            fo.write(input_content)
+        with open(os.path.join(self.directory, input_filename), 'w') as fobj:
+            fobj.write(input_content)
 
         #Execute ORCA with the generated input file
         out_filename = os.path.join(self.directory, f"{self.label}.out")
         if self.abs_orca_path is None or not os.path.exists(self.abs_orca_path):
             raise FileNotFoundError('Could not find ORCA executable. Set abs_orca_path manually.')
-        with open(out_filename, 'w') as fo:
+        with open(out_filename, 'w') as fobj:
             subprocess.call(
                 [self.abs_orca_path, input_filename],
-                stdout=fo,
+                stdout=fobj,
                 stderr=subprocess.STDOUT,
                 cwd=self.directory
             )
@@ -173,5 +173,3 @@ class ORCACalculator(LCAOQCCalculator):
                 url = {https://doi.org/10.1063/5.0004608},
                 eprint = {https://pubs.aip.org/aip/jcp/article-pdf/doi/10.1063/5.0004608/16740678/224108\_1\_online.pdf},
             }""")
-
-

@@ -106,8 +106,8 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
             tsc.data[(h, k, l)] if (h, k, l) in tsc.data.keys() else np.conj(tsc.data[(-h, -k, -l)]) for h, k, l in zip(refln_dict['_refln_index_h'], refln_dict['_refln_index_k'], refln_dict['_refln_index_l'])
         ]).T
 
-        with open(os.path.join(self.options['calc_folder'], 'NoSpherA2.log'), 'r') as fo:
-            content = fo.read()
+        with open(os.path.join(self.options['calc_folder'], 'NoSpherA2.log'), 'r') as fobj:
+            content = fobj.read()
 
         charge_table_match = re.search(r'Atom\s+Becke\s+Spherical\s+Hirshfeld(.*)\nTotal number of electrons', content, flags=re.DOTALL)
 

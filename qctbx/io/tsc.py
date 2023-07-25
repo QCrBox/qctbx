@@ -176,8 +176,8 @@ class TSCFile(TSCBase):
         TSCFile
             A TSCFile instance with data loaded from the file.
         """
-        with open(filename, 'r') as fo:
-            tsc_content = fo.read()
+        with open(filename, 'r') as fobj:
+            tsc_content = fobj.read()
         header_str, data_str = tsc_content.split('DATA:\n')
 
         new_obj = cls()
@@ -207,8 +207,8 @@ class TSCFile(TSCBase):
         data_iter = iter(f"{int(hkl[0])} {int(hkl[1])} {int(hkl[2])} {' '.join(f'{np.real(val):.8e},{np.imag(val):.8e}' for val in values)}" for hkl, values in self.data.items())
         data_str = '\n'.join(data_iter)
 
-        with open(filename, 'w') as fo:
-            fo.write(f'{header_str}\nDATA:\n{data_str}\n')
+        with open(filename, 'w') as fobj:
+            fobj.write(f'{header_str}\nDATA:\n{data_str}\n')
 
 
 class TSCBFile(TSCBase):
@@ -251,18 +251,18 @@ class TSCBFile(TSCBase):
             A TSCBFile instance with data loaded from the file.
         """
         new_obj = cls()
-        with open(filename, 'rb') as fo:
-            additional_header_size, n_bytes_labels = struct.unpack('2i', fo.read(8))
+        with open(filename, 'rb') as fobj:
+            additional_header_size, n_bytes_labels = struct.unpack('2i', fobj.read(8))
             if additional_header_size > 0:
-                header_str = fo.read(additional_header_size).decode('ASCII')
+                header_str = fobj.read(additional_header_size).decode('ASCII')
 
                 new_obj.header.update(parse_header(header_str))
-            new_obj.header['SCATTERERS'] = fo.read(n_bytes_labels).decode('ASCII')
+            new_obj.header['SCATTERERS'] = fobj.read(n_bytes_labels).decode('ASCII')
 
-            n_refln = struct.unpack('i', fo.read(4))[0]
+            n_refln = struct.unpack('i', fobj.read(4))[0]
             n_atoms = len(new_obj.header['SCATTERERS'].split())
             new_obj.data = {
-                tuple(np.frombuffer(fo.read(12), dtype=np.int32)): np.frombuffer(fo.read(n_atoms*16), dtype=np.complex128) for i in range(n_refln)
+                tuple(np.frombuffer(fobj.read(12), dtype=np.int32)): np.frombuffer(fobj.read(n_atoms*16), dtype=np.complex128) for i in range(n_refln)
             }
         return new_obj
 
@@ -283,9 +283,9 @@ class TSCBFile(TSCBase):
             self.data = {key: value.astype(np.complex128) for key, value in self.data.items()}
         omitted_header_entries = ('SCATTERERS', 'TITLE', 'SYMM')
         header_string = '\n'.join(f'{name}: {entry}' for name, entry in self.header.items() if name not in omitted_header_entries)
-        with open(filename, 'wb') as fo:
-            fo.write(struct.pack('2i', len(header_string), len(self.header['SCATTERERS'])))
-            fo.write(header_string.encode('ASCII'))
-            fo.write(self.header['SCATTERERS'].encode('ASCII'))
-            fo.write(struct.pack('i', len(self.data)))
-            fo.write(bytes().join(struct.pack('3i', *hkl) + f0js.tobytes() for hkl, f0js in self.data.items()))
+        with open(filename, 'wb') as fobj:
+            fobj.write(struct.pack('2i', len(header_string), len(self.header['SCATTERERS'])))
+            fobj.write(header_string.encode('ASCII'))
+            fobj.write(self.header['SCATTERERS'].encode('ASCII'))
+            fobj.write(struct.pack('i', len(self.data)))
+            fobj.write(bytes().join(struct.pack('3i', *hkl) + f0js.tobytes() for hkl, f0js in self.data.items()))

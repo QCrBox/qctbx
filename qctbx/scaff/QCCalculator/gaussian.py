@@ -53,14 +53,14 @@ class GaussianCalculator(LCAOQCCalculator):
         input_content = self._generate_gaussian_input()
 
         input_filename = f"{self.label}.com"
-        with open(input_filename, 'w') as fo:
-            fo.write(input_content)
+        with open(input_filename, 'w') as fobj:
+            fobj.write(input_content)
 
         out_filename = f"{self.label}.log"
-        with open(out_filename, 'w') as fo:
+        with open(out_filename, 'w') as fobj:
             subprocess.call(
                 [self.abs_g16_path, input_filename],
-                stdout=fo,
+                stdout=fobj,
                 stderr=subprocess.STDOUT
             )
 
