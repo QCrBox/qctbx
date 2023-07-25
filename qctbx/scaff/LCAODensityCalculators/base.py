@@ -4,6 +4,7 @@ from typing import Any, Dict, Union, List
 from ..citations import get_basis_citation, get_functional_citation
 from ..base_classes import DensityCalculator
 from ..util import dict_merge, tempinput
+from ...conversions import parse_specific_options
 
 class LCAODensityCalculator(DensityCalculator):
 
@@ -14,7 +15,7 @@ class LCAODensityCalculator(DensityCalculator):
         charge:int=None,
         multiplicity:int=None,
         specific_options:Dict[Any, Any]=None,
-        n_core:int=None,
+        cpu_count:int=None,
         ram_mb:float=None,
         calc_options=None
     ):
@@ -26,7 +27,7 @@ class LCAODensityCalculator(DensityCalculator):
             self.specific_options = {}
         else:
             self.specific_options = specific_options
-        self.n_core = n_core
+        self.cpu_count = cpu_count
         self.ram_mb = ram_mb
         if calc_options is None:
             self.calc_options = {}
@@ -50,9 +51,9 @@ class LCAODensityCalculator(DensityCalculator):
         if condition and 'multiplicity' in update_dict:
             self.multiplicity = update_dict['multiplicity']
 
-        condition = (self.n_core is None) or update_if_present
-        if condition and 'n_core' in update_dict:
-            self.charge = update_dict['n_core']
+        condition = (self.cpu_count is None) or update_if_present
+        if condition and 'cpu_count' in update_dict:
+            self.cpu_count = update_dict['cpu_count']
 
         condition = (self.ram_mb is None) or update_if_present
         if condition and 'ram_mb' in update_dict:
@@ -106,18 +107,27 @@ class LCAODensityCalculator(DensityCalculator):
             cif_data = cif.reader(named_file).model()
             settings_cif = cif_data.blocks[block_name]
 
-        #TODO: implement parsed specific options
-        if len(settings_cif.get('_qctbx_lacowfn_specific_options', '').strip()) > 0:
-            raise NotImplementedError('Parsing of the specific options is not implemented at the moment')
+        cif_specific_options = settings_cif.get('_qctbx_lacowfn_specific_options', '').strip()
+        if len(cif_specific_options) > 0:
+            specific_options = parse_specific_options(cif_specific_options)
+        else:
+            specific_options = {}
+
+        cif_calc_options = settings_cif.get('_qctbx_lacowfn_calc_options', '').strip()
+        if len(cif_calc_options) > 0:
+            calc_options = parse_specific_options(cif_calc_options)
+        else:
+            calc_options = {}
 
         new_obj = cls(
             method=str(settings_cif['_qctbx_lcaowfn_method']),
             basis_set=str(settings_cif['_qctbx_lcaowfn_basisset']),
             charge=int(settings_cif['_qctbx_lcaowfn_charge']),
             multiplicity=int(settings_cif['_qctbx_lcaowfn_multiplicity']),
-            n_core=int(settings_cif['_qctbx_lcaowfn_n_core']),
+            cpu_count=int(settings_cif['_qctbx_lcaowfn_cpu_count']),
             ram_mb=int(settings_cif['_qctbx_lcaowfn_ram_mb']),
-            specific_options={}
+            specific_options=specific_options,
+            calc_options=calc_options
         )
 
         return new_obj

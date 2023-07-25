@@ -129,3 +129,5 @@ def tempinput(data, suffix='.cif'):
         yield temp.name
     finally:
         os.unlink(temp.name)
+
+

@@ -15,10 +15,14 @@ from ..citations import get_partitioning_citation
 from .base import LCAODensityPartitioner
 
 defaults = {
-    'nosphera2_path': './NoSpherA2',
-    'n_cores': 4,
-    'nosphera2_accuracy': 2,
-    'calc_folder': '.'
+    'method': 'hirshfeld',
+    'grid_accuracy': 'medium',
+    'cpu_count': 4,
+    'specific_options': {},
+    'calc_options':{
+        'nosphera2_path': './NoSpherA2',
+        'calc_folder': '.'
+    }
 }
 
 nosphera2_bibtex_key = 'NoSpherA2'
@@ -38,22 +42,18 @@ nosphera2_bibtex_entry = """
 }
 """.strip()
 
+grid_accuracy_names = ('coarse', 'medium', 'fine', 'veryfine', 'ultrafine', 'insane')
+
 class NoSpherA2Partitioner(LCAODensityPartitioner):
+
     accepts_input = ('wfn', 'wfx')
 
-    def __init__(self, options=None):
-        if options is None:
-            options = {}
-        else:
-            options = deepcopy(options)
-        for key, value in defaults.items():
-            if key not in options:
-                options[key] = value
-
-        self.options = options
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.update_from_dict(defaults, update_if_present=False)
 
     def check_availability(self) -> bool:
-        return os.path.exists(self.options['nosphera2_path'])
+        return os.path.exists(self.calc_options['nosphera2_path'])
 
     def run_nospherA2(
         self,
@@ -79,14 +79,17 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
         select_atom_site_dict = {
             key: [value[i] for i in atom_indexes] for key, value in atom_site_dict.items()
         }
-        write_minimal_cif('npa2.cif', cell_dict, cleaned_sg_dict, atom_site_dict)
-        write_minimal_cif('npa2_asym.cif', cell_dict, cleaned_sg_dict, select_atom_site_dict)
-        write_mock_hkl('mock.hkl', refln_dict)
+        write_minimal_cif(os.path.join(self.calc_options['calc_folder'], 'npa2.cif'), cell_dict, cleaned_sg_dict, atom_site_dict)
+        write_minimal_cif(os.path.join(self.calc_options['calc_folder'], 'npa2_asym.cif'), cell_dict, cleaned_sg_dict, select_atom_site_dict)
+        write_mock_hkl(os.path.join(self.calc_options['calc_folder'], 'mock.hkl'), refln_dict)
 
-        pass_options = deepcopy(self.options)
-        pass_options['density_path'] = density_path
+        pass_options = deepcopy(self.specific_options)
+        pass_options.update(self.calc_options)
+        pass_options['nosphera2_accuracy'] = grid_accuracy_names.index(self.grid_accuracy) + 1
+        pass_options['cpu_count'] = self.cpu_count
+        pass_options['density_path'] = os.path.abspath(density_path)
 
-        subprocess.check_call('{nosphera2_path} -hkl mock.hkl -wfn {density_path} -cif npa2.cif -asym_cif npa2_asym.cif -acc {nosphera2_accuracy} -cores {n_cores}'.format(**pass_options), shell=True, stdout=subprocess.DEVNULL, cwd=self.options['calc_folder'])
+        subprocess.check_call('{nosphera2_path} -hkl mock.hkl -wfn {density_path} -cif npa2.cif -asym_cif npa2_asym.cif -acc {nosphera2_accuracy} -cores {cpu_count}'.format(**pass_options), shell=True, stdout=subprocess.DEVNULL, cwd=self.calc_options['calc_folder'])
 
 
     def calc_f0j(
@@ -100,13 +103,13 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
     ):
         self.run_nospherA2(atom_labels, atom_site_dict, cell_dict, space_group_dict, refln_dict, density_path)
 
-        tsc = TSCFile.from_file('experimental.tsc')
+        tsc = TSCFile.from_file(os.path.join(self.calc_options['calc_folder'],'experimental.tsc'))
 
         f0j = np.array([
             tsc.data[(h, k, l)] if (h, k, l) in tsc.data.keys() else np.conj(tsc.data[(-h, -k, -l)]) for h, k, l in zip(refln_dict['_refln_index_h'], refln_dict['_refln_index_k'], refln_dict['_refln_index_l'])
         ]).T
 
-        with open(os.path.join(self.options['calc_folder'], 'NoSpherA2.log'), 'r') as fobj:
+        with open(os.path.join(self.calc_options['calc_folder'], 'NoSpherA2.log'), 'r') as fobj:
             content = fobj.read()
 
         charge_table_match = re.search(r'Atom\s+Becke\s+Spherical\s+Hirshfeld(.*)\nTotal number of electrons', content, flags=re.DOTALL)

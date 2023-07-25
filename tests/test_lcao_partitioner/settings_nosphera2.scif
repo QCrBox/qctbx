@@ -21,3 +21,15 @@ _qctbx_lacowfn_calc_options
     "output_format": "wfn"
 }
 ;
+
+_qctbx_lcaopartitioning_software "NoSpherA2"
+_qctbx_lcaopartitioning_method "hirshfeld"
+_qctbx_lcaopartitioning_grid_accuracy "medium"
+_qctbx_lcaopartitioning_cpu_count 4
+_qctbx_lcaopartitioning_calc_options
+;
+{
+    "nosphera2_path": "/mnt/d/qctbx_dev/executables/NoSpherA2",
+    "calc_folder": "./temp_calculation_dir"
+}
+;

@@ -18,6 +18,18 @@ _qctbx_lacowfn_specific_options
 _qctbx_lacowfn_calc_options
 ;
 {
-    "output_format": "wfn"
+    "output_format": "mkl"
+}
+;
+
+_qctbx_lcaopartitioning_software "Horton"
+_qctbx_lcaopartitioning_method "hirshfeld"
+_qctbx_lcaopartitioning_grid_accuracy "medium"
+_qctbx_lcaopartitioning_cpu_count 1
+_qctbx_lcaopartitioning_calc_options
+;
+{
+    "atomdb_path": "/mnt/d/qctbx_dev/data/horton_atomdb/atoms.h5",
+    "log_file": "./temp_calculation_dir/horton.log"
 }
 ;

@@ -1,6 +1,8 @@
-from qctbx.conversions import symm_to_matrix_vector, symm_mat_vec2str
 import numpy as np
 import pytest
+
+from qctbx.conversions import symm_mat_vec2str, symm_to_matrix_vector
+
 
 @pytest.mark.parametrize('test_input, mat_result, vec_result', [
         ('x,y,z' , np.eye(3), np.zeros(3)),

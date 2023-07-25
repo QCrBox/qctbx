@@ -13,6 +13,8 @@ _cell_angle_beta                 90
 _cell_angle_gamma                90
 _cell_volume                     1000
 
+_reflns_d_resolution_high 1.0
+
 loop_
  _space_group_symop_operation_xyz
  'x, y, z'

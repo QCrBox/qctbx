@@ -13,7 +13,7 @@ defaults = {
     'basis_set': 'def2-SVP',
     'charge': 0,
     'multiplicity': 1,
-    'n_core': 1,
+    'cpu_count': 1,
     'ram_mb': 2000,
     'specific_options': {
         'keywords': [],
@@ -130,8 +130,8 @@ class ORCADensityCalculator(LCAODensityCalculator):
             positions_cart
         )
 
-        blocks['maxcore'] = str(self.ram_mb // self.n_core)
-        blocks['pal'] = f"nprocs {self.n_core}"
+        blocks['maxcore'] = str(self.ram_mb // self.cpu_count)
+        blocks['pal'] = f"nprocs {self.cpu_count}"
         blocks.update(self.specific_options['blocks'])
 
         keywords = list(set(keywords + self.specific_options['keywords']))

@@ -207,7 +207,6 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
                 xyz_cart_dash = xyz_cart + cell_mat_m[0] * x_add + cell_mat_m[1] * y_add + cell_mat_m[2] * z_add
                 distances = np.linalg.norm(xyz_cart_dash[None, None, None, :] - xyz_cart_cell, axis=-1)
                 atom_weight[distances < spline.cutoff] += spline(distances[distances < spline.cutoff])
-            #print(atom_label, elem_num2type[atom_site['_atom_site_type_symbol']] - np.sum(density * atom_weight * all_atom_weights)  )
 
             phase_to_zero = np.exp(-2j * np.pi * (xyz_frac[0] * h + xyz_frac[1] * k + xyz_frac[2] * l))
             f0j_atom = np.fft.ifftn(density * atom_weight * all_atom_weights) * np.prod(density.shape)

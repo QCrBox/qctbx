@@ -18,7 +18,7 @@ defaults = {
     'basis_set': 'def2-SVP',
     'multiplicity': 1,
     'charge': 0,
-    'n_core': 1,
+    'cpu_count': 1,
     'ram': 2000,
     'specific_options': {},
     'calc_options': {
@@ -124,8 +124,8 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
         ase_options['task'] = 'property'
         ase_options['memory'] = f'total {int(self.ram_mb)} mb'
 
-        if self.n_core > 1:
-            ase_options['command'] = f'mpirun -n {self.n_core} {self.nwchem_path}]'
+        if self.cpu_count > 1:
+            ase_options['command'] = f'mpirun -n {self.cpu_count} {self.nwchem_path}]'
 
         nwchem = NWChem(**ase_options)
 

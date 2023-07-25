@@ -11,18 +11,18 @@ def cell_dict2atom_sites_dict(
     """
     Converts a cell dictionary into an atom sites dictionary that includes transformation matrix.
 
-    The transformation matrix is generated based on the cell parameters. This matrix contains the three lattice vectors 
+    The transformation matrix is generated based on the cell parameters. This matrix contains the three lattice vectors
     as rows. It is used to convert from fractional to Cartesian coordinates.
 
     Args:
-        cell_dict (Dict[str, Union[float, np.ndarray]]): A dictionary representing a unit cell. It should contain the 
-        following keys: '_cell_length_a', '_cell_length_b', '_cell_length_c', '_cell_angle_alpha', '_cell_angle_beta', 
-        '_cell_angle_gamma'. The corresponding values should be floats representing the cell lengths (a, b, c) in angstroms 
+        cell_dict (Dict[str, Union[float, np.ndarray]]): A dictionary representing a unit cell. It should contain the
+        following keys: '_cell_length_a', '_cell_length_b', '_cell_length_c', '_cell_angle_alpha', '_cell_angle_beta',
+        '_cell_angle_gamma'. The corresponding values should be floats representing the cell lengths (a, b, c) in angstroms
         and the cell angles (alpha, beta, gamma) in degrees.
 
     Returns:
-        Dict[str, Union[str, np.ndarray]]: A dictionary containing the transformation matrix and its description. The keys 
-        are '_atom_sites_Cartn_transform_axes' (with value being a string description of the transformation axes) and 
+        Dict[str, Union[str, np.ndarray]]: A dictionary containing the transformation matrix and its description. The keys
+        are '_atom_sites_Cartn_transform_axes' (with value being a string description of the transformation axes) and
         '_atom_sites_Cartn_tran_matrix' (with value being a 3x3 numpy array representing the transformation matrix).
     """
     a = cell_dict['_cell_length_a']
@@ -71,7 +71,7 @@ def add_sin_theta_ov_lambda(
     rec_cartn_tran_matrix = np.linalg.inv(cartn_tran_matrix).T
     hkl = np.array([refln_dict[f'_refln_index_{index}'] for index in ('h', 'k', 'l')]).T
     output = refln_dict.copy()
-    output['_refln_sint/lambda'] = np.linalg.norm(np.einsum('xy, zy -> zx', rec_cartn_tran_matrix, hkl), axis=1) / 2 
+    output['_refln_sint/lambda'] = np.linalg.norm(np.einsum('xy, zy -> zx', rec_cartn_tran_matrix, hkl), axis=1) / 2
     return output
 
 def add_cart_pos(atom_site_dict: Dict[str, List[float]], cell_dict: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -91,13 +91,13 @@ def add_cart_pos(atom_site_dict: Dict[str, List[float]], cell_dict: Dict[str, An
     Returns
     -------
     atom_site_out : Dict[str, Any]
-        The input dictionary with added Cartesian coordinates. These are added 
+        The input dictionary with added Cartesian coordinates. These are added
         as lists of floats with keys '_atom_site_Cartn_x', '_atom_site_Cartn_y',
         and '_atom_site_Cartn_z'.
-        
+
     atom_sites_dict : Dict[str, Any]
-        Dictionary containing the transformation matrix for conversion from 
-        fractional to Cartesian coordinates and the cartesian convention in 
+        Dictionary containing the transformation matrix for conversion from
+        fractional to Cartesian coordinates and the cartesian convention in
         as cif keys.
     """
     atom_sites_dict = cell_dict2atom_sites_dict(cell_dict)
@@ -117,16 +117,16 @@ def symm_to_matrix_vector(instruction: str) -> Tuple[np.ndarray, np.ndarray]:
     Parameters
     ----------
     instruction : str
-        Instruction string containing symmetry instruction for all three 
+        Instruction string containing symmetry instruction for all three
         coordinates separated by comma signs (e.g -x, -y, 0.5+z)
 
     Returns
     -------
-    symm_matrix: np.ndarray, 
+    symm_matrix: np.ndarray,
         size (3, 3) array containing the symmetry matrix for the symmetry element
     symm_vector: np.ndarray
         size (3) array containing the translation vector for the symmetry element
-    """    
+    """
     instruction_strings = [val.replace(' ', '').upper() for val in instruction.split(',')]
     matrix = np.zeros((3,3), dtype=np.float64)
     vector = np.zeros(3, dtype=np.float64)
@@ -162,16 +162,16 @@ def symm_to_matrix_vector(instruction: str) -> Tuple[np.ndarray, np.ndarray]:
 
 
 def expand_atom_site_table_symm(
-    atom_site_dict: Dict[str, List[Union[str, float]]], 
-    expand_positions: Dict[str, Union[str, List[str]]], 
-    cell_dict: Optional[Dict[str, float]] = None, 
+    atom_site_dict: Dict[str, List[Union[str, float]]],
+    expand_positions: Dict[str, Union[str, List[str]]],
+    cell_dict: Optional[Dict[str, float]] = None,
     check_special: bool = True
 ) -> Dict[str, List[Union[str, float]]]:
     """
-    Expands an atom site table based on symmetry operations. 
+    Expands an atom site table based on symmetry operations.
 
     Args:
-        atom_site_dict (Dict[str, List[Union[str, float]]]): Dictionary containing the atom site information. 
+        atom_site_dict (Dict[str, List[Union[str, float]]]): Dictionary containing the atom site information.
             Necessary keys are:
             - '_atom_site_label': List of strings, the labels of the atoms.
             - '_atom_site_type_symbol': List of strings, the atomic symbols.
@@ -181,15 +181,15 @@ def expand_atom_site_table_symm(
             Optional keys that are also returned are:
             - '_atom_site_disorder_group': List of strings, the disorder group of the atoms (if present).
             - '_atom_site_disorder_assembly': List of strings, the disorder assembly of the atoms (if present).
-            
-        expand_positions (Dict[str, Union[str, List[str]]]): Dictionary containing the symmetry operations 
-            and the atom labels to which these operations should be applied. The symmetry operation is the key 
+
+        expand_positions (Dict[str, Union[str, List[str]]]): Dictionary containing the symmetry operations
+            and the atom labels to which these operations should be applied. The symmetry operation is the key
             and the value can be either:
             - a string "all" indicating that the symmetry operation should be applied to all atoms.
             - a string starting with "all" followed by "skip" and a list of space separated atom labels to be skipped.
             - a list of specific atom labels to which the symmetry operation should be applied.
 
-        cell_dict (Optional[Dict[str, float]]): Dictionary containing the unit cell parameters. 
+        cell_dict (Optional[Dict[str, float]]): Dictionary containing the unit cell parameters.
             Default is None. Required if check_special is True.
         check_special (bool): Flag to check for special positions by distance. Default is True.
 
@@ -204,16 +204,16 @@ def expand_atom_site_table_symm(
         '_atom_site_label', '_atom_site_type_symbol', '_atom_site_fract_x', '_atom_site_fract_y', '_atom_site_fract_z',  '_atom_site_disorder_group', '_atom_site_disorder_assembly'
     ]
     use_cols = [col for col in use_cols if col in atom_site_dict]
-    
+
     original_indexes = list(range(len(atom_site_dict[use_cols[0]])))
-    
+
     atoms_dict = OrderedDict((atom_site_dict['_atom_site_label'][i], {key: atom_site_dict[key][i] for key in use_cols}) for i in original_indexes)
     xyz_cols = ('_atom_site_fract_x', '_atom_site_fract_y', '_atom_site_fract_z')
     if check_special:
         assert cell_dict is not None, 'For checking special positions by distance a cell_dict is needed'
         cell_mat_m = cell_dict2atom_sites_dict(cell_dict)['_atom_sites_Cartn_tran_matrix']
         check_present = {key: [cell_mat_m @ (np.array([value[col] for col in xyz_cols]) % 1)] for key, value in atoms_dict.items()}
-    
+
     for symm_element, expanded_atoms in expand_positions.items():
         symm_mat, symm_vec = symm_to_matrix_vector(symm_element)
         if np.sum(np.abs(symm_mat - np.eye(3))) + np.sum(np.abs(symm_vec)) < 1e-5:
@@ -239,7 +239,7 @@ def expand_atom_site_table_symm(
             new_atom['_atom_site_fract_z'] = new_xyz[2]
             new_atom['_atom_site_label'] += ':' + symm_element.replace(' ', '')
             atoms_dict[new_atom['_atom_site_label']] = new_atom
-    
+
     new_atom_site_dict = {
         key: [atom[key] for atom in list(atoms_dict.values())] for key in use_cols
     }
@@ -253,15 +253,15 @@ def create_hkl_dmin(
         d_min: float
     ) -> Dict[str, np.ndarray]:
     """
-    Generate a dictionary of h, k, and l indices of reflections for a crystal lattice specified by cell_dict, 
+    Generate a dictionary of h, k, and l indices of reflections for a crystal lattice specified by cell_dict,
     considering reflections with d-spacing greater than or equal to the provided minimum.
 
     Parameters
     ----------
     cell_dict : Dict[str, Union[float, np.ndarray]]
-        Dictionary containing the unit cell parameters. It should contain the following keys: 
-        '_cell_length_a', '_cell_length_b', '_cell_length_c', '_cell_angle_alpha', '_cell_angle_beta', 
-        '_cell_angle_gamma'. The corresponding values should be floats representing the cell lengths 
+        Dictionary containing the unit cell parameters. It should contain the following keys:
+        '_cell_length_a', '_cell_length_b', '_cell_length_c', '_cell_angle_alpha', '_cell_angle_beta',
+        '_cell_angle_gamma'. The corresponding values should be floats representing the cell lengths
         (a, b, c) in angstroms and the cell angles (alpha, beta, gamma) in degrees.
 
     d_min : float
@@ -270,8 +270,8 @@ def create_hkl_dmin(
     Returns
     -------
     Dict[str, np.ndarray]
-        Dictionary containing arrays of Miller indices (h, k, l) for the generated reflections. The keys 
-        of the dictionary are '_refln_index_h', '_refln_index_k', and '_refln_index_l'. Each value is 
+        Dictionary containing arrays of Miller indices (h, k, l) for the generated reflections. The keys
+        of the dictionary are '_refln_index_h', '_refln_index_k', and '_refln_index_l'. Each value is
         an array of integers representing the corresponding Miller indices of the reflections.
     """
     atom_sites_dict = cell_dict2atom_sites_dict(cell_dict)
@@ -297,7 +297,7 @@ def create_hkl_dmin(
     }
 
 def symm_mat_vec2str(
-    symm_mat: np.ndarray, 
+    symm_mat: np.ndarray,
     symm_vec: np.ndarray
 ) -> str:
     """
@@ -319,7 +319,7 @@ def symm_mat_vec2str(
     for symm_parts, add in zip(symm_mat, symm_vec):
         symm_string_add = str(fractions.Fraction(add).limit_denominator(50))
         if symm_string_add != '0':
-            symm_string += symm_string_add 
+            symm_string += symm_string_add
         for symm_part, symbol in zip(symm_parts, ['X', 'Y', 'Z']):
             if abs(symm_part) < 1e-10:
                 continue
@@ -351,7 +351,7 @@ def split_error(string: str) -> Union[Tuple[float, float], Tuple[int, int]]:
     Union[Tuple[float, float], Tuple[int, int]]
         Pair of floats if a '.' was present in string, otherwise a pair of ints
         containing the value and its esd
-    """    
+    """
     int_search = re.search(r'([\-\d]*)\((\d*)\)', string)
     search = re.search(r'(\-{0,1})([\d]*)\.(\d*)\((\d*)\)', string)
     if search is not None:
@@ -367,4 +367,11 @@ def split_error(string: str) -> Union[Tuple[float, float], Tuple[int, int]]:
         return int(value), int(error)
     else:
         # no error found
-        return float(string), 0.0  
+        return float(string), 0.0
+
+
+def parse_specific_options(string):
+    #TODO: change this from JSON to final format (phil?)
+    import json
+    read_json = json.loads(string)
+    return dict(read_json)
