@@ -74,7 +74,7 @@ class AsePBCCalculator(RegGrQCCalculator):
             cell=self._cell_mat_m
         )
 
-        atoms.set_calculator(self.calc)
+        atoms.calc = self.calc
         atoms.get_potential_energy()
 
         return atoms, self.calc

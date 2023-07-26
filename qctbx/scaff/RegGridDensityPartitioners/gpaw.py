@@ -176,8 +176,8 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
             splines = {setup.symbol: (setup.get_partial_waves()[2], setup.rgd.r_g) for setup in calc.density.setups}
             qubox_density_atomic_dicts = {
                 symbol: {
-                    '_qubox_density_atomic_rgrid': rgrid * ANGSTROM_PER_BOHR,
-                    '_qubox_density_atomic_core': spline.map(rgrid) / ANGSTROM_PER_BOHR**3 * y00
+                    '_qctbx_density_atomic_rgrid': rgrid * ANGSTROM_PER_BOHR,
+                    '_qctbx_density_atomic_core': spline.map(rgrid) / ANGSTROM_PER_BOHR**3 * y00
                 } for symbol, (spline, rgrid) in splines.items()
             }
 

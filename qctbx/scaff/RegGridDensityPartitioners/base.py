@@ -21,8 +21,8 @@ def calc_f0j_core(
         qubox_density_atomic_dict (Dict[str, Dict[str, Any]]): A dictionary of
             dictionaries with elements as key and the entries being dictionaries
             containing the atomic density on a real-space grid. Used entries within
-            the individual elements are _qubox_density_atomic_rgrid and
-            _qubox_density_atomic_core
+            the individual elements are _qctbx_density_atomic_rgrid and
+            _qctbx_density_atomic_core
 
     Returns:
         Dict[str, Any]: A dictionary of core density values in Fourier space, keyed by element.
@@ -35,8 +35,8 @@ def calc_f0j_core(
     f0j_core_dict = {}
     n_elec_core = {}
     for element, atomic_entries in qubox_density_atomic_dicts.items():
-        r = np.array(atomic_entries['_qubox_density_atomic_rgrid'])
-        core_density = np.array(atomic_entries['_qubox_density_atomic_core'])
+        r = np.array(atomic_entries['_qctbx_density_atomic_rgrid'])
+        core_density = np.array(atomic_entries['_qctbx_density_atomic_core'])
         gr = r[None,:] * g_ks[:,None]
         j0 = np.zeros_like(gr)
         j0[gr != 0] = np.sin(2 * np.pi * gr[gr != 0]) / (2 * np.pi * gr[gr != 0])

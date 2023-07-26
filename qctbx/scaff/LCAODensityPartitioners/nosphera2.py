@@ -10,7 +10,7 @@ from ...conversions import (cell_dict2atom_sites_dict, symm_mat_vec2str,
                             symm_to_matrix_vector)
 from ...custom_typing import Path
 from ...io.minimal_files import write_minimal_cif, write_mock_hkl
-from ...io.tsc import TSCFile
+from ...io.tsc import TSCFile, TSCBFile
 from ..citations import get_partitioning_citation
 from .base import LCAODensityPartitioner
 
@@ -102,9 +102,10 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
         density_path: Path
     ):
         self.run_nospherA2(atom_labels, atom_site_dict, cell_dict, space_group_dict, refln_dict, density_path)
-
-        tsc = TSCFile.from_file(os.path.join(self.calc_options['calc_folder'],'experimental.tsc'))
-
+        if os.path.exists(os.path.join(self.calc_options['calc_folder'],'experimental.tscb')):
+            tsc = TSCBFile.from_file(os.path.join(self.calc_options['calc_folder'],'experimental.tscb'))
+        else:
+            tsc = TSCFile.from_file(os.path.join(self.calc_options['calc_folder'],'experimental.tsc'))
         f0j = np.array([
             tsc.data[(h, k, l)] if (h, k, l) in tsc.data.keys() else np.conj(tsc.data[(-h, -k, -l)]) for h, k, l in zip(refln_dict['_refln_index_h'], refln_dict['_refln_index_k'], refln_dict['_refln_index_l'])
         ]).T

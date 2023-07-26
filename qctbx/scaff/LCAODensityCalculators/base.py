@@ -16,7 +16,6 @@ class LCAODensityCalculator(DensityCalculator):
         multiplicity:int=None,
         specific_options:Dict[Any, Any]=None,
         cpu_count:int=None,
-        ram_mb:float=None,
         calc_options=None
     ):
         self.method = method
@@ -28,7 +27,6 @@ class LCAODensityCalculator(DensityCalculator):
         else:
             self.specific_options = specific_options
         self.cpu_count = cpu_count
-        self.ram_mb = ram_mb
         if calc_options is None:
             self.calc_options = {}
         else:
@@ -55,10 +53,6 @@ class LCAODensityCalculator(DensityCalculator):
         if condition and 'cpu_count' in update_dict:
             self.cpu_count = update_dict['cpu_count']
 
-        condition = (self.ram_mb is None) or update_if_present
-        if condition and 'ram_mb' in update_dict:
-            self.charge = update_dict['ram_mb']
-
         #dictionaries are merged instead of replaced
         updates = update_dict.get('specific_options', {})
         if update_if_present:
@@ -68,7 +62,7 @@ class LCAODensityCalculator(DensityCalculator):
 
         updates = update_dict.get('calc_options', {})
         if update_if_present:
-            self.calc_options = dict_merge(self.calc_options, updates, case_sensitive=False)
+            self.calc_options = dict_merge(self.calc_options, updates)
         else:
             self.calc_options = dict_merge(updates, self.calc_options)
 
@@ -107,13 +101,13 @@ class LCAODensityCalculator(DensityCalculator):
             cif_data = cif.reader(named_file).model()
             settings_cif = cif_data.blocks[block_name]
 
-        cif_specific_options = settings_cif.get('_qctbx_lacowfn_specific_options', '').strip()
+        cif_specific_options = settings_cif.get('_qctbx_lcaowfn_specific_options', '').strip()
         if len(cif_specific_options) > 0:
             specific_options = parse_specific_options(cif_specific_options)
         else:
             specific_options = {}
 
-        cif_calc_options = settings_cif.get('_qctbx_lacowfn_calc_options', '').strip()
+        cif_calc_options = settings_cif.get('_qctbx_lcaowfn_calc_options', '').strip()
         if len(cif_calc_options) > 0:
             calc_options = parse_specific_options(cif_calc_options)
         else:
@@ -125,7 +119,6 @@ class LCAODensityCalculator(DensityCalculator):
             charge=int(settings_cif['_qctbx_lcaowfn_charge']),
             multiplicity=int(settings_cif['_qctbx_lcaowfn_multiplicity']),
             cpu_count=int(settings_cif['_qctbx_lcaowfn_cpu_count']),
-            ram_mb=int(settings_cif['_qctbx_lcaowfn_ram_mb']),
             specific_options=specific_options,
             calc_options=calc_options
         )

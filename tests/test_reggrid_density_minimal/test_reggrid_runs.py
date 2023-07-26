@@ -4,20 +4,13 @@ import shutil
 import pytest
 
 from qctbx.io.cif import cif2dicts
-from qctbx.scaff.LCAODensityCalculators.nwchem import NWChemLCAODensityCalculator
-from qctbx.scaff.LCAODensityCalculators.orca import ORCADensityCalculator
-folder = 'test_lcao_density_minimal'
+from qctbx.scaff.RegGridDensityCalculators.gpaw import GPAWDensityCalculator
+folder = 'test_reggrid_density_minimal'
 
 @pytest.mark.parametrize('calculator, settings_cif_path, cif_path, cif_dataset', [
     (
-        NWChemLCAODensityCalculator,
-        './settings_nwchem.scif',
-        '../datasets/minimal_tests/Water.cif',
-        'Water'
-    ),
-    (
-        ORCADensityCalculator,
-        './settings_orca.scif',
+        GPAWDensityCalculator,
+        './settings_gpaw.scif',
         '../datasets/minimal_tests/Water.cif',
         'Water'
     )

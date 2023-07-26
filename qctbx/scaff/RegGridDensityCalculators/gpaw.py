@@ -1,7 +1,6 @@
 import os
 
 from ..QCCalculator.ase import AsePBCCalculator
-from ..util import dict_merge
 from .base import RegGridDensityCalculator
 
 try:
@@ -11,7 +10,7 @@ try:
     from gpaw import GPAW
     from gpaw.utilities.tools import cutoff2gridspacing, gridspacing2cutoff
     import_worked = True
-except:
+except ImportError:
     import_worked = False
 
 gpaw_bibtex_key = 'GPAW1,GPAW2'
@@ -47,23 +46,23 @@ augmented-wave method},
 journal = {Journal of Physics: Condensed Matter},
 }""".strip()
 
-calc_defaults = {
-    'label': 'gpaw',
-    'work_directory': '.',
-    'output_format': 'cube',
-    'output_type': 'total',
-    'grid_interpolation': 4,
 
-}
 
-qm_defaults = {
+defaults = {
     'method': 'PBE',
-    'e_cut_ev': 50,
+    'ecut_ev': 50,
     'kpoints': (1,1,1),
-    'gpaw_options': {
+    'density_type': 'total',
+    'specific_options': {
         'convergence':{'density': 1e-6},
         'symmetry':{'symmorphic': False},
         'txt': 'gpaw_calculation.txt'
+    },
+    'calc_options': {
+        'label': 'gpaw',
+        'work_directory': '.',
+        'output_format': 'cube',
+        'grid_interpolation': 4,
     }
 }
 
@@ -73,8 +72,7 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._calc_options = dict_merge(calc_defaults, self.calc_options)
-        self._qm_options = dict_merge(qm_defaults, self.qm_options)
+        self.update_from_dict(defaults, update_if_present=False)
 
     def check_availability(self):
         return import_worked
@@ -84,18 +82,16 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
         atom_site_dict,
         cell_dict
     ):
-        self._calc_options = dict_merge(calc_defaults, self.calc_options)
-        self._qm_options = dict_merge(qm_defaults, self.qm_options)
-        if 'xc' in self._qm_options['gpaw_options']:
-            self._qm_options['method'] = self._qm_options['gpaw_options']['xc']
-            del(self._qm_options['gpaw_options']['xc'])
-        if 'h' in self._qm_options['gpaw_options']:
-            self._qm_options['e_cut_ev'] = gridspacing2cutoff(self._qm_options['gpaw_options']['h']) / Hartree
-            del(self._qm_options['gpaw_options']['h'])
+        if 'xc' in self.specific_options:
+            self.method = self.specific_options['xc']
+            del(self.specific_options['xc'])
+        if 'h' in self.specific_options:
+            self.ecut_ev = gridspacing2cutoff(self.specific_options['h']) / Hartree
+            del(self.specific_options['h'])
         ase_calc = GPAW(
-            xc=self._qm_options['method'],
-            h=cutoff2gridspacing(self._qm_options['e_cut_ev'] * Hartree),
-            **self._qm_options['gpaw_options']
+            xc=self.method,
+            h=cutoff2gridspacing(self.ecut_ev * Hartree),
+            **self.specific_options
         )
 
         calculator = AsePBCCalculator(
@@ -106,13 +102,13 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
 
         atoms, calc = calculator.run_calculation()
 
-        if self._calc_options['output_type'] == 'total':
-            density = calc.get_all_electron_density(gridrefinement=self._calc_options['grid_interpolation'])
-        elif self._calc_options['output_type'] == 'valence':
-            density = calc.get_all_electron_density(skip_core=True, gridrefinement=self._calc_options['grid_interpolation'])
+        if self.density_type == 'total':
+            density = calc.get_all_electron_density(gridrefinement=self.calc_options['grid_interpolation'])
+        elif self.density_type == 'valence':
+            density = calc.get_all_electron_density(skip_core=True, gridrefinement=self.calc_options['grid_interpolation'])
         else:
             raise NotImplementedError('output_type needs to be valence or total')
-        path = os.path.join (self._calc_options['work_directory'], f" {self._calc_options['label']}.cube")
+        path = os.path.join (self.calc_options['work_directory'], f" {self.calc_options['label']}.cube")
         write(path, atoms, data=density * Bohr**3)
         return path
 
@@ -120,8 +116,6 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
         return 'Implement me'
 
     def citation_strings(self) -> str:
-        self._calc_options = dict_merge(calc_defaults, self.calc_options)
-        self._qm_options = dict_merge(qm_defaults, self.qm_options)
 
         gpaw_version = gpaw.__version__
         software_name = f'ASE/GPAW {gpaw_version}'

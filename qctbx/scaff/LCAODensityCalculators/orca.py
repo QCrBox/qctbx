@@ -14,7 +14,6 @@ defaults = {
     'charge': 0,
     'multiplicity': 1,
     'cpu_count': 1,
-    'ram_mb': 2000,
     'specific_options': {
         'keywords': [],
         'blocks': {}
@@ -22,7 +21,8 @@ defaults = {
     'calc_options': {
         'label': 'orca',
         'work_directory': '.',
-        'output_format': 'mkl'
+        'output_format': 'mkl',
+        'ram_mb': 2000,
     }
 }
 
@@ -130,7 +130,7 @@ class ORCADensityCalculator(LCAODensityCalculator):
             positions_cart
         )
 
-        blocks['maxcore'] = str(self.ram_mb // self.cpu_count)
+        blocks['maxcore'] = str(self.calc_options['ram_mb'] // self.cpu_count)
         blocks['pal'] = f"nprocs {self.cpu_count}"
         blocks.update(self.specific_options['blocks'])
 

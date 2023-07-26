@@ -19,12 +19,12 @@ defaults = {
     'multiplicity': 1,
     'charge': 0,
     'cpu_count': 1,
-    'ram': 2000,
     'specific_options': {},
     'calc_options': {
         'label': 'nwchem',
         'work_directory': '.',
-        'output_format': 'wfn'
+        'output_format': 'wfn',
+        'ram_mb': 2000,
     }
 }
 
@@ -122,7 +122,7 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
                 'Aimfile': None
             }
         ase_options['task'] = 'property'
-        ase_options['memory'] = f'total {int(self.ram_mb)} mb'
+        ase_options['memory'] = f"total {int(self.calc_options['ram_mb'])} mb"
 
         if self.cpu_count > 1:
             ase_options['command'] = f'mpirun -n {self.cpu_count} {self.nwchem_path}]'

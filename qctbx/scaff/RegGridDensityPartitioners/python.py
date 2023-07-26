@@ -43,13 +43,13 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
                 format of AtomicDensityReaders. It is not optional.
                 Each atomic element is a key, and the value is another dictionary
                 with the following structure:
-                    - '_qubox_density_atomic_rgrid': (list or np.ndarray)
+                    - '_qctbx_density_atomic_rgrid': (list or np.ndarray)
                         Radial grid for atomic densities.
-                    - '_qubox_density_atomic_valence': (list or np.ndarray)
+                    - '_qctbx_density_atomic_valence': (list or np.ndarray)
                         Valence atomic density, only needed for valence partitioning
-                    - '_qubox_density_atomic_total': (list or np.ndarray)
+                    - '_qctbx_density_atomic_total': (list or np.ndarray)
                         Total atomic density, only needed for total partitioning
-                    - '_qubox_density_atomic_core': (list or np.ndarray)
+                    - '_qctbx_density_atomic_core': (list or np.ndarray)
                         Core atomic density, only needed for valence partitioning
             - 'partition': (str, optional) Type of atomic density partition.
                 Needs to match the density in the provided cube file.
@@ -67,15 +67,6 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
     atom_splines: Dict[str, Any]
     atom_n_elec: Dict[str, float]
     charges: Optional[np.ndarray]
-
-    def check_availability(self) -> bool:
-        """
-        If qctbx is installed this should be available
-
-        Returns:
-            bool: True
-        """
-        return True
 
     def __init__(self, options: Dict[str, Any]):
         """
@@ -98,6 +89,15 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
 
         self.generate_splines()
 
+    def check_availability(self) -> bool:
+        """
+        If qctbx is installed this should be available
+
+        Returns:
+            bool: True
+        """
+        return True
+
 
     def generate_splines(self):
         """
@@ -115,25 +115,25 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
 
         for element, atomic_entries in self.options['atomic_densities_dict'].items():
             atom_density_spline = InterpolatedUnivariateSpline(
-                atomic_entries['_qubox_density_atomic_rgrid'],
-                atomic_entries[f'_qubox_density_atomic_{density_type}'],
+                atomic_entries['_qctbx_density_atomic_rgrid'],
+                atomic_entries[f'_qctbx_density_atomic_{density_type}'],
                 ext=1
             )
             atom_shell_spline = InterpolatedUnivariateSpline(
-                atomic_entries['_qubox_density_atomic_rgrid'],
-                4 * np.pi * np.array(atomic_entries['_qubox_density_atomic_rgrid'])**2 * atomic_entries[f'_qubox_density_atomic_{density_type}'],
+                atomic_entries['_qctbx_density_atomic_rgrid'],
+                4 * np.pi * np.array(atomic_entries['_qctbx_density_atomic_rgrid'])**2 * atomic_entries[f'_qctbx_density_atomic_{density_type}'],
                 ext=1
             )
             used_target = functools.partial(
                 target_with_e_missing,
                 spline=atom_density_spline,
-                spline_limit=atomic_entries['_qubox_density_atomic_rgrid'][-1],
+                spline_limit=atomic_entries['_qctbx_density_atomic_rgrid'][-1],
                 missing_e=self.options['missing_e_atomic_max']
             )
             cutoff = minimize_scalar(used_target).x
             atom_density_spline.cutoff = cutoff
             self.atom_splines[element] = atom_density_spline
-            self.atom_n_elec[element] = atom_shell_spline.integral(0.0, atomic_entries['_qubox_density_atomic_rgrid'][-1])
+            self.atom_n_elec[element] = atom_shell_spline.integral(0.0, atomic_entries['_qctbx_density_atomic_rgrid'][-1])
 
     def calc_f0j(
         self,
@@ -220,7 +220,7 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
     def citation_strings(self) -> str:
         method_bibtex_key, method_bibtex_entry = get_partitioning_citation('hirshfeld')
         description_string = (
-            f'The moleculear electron density was partitioning using Hirshfeld partitioning [{method_bibtex_key}]'
+            f'The molecular electron density was partitioning using Hirshfeld partitioning [{method_bibtex_key}]'
             + 'using the buildin routine of qctbx'
         )
         return description_string, method_bibtex_entry

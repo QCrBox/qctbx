@@ -1,0 +1,15 @@
+# values in the settings block list entries that are to be used in a
+# *future* calculation. As soon as they are used, they can be
+# copied 1:1 to data to indicate what has been used for calculation.
+
+settings_Water
+_qctbx_reggridpartition_software "qctbx.python"
+_qctbx_reggridpartition_density_type "total"
+
+loop_
+_qctbx_density_atomic_atom_type
+_qctbx_density_atomic_rgrid
+_qctbx_density_atomic_valence
+_qctbx_density_atomic_total
+_qctbx_density_atomic_core
+

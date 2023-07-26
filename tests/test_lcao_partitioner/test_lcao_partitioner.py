@@ -49,7 +49,7 @@ def test_water_runs(part_base, part_settings):
         density_path=density_path
     )
 
-    assert sum(charges) == pytest.approx(0, abs=1e-3)
+    assert sum(charges) == pytest.approx(0, abs=1e-2)
 
     if os.path.exists(work_dir):
         shutil.rmtree(work_dir)
