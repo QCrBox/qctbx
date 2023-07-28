@@ -1,16 +1,17 @@
-from typing import Any, Dict
+from typing import Any, Dict, Union
+import warnings
 
 import numpy as np
 from scipy.integrate import simps
 
-from ...conversions import cell_dict2atom_sites_dict
 from ..base_classes import DensityPartitioner
-
+from ..util import dict_merge, tempinput
+from ...conversions import cell_dict2atom_sites_dict, parse_specific_options
 
 def calc_f0j_core(
     cell_dict: Dict[str, Any],
     refln_dict: Dict[str, Any],
-    qubox_density_atomic_dicts: Dict[str, Any]
+    qctbx_density_atomic_dict: Dict[str, Any]
 ):
     """
     Calculates the core density in Fourier space.
@@ -34,7 +35,7 @@ def calc_f0j_core(
 
     f0j_core_dict = {}
     n_elec_core = {}
-    for element, atomic_entries in qubox_density_atomic_dicts.items():
+    for element, atomic_entries in separate_atoms_in_dict(qctbx_density_atomic_dict).items():
         r = np.array(atomic_entries['_qctbx_density_atomic_rgrid'])
         core_density = np.array(atomic_entries['_qctbx_density_atomic_core'])
         gr = r[None,:] * g_ks[:,None]
@@ -45,5 +46,127 @@ def calc_f0j_core(
         n_elec_core[element] = simps(4 * np.pi * r**2  * core_density, x=r)
     return f0j_core_dict, n_elec_core
 
+
+def separate_atoms_in_dict(qctbx_density_atomic_dict):
+    atom_type_list = qctbx_density_atomic_dict['_qctbx_density_atomic_atom_type']
+    atom_types = set(atom_type_list)
+    separated_dict = {}
+    for atom_type in atom_types:
+        separated_dict[atom_type] = {key: [
+            value for value, inner_atom_type in zip(values, atom_type_list) if inner_atom_type == atom_type
+        ] for key, values in qctbx_density_atomic_dict.items()}
+    return separated_dict
+
+
 class RegGridDensityPartitioner(DensityPartitioner):
-    pass
+    _density_type = None
+    available_args = ('method', 'density_type', 'qctbx_density_atomic_dict', 'specific_options', 'calc_options')
+    def __init__(
+        self,
+        method:str=None,
+        density_type:str=None,
+        qctbx_density_atomic_dict: Dict[str, Union[str, float]]=None,
+        specific_options: Dict[str, Any]=None,
+        calc_options: Dict[str, Any]=None
+    ):
+        self.method = method
+        self.density_type = density_type
+        self.qctbx_density_atomic_dict = qctbx_density_atomic_dict
+        if specific_options is None:
+            self.specific_options = {}
+        else:
+            self.specific_options = specific_options
+        if calc_options is None:
+            self.calc_options = {}
+        else:
+            self.calc_options = calc_options
+
+    @classmethod
+    def from_settings_cif(cls, filename, block_name):
+        #TODO There should possibly be a central settings_cif wrapper
+        from iotbx import cif
+        with open(filename, encoding='ASCII') as fobj:
+            content = fobj.read()
+
+        dict_entries = ('specific_options', 'calc_options')
+        type_funcs = {
+            'method': str,
+            'density_type': str,
+        }
+        cif_entry_start = '_qctbx_reggridpartition_'
+
+        new_str = content.replace('\nsettings_', '\ndata_')
+        with tempinput(new_str) as named_file:
+            cif_data = cif.reader(named_file).model()
+            settings_cif = cif_data.blocks[block_name]
+
+        kwargs = {}
+        for cif_key, cif_entry in settings_cif.items():
+            if not cif_key.startswith(cif_entry_start):
+                continue
+            cut_key = cif_key[len(cif_entry_start):]
+            if cut_key == 'software':
+                continue
+            if cut_key not in cls.available_args:
+                warnings.warn(f'Setting key {cif_key} is not implemented')
+                continue
+            if cut_key in dict_entries:
+                options = cif_entry.strip()
+                if len(options) > 0:
+                    kwargs[cut_key] = parse_specific_options(options)
+            else:
+                kwargs[cut_key] = type_funcs[cut_key](cif_entry)
+
+        if '_qctbx_density_atomic_atom_type' in settings_cif:
+            kwargs['qctbx_density_atomic_dict'] = {
+                '_qctbx_density_atomic_atom_type': [str(val) for val in settings_cif['_qctbx_density_atomic_atom_type']],
+                '_qctbx_density_atomic_rgrid': [float(val) for val in settings_cif['_qctbx_density_atomic_rgrid']],
+                '_qctbx_density_atomic_valence': [float(val) for val in settings_cif['_qctbx_density_atomic_valence']],
+                '_qctbx_density_atomic_core': [float(val) for val in settings_cif['_qctbx_density_atomic_core']],
+                '_qctbx_density_atomic_total': [float(val) for val in settings_cif['_qctbx_density_atomic_total']]
+            }
+
+        new_obj = cls(**kwargs)
+
+        return new_obj
+
+    @property
+    def density_type(self):
+        return self._density_type
+
+    @density_type.setter
+    def density_type(self, value):
+        if value not in ('total', 'valence'):
+            raise NotImplementedError('density_type can be either valence or total')
+        self._density_type = value
+
+    def update_from_dict(self, update_dict, update_if_present=True):
+
+        for key in update_dict.keys():
+            if key not in self.available_args:
+                warnings.warn(f'Could not find matching property for key: {key}')
+
+        condition = (self.method is None) or update_if_present
+        if condition and 'method' in update_dict:
+            self.method = update_dict['method']
+
+        condition = (self.density_type is None) or update_if_present
+        if condition and 'density_type' in update_dict:
+            self.density_type = update_dict['density_type']
+
+        condition = (self.qctbx_density_atomic_dict is None) or update_if_present
+        if condition and 'qctbx_density_atomic_dict' in update_dict:
+            self.qctbx_density_atomic_dict = update_dict['qctbx_density_atomic_dict']
+
+        #dictionaries are merged instead of replaced
+        updates = update_dict.get('specific_options', {})
+        if update_if_present:
+            self.specific_options = dict_merge(self.specific_options, updates)
+        else:
+            self.specific_options = dict_merge(updates, self.specific_options)
+
+        updates = update_dict.get('calc_options', {})
+        if update_if_present:
+            self.calc_options = dict_merge(self.calc_options, updates)
+        else:
+            self.calc_options = dict_merge(updates, self.calc_options)

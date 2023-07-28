@@ -45,6 +45,7 @@ nosphera2_bibtex_entry = """
 grid_accuracy_names = ('coarse', 'medium', 'fine', 'veryfine', 'ultrafine', 'insane')
 
 class NoSpherA2Partitioner(LCAODensityPartitioner):
+    _method = 'hirshfeld'
 
     accepts_input = ('wfn', 'wfx')
 
@@ -54,6 +55,15 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
 
     def check_availability(self) -> bool:
         return os.path.exists(self.calc_options['nosphera2_path'])
+
+    @property
+    def method(self):
+        return self._method
+
+    @method.setter
+    def method(self, value):
+        if value.lower() != 'hirshfeld':
+            raise NotImplementedError('Currently only Hirshfeld partitioning is implemented')
 
     def run_nospherA2(
         self,

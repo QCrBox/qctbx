@@ -58,6 +58,8 @@ class RegGridDensityCalculator(DensityCalculator):
             if not cif_key.startswith(cif_entry_start):
                 continue
             cut_key = cif_key[len(cif_entry_start):]
+            if cut_key == 'software':
+                continue
             if cut_key not in cls.available_args:
                 warnings.warn(f'Setting key {cif_key} is not implemented')
                 continue

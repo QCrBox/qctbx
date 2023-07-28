@@ -16,17 +16,18 @@ from ...custom_typing import Path
 from ..citations import get_partitioning_citation
 from ..constants import ANGSTROM_PER_BOHR, ATOMIC_N_ELEC
 from ..RegGridDensityCalculators.gpaw import gpaw_bibtex_entry, gpaw_bibtex_key
-from ..util import dict_merge
 from .base import RegGridDensityPartitioner, calc_f0j_core
 from .cubetools import read_cube
 
 defaults = {
-    'partition': 'valence',
-    'gpaw_options' : {
-        'xc': 'PBE',
-        'txt': 'gpaw_partition.txt'
-    },
-    'gridinterpolation': 2
+    'density_type': 'valence',
+    'specific_options': {
+        'gpaw_options' : {
+                'xc': 'PBE',
+                'txt': 'gpaw_partition.txt'
+            },
+        'grid_interpolation': 2
+    }
 }
 
 class HirshfeldDensity(RealSpaceDensity):
@@ -129,13 +130,21 @@ class HirshfeldDensity(RealSpaceDensity):
 
 
 class GPAWDensityPartitioner(RegGridDensityPartitioner):
-
-    def __init__(self, options):
-        super().__init__()
-        self.options = options
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.update_from_dict(defaults, update_if_present=False)
 
     def check_availability(self) -> bool:
         return True
+
+    @property
+    def qctbx_density_atomic_dict(self):
+        return None
+
+    @qctbx_density_atomic_dict.setter
+    def qctbx_density_atomic_dict(self, value):
+        if value is not None:
+            raise NotImplementedError('The GPAWDensityPartitioner only uses the build-in densities of GPAW')
 
     def calc_f0j(
         self,
@@ -146,7 +155,7 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
         refln_dict: Dict[str, Any],
         density_path: Path
     ) -> np.ndarray:
-        options = dict_merge(defaults, self.options)
+        self.update_from_dict(defaults, update_if_present=False)
 
         cell_mat_m = cell_dict2atom_sites_dict(cell_dict)['_atom_sites_Cartn_tran_matrix']
 
@@ -161,16 +170,17 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
         cube = read_cube(density_path)
         density = cube[0] / ANGSTROM_PER_BOHR**3 * np.linalg.det(np.stack(tuple((cube[1]['xvec'], cube[1]['yvec'], cube[1]['zvec']))) * ANGSTROM_PER_BOHR)
 
-        assert np.all((np.round((np.array(density.shape) / options['gridinterpolation']), 10) % 1.0) == 0.0), 'gridinterpolation produces a remainder for size of cube file density grid'
+        grid_interpolation = self.specific_options['grid_interpolation']
+        assert np.all((np.round((np.array(density.shape) / grid_interpolation), 10) % 1.0) == 0.0), 'grid_interpolation produces a remainder for size of cube file density grid'
 
-        coarse_grid_size = tuple(int(val / options['gridinterpolation']) for val in density.shape)
+        coarse_grid_size = tuple(int(val / grid_interpolation) for val in density.shape)
 
-        calc = GPAW(gpts=coarse_grid_size, **options['gpaw_options'])
-        atoms.set_calculator(calc)
+        calc = GPAW(gpts=coarse_grid_size, **self.specific_options['gpaw_options'])
+        atoms.calc = calc
         calc.initialize(atoms)
         calc.set_positions(atoms)
         hdens_obj = HirshfeldDensity(calc)
-        if options['partition'] == 'valence':
+        if self.density_type == 'valence':
             skip_core = True
             y00 = 0.5 * np.pi**(-0.5)
             splines = {setup.symbol: (setup.get_partial_waves()[2], setup.rgd.r_g) for setup in calc.density.setups}
@@ -182,32 +192,34 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
             }
 
             f0j_core_dict, n_elec_core = calc_f0j_core(cell_dict, refln_dict, qubox_density_atomic_dicts)
-        elif options['partition'] == 'total':
+        elif self.density_type == 'total':
             skip_core = False
         else:
             raise NotImplementedError('partition setting in options needs to either valence or total.')
 
-        all_atom_weights = 1.0 / hdens_obj.get_density(
-            gridrefinement=options['gridinterpolation'],
+        all_atom_density = hdens_obj.get_density(
+            gridrefinement=grid_interpolation,
             skip_core=skip_core
         )[0]
-        all_atom_weights[np.logical_not(np.isfinite(all_atom_weights))] = 0.0
+        all_atom_weights = np.zeros_like(all_atom_density)
+        all_atom_weights[all_atom_density != 0] = 1.0 / all_atom_density[all_atom_density != 0]
+        #all_atom_weights[np.logical_not(np.isfinite(all_atom_weights))] = 0.0
 
         atom_indexes = iter(atom_site_dict['_atom_site_label'].index(label) for label in atom_labels)
         atom_types = atom_site_dict['_atom_site_type_symbol']
-        h = np.array(refln_dict['_refln_index_h'], dtype=np.int64)
-        k = np.array(refln_dict['_refln_index_k'], dtype=np.int64)
-        l = np.array(refln_dict['_refln_index_l'], dtype=np.int64)
+        refln_h = np.array(refln_dict['_refln_index_h'], dtype=np.int64)
+        refln_k = np.array(refln_dict['_refln_index_k'], dtype=np.int64)
+        refln_l = np.array(refln_dict['_refln_index_l'], dtype=np.int64)
 
-        f0j = np.empty((len(atom_labels), h.shape[0]), dtype=np.complex128)
+        f0j = np.empty((len(atom_labels), refln_h.shape[0]), dtype=np.complex128)
         charges = np.empty(len(atom_labels), dtype=np.float64)
         for atom_index in atom_indexes:
             frac_position = fract_xyz[atom_index]
             atom_type = atom_types[atom_index]
-            phase_to_zero = np.exp(-2j * np.pi * (frac_position[0] * h + frac_position[1] * k + frac_position[2] * l))
-            atom_weight = hdens_obj.get_density([atom_index], gridrefinement=options['gridinterpolation'], skip_core=skip_core)[0]
+            phase_to_zero = np.exp(-2j * np.pi * (frac_position[0] * refln_h + frac_position[1] * refln_k + frac_position[2] * refln_l))
+            atom_weight = hdens_obj.get_density([atom_index], gridrefinement=grid_interpolation, skip_core=skip_core)[0]
             f0j_atom = np.fft.ifftn(density * atom_weight * all_atom_weights) * np.prod(density.shape)
-            f0j[atom_index] = f0j_atom[h, k, l] * phase_to_zero
+            f0j[atom_index] = f0j_atom[refln_h, refln_k, refln_l] * phase_to_zero
             charges[atom_index] = ATOMIC_N_ELEC[atom_type] - np.real(f0j_atom[0, 0, 0])
             if skip_core:
                 f0j[atom_index] += f0j_core_dict[atom_type]

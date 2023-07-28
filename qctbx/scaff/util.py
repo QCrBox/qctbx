@@ -29,7 +29,11 @@ def batched(iterable: Iterable, n:int) -> iter:
     while batch := tuple(islice(new_iterable, n)):
         yield batch
 
-def dict_merge(*args: Dict[str, Any], case_sensitive: bool=True) -> Dict[str, Any]:
+def dict_merge(
+    *args: Dict[str, Any],
+    case_sensitive: bool=True,
+    unique_lists:bool=True
+) -> Dict[str, Any]:
     """
     Merge multiple input dictionaries into a single dictionary.
 
@@ -93,8 +97,10 @@ def dict_merge(*args: Dict[str, Any], case_sensitive: bool=True) -> Dict[str, An
                 if isinstance(a[a_key], dict) and isinstance(b[b_key], dict):
                     inner_merge(a[a_key], b[b_key], path + [str(b_key)])
                 elif isinstance(a[a_key], list) and isinstance(b[b_key], list):
-                    if case_sensitive:
+                    if case_sensitive and unique_lists:
                         a[b_key] = list(set(a[a_key] + b[b_key]))
+                    elif not unique_lists:
+                        a[b_key] = a[a_key] + b[b_key]
                     else:
                         b_lower = list(map(lower_if_str, b[b_key]))
                         a_keep = [val for val in a[a_key] if lower_if_str(val) not in b_lower]
