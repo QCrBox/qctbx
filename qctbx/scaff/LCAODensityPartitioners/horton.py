@@ -1,10 +1,8 @@
-import horton as horton_module
-from horton.log import ScreenLog
-from horton import log as original_log
-
-from typing import Any, Dict, List, Optional
 import atexit
+import sys
+from typing import Any, Dict, List, Optional
 
+import horton
 import numpy as np
 
 from ...conversions import cell_dict2atom_sites_dict
@@ -51,28 +49,9 @@ class HortonPartitioner(LCAODensityPartitioner):
         super().__init__(*args, **kwargs)
         self.update_from_dict(defaults, update_if_present=False)
         if self.calc_options['log_file'] is not None:
-            atexit.unregister(horton_module.log.print_footer)
-            self._original_log = ScreenLog(
-                original_log.name,
-                original_log.version,
-                original_log.head_banner,
-                original_log.foot_banner,
-                original_log.timer,
-                original_log.biblio,
-                original_log._file
-            )
-            new_fobj = open(self.calc_options['log_file'], 'a')
-            self._new_log = ScreenLog(
-                original_log.name,
-                original_log.version,
-                original_log.head_banner,
-                original_log.foot_banner,
-                original_log.timer,
-                original_log.biblio,
-                new_fobj
-            )
-            self._log_fo = new_fobj
-            horton_module.log = self._new_log
+            atexit.unregister(horton.log.print_footer)
+            self._log_fo = open(self.calc_options['log_file'], 'a')
+            horton.log._file = self._log_fo
 
         else:
             self._log_fo = None
@@ -82,10 +61,11 @@ class HortonPartitioner(LCAODensityPartitioner):
 
     def __del__(self):
         if self._log_fo is not None:
-            self._new_log.print_footer()
-            horton_module.log = self._original_log
+            horton.log.print_footer()
+            horton.log._file = sys.stdout
             if not self._log_fo.closed:
                 self._log_fo.close()
+        super().__del__()
 
     def check_availability(self) -> bool:
         """
@@ -106,20 +86,20 @@ class HortonPartitioner(LCAODensityPartitioner):
         """
         assert density_path is not None, 'So far density has not been partitioned, so a path is needed'
 
-        mol = horton_module.IOData.from_file(density_path)
-        grid = horton_module.BeckeMolGrid(mol.coordinates, mol.numbers, mol.pseudo_numbers, agspec=self.grid_accuracy, mode='keep')
+        mol = horton.IOData.from_file(density_path)
+        grid = horton.BeckeMolGrid(mol.coordinates, mol.numbers, mol.pseudo_numbers, agspec=self.grid_accuracy, mode='keep')
         moldens = mol.obasis.compute_grid_density_dm(mol.get_dm_full(), grid.points)
 
         if self.method.lower() == 'hirshfeld':
-            atomdb = horton_module.ProAtomDB.from_file(self.calc_options['atomdb_path'])
-            wpart = horton_module.HirshfeldWPart(mol.coordinates, mol.numbers, mol.pseudo_numbers, grid, moldens, atomdb, **self.specific_options)
+            atomdb = horton.ProAtomDB.from_file(self.calc_options['atomdb_path'])
+            wpart = horton.HirshfeldWPart(mol.coordinates, mol.numbers, mol.pseudo_numbers, grid, moldens, atomdb, **self.specific_options)
         elif self.method.lower() == 'hirshfeld-i':
-            atomdb = horton_module.ProAtomDB.from_file(self.calc_options['atomdb_path'])
-            wpart = horton_module.HirshfeldIWPart(mol.coordinates, mol.numbers, mol.pseudo_numbers, grid, moldens, atomdb, **self.specific_options)
+            atomdb = horton.ProAtomDB.from_file(self.calc_options['atomdb_path'])
+            wpart = horton.HirshfeldIWPart(mol.coordinates, mol.numbers, mol.pseudo_numbers, grid, moldens, atomdb, **self.specific_options)
         elif self.method.lower() == 'iterative-stockholder':
-            wpart = horton_module.IterativeStockholderWPart(mol.coordinates, mol.numbers, mol.pseudo_numbers, grid, moldens, **self.specific_options)
+            wpart = horton.IterativeStockholderWPart(mol.coordinates, mol.numbers, mol.pseudo_numbers, grid, moldens, **self.specific_options)
         elif self.method.lower() == 'mbis':
-            wpart = horton_module.MBISWPart(mol.coordinates, mol.numbers, mol.pseudo_numbers, grid, moldens, **self.specific_options)
+            wpart = horton.MBISWPart(mol.coordinates, mol.numbers, mol.pseudo_numbers, grid, moldens, **self.specific_options)
         else:
             raise NotImplementedError('Partitioning method not implemented. Use either Hirshfeld, Hirshfeld-I, Iterative-Stockholder or MBIS')
         wpart.do_partitioning()
