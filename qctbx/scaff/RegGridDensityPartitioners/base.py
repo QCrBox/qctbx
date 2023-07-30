@@ -5,7 +5,8 @@ import numpy as np
 from scipy.integrate import simps
 
 from ..base_classes import DensityPartitioner
-from ..util import dict_merge, tempinput
+from ..util import dict_merge
+from ...io.cif import read_settings_cif
 from ...conversions import cell_dict2atom_sites_dict, parse_specific_options
 
 def calc_f0j_core(
@@ -82,11 +83,9 @@ class RegGridDensityPartitioner(DensityPartitioner):
             self.calc_options = calc_options
 
     @classmethod
-    def from_settings_cif(cls, filename, block_name):
+    def from_settings_cif(cls, scif_path, block_name):
         #TODO There should possibly be a central settings_cif wrapper
-        from iotbx import cif
-        with open(filename, encoding='ASCII') as fobj:
-            content = fobj.read()
+        settings_cif = read_settings_cif(scif_path, block_name)
 
         dict_entries = ('specific_options', 'calc_options')
         type_funcs = {
@@ -94,11 +93,6 @@ class RegGridDensityPartitioner(DensityPartitioner):
             'density_type': str,
         }
         cif_entry_start = '_qctbx_reggridpartition_'
-
-        new_str = content.replace('\nsettings_', '\ndata_')
-        with tempinput(new_str) as named_file:
-            cif_data = cif.reader(named_file).model()
-            settings_cif = cif_data.blocks[block_name]
 
         kwargs = {}
         for cif_key, cif_entry in settings_cif.items():

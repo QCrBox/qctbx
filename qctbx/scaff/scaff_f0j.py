@@ -3,6 +3,8 @@ from .RegGridDensityCalculators.base import RegGridDensityCalculator
 from .base_classes import DensityCalculator, DensityPartitioner
 from ..conversions import expand_atom_site_table_symm
 from ..f0j_source_base import F0jSource
+from ..io.cif import read_settings_cif
+from . import name2lcaodensity, name2lcaopartition, name2reggriddensity,name2reggridpartition
 
 class ScaffF0jSource(F0jSource):
     """
@@ -60,6 +62,36 @@ class ScaffF0jSource(F0jSource):
         self.use_charges = use_charges
         if use_charges:
             raise NotImplementedError('cluster charge calculations are not implemented yet')
+
+    @classmethod
+    def from_settings_cif(
+        cls,
+        scif_path,
+        block_name,
+        expand_positions: Dict[str, Union[str, List[str]]] = None,
+        use_charges: bool=False
+    ):
+        settings_cif = read_settings_cif(scif_path, block_name)
+        if '_qctbx_reggridwfn_software' in settings_cif:
+            calc_cls = name2reggriddensity(settings_cif['_qctbx_reggridwfn_software'])
+        elif '_qctbx_lcaowfn_software' in settings_cif:
+            calc_cls = name2lcaodensity(settings_cif['_qctbx_lcaowfn_software'])
+        else:
+            raise KeyError('Need either _qctbx_lcaowfn_software or _qctbx_reggridwfn_software in scif file.')
+
+        if '_qctbx_lcaopartitioning_software' in settings_cif:
+            part_cls = name2lcaopartition(settings_cif['_qctbx_lcaopartitioning_software'])
+        elif '_qctbx_reggridpartition_software' in settings_cif:
+            part_cls = name2reggridpartition(settings_cif['_qctbx_reggridpartition_software'])
+        else:
+            raise KeyError('Need either _qctbx_lcaopartitioning_software or _qctbx_reggridpartition_software in scif file')
+        #TODO also find cif representation for expand_positions and use_charges
+        return cls(
+            density_calculator = calc_cls.from_settings_cif(scif_path, block_name),
+            partitioner=part_cls.from_settings_cif(scif_path, block_name),
+            expand_positions=expand_positions,
+            use_charges=use_charges
+        )
 
     def calc_f0j(
         self,

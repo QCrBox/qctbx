@@ -1,6 +1,7 @@
 from ..base_classes import DensityPartitioner
 from ...conversions import parse_specific_options
-from ..util import dict_merge, tempinput
+from ...io.cif import read_settings_cif
+from ..util import dict_merge
 
 class LCAODensityPartitioner(DensityPartitioner):
     def __init__(
@@ -50,15 +51,8 @@ class LCAODensityPartitioner(DensityPartitioner):
             self.calc_options = dict_merge(updates, self.calc_options)
 
     @classmethod
-    def from_settings_cif(cls, filename, block_name):
-        from iotbx import cif
-        with open(filename) as fobj:
-            content = fobj.read()
-
-        new_str = content.replace('\nsettings_', '\ndata_')
-        with tempinput(new_str) as named_file:
-            cif_data = cif.reader(named_file).model()
-            settings_cif = cif_data.blocks[block_name]
+    def from_settings_cif(cls, scif_path, block_name):
+        settings_cif = read_settings_cif(scif_path, block_name)
 
         cif_specific_options = settings_cif.get('_qctbx_lcaopartitioning_specific_options', '').strip()
         if len(cif_specific_options) > 0:

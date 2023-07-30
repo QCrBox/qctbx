@@ -1,3 +1,5 @@
+from io import StringIO
+
 import numpy as np
 
 from ..conversions import (cell_dict2atom_sites_dict, create_hkl_dmin,
@@ -70,3 +72,14 @@ def cif2dicts(cif_filename, cif_dataset, complete_dmin=False):
         atom_site_dict[key] = block.get(key, ['.'] * len(atom_site_dict['_atom_site_label']))
 
     return atom_site_dict, cell_dict, space_group_dict, refln_dict
+
+def read_settings_cif(scif_path, block_name):
+    from iotbx import cif
+    with open(scif_path, encoding='ASCII') as fobj:
+        content = fobj.read()
+    new_str = content.replace('\nsettings_', '\ndata_settings_input_')
+
+    with StringIO(new_str) as io_obj:
+        cif_data = cif.reader(file_object=io_obj).model()
+    settings_cif = cif_data.blocks['settings_input_' + block_name]
+    return settings_cif

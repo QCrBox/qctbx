@@ -3,7 +3,8 @@ import warnings
 
 from ..citations import get_functional_citation
 from ..base_classes import DensityCalculator
-from ..util import dict_merge, tempinput
+from ..util import dict_merge
+from ...io.cif import read_settings_cif
 from ...conversions import parse_specific_options
 
 class RegGridDensityCalculator(DensityCalculator):
@@ -34,10 +35,8 @@ class RegGridDensityCalculator(DensityCalculator):
             self.calc_options = {}
 
     @classmethod
-    def from_settings_cif(cls, filename, block_name):
-        from iotbx import cif
-        with open(filename) as fobj:
-            content = fobj.read()
+    def from_settings_cif(cls, scif_path, block_name):
+        settings_cif = read_settings_cif(scif_path, block_name)
 
         dict_entries = ('specific_options', 'calc_options')
         type_funcs = {
@@ -47,11 +46,6 @@ class RegGridDensityCalculator(DensityCalculator):
             'density_type': str,
         }
         cif_entry_start = '_qctbx_reggridwfn_'
-
-        new_str = content.replace('\nsettings_', '\ndata_')
-        with tempinput(new_str) as named_file:
-            cif_data = cif.reader(named_file).model()
-            settings_cif = cif_data.blocks[block_name]
 
         kwargs = {}
         for cif_key, cif_entry in settings_cif.items():

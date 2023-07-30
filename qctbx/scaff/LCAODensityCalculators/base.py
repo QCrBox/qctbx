@@ -3,8 +3,9 @@ from typing import Any, Dict, Union, List
 
 from ..citations import get_basis_citation, get_functional_citation
 from ..base_classes import DensityCalculator
-from ..util import dict_merge, tempinput
+from ..util import dict_merge
 from ...conversions import parse_specific_options
+from ...io.cif import read_settings_cif
 
 class LCAODensityCalculator(DensityCalculator):
 
@@ -91,15 +92,8 @@ class LCAODensityCalculator(DensityCalculator):
         return report_string, '\n\n\n'.join((software_bibtex_entry, method_bibtex_entry, basis_bibtex_entry))
 
     @classmethod
-    def from_settings_cif(cls, filename, block_name):
-        from iotbx import cif
-        with open(filename) as fobj:
-            content = fobj.read()
-
-        new_str = content.replace('\nsettings_', '\ndata_')
-        with tempinput(new_str) as named_file:
-            cif_data = cif.reader(named_file).model()
-            settings_cif = cif_data.blocks[block_name]
+    def from_settings_cif(cls, scif_path, block_name):
+        settings_cif = read_settings_cif(scif_path, block_name)
 
         cif_specific_options = settings_cif.get('_qctbx_lcaowfn_specific_options', '').strip()
         if len(cif_specific_options) > 0:

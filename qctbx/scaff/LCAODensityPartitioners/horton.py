@@ -65,7 +65,6 @@ class HortonPartitioner(LCAODensityPartitioner):
             horton.log._file = sys.stdout
             if not self._log_fo.closed:
                 self._log_fo.close()
-        super().__del__()
 
     def check_availability(self) -> bool:
         """
