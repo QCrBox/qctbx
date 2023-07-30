@@ -108,7 +108,7 @@ class normal_eqns(least_squares.crystallographic_ls_class()):
         max_shift_site = self.max_shift_site()
         max_shift_u = self.max_shift_u()
         self.analyse_shifts()
-        print_tabular = True
+        print_tabular = False
 
         if print_tabular:
             header = "  % 5i    % 6.2f    % 6.2f    % 6.2f    % 8.3f %-11s  % 8.2e %-11s  % 8.2e %-11s"

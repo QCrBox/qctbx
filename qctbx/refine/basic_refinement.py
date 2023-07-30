@@ -90,15 +90,18 @@ def basic_refinement(
     xray_structure: structure,
     miller_array: miller.array,
     f0jeval: F0jSource,
-    har_convergence_conditions: Dict[str, Union[float, int]]=default_har_convergence_conditions,
+    har_convergence_conditions: Dict[str, Union[float, int]]=None,
     constraints_list=None,
     restraints_manager=None,
     solver_name='Gauss-Newton',
-    tsc_path='qctbx.tsc'
+    tsc_path='qctbx.tsc',
+    update_weights=True
 ):
+    if har_convergence_conditions is None:
+        har_convergence_conditions = default_har_convergence_conditions
     if constraints_list is None:
         constraints_list = []
-
+    new_weighting = None
     for _ in range(har_convergence_conditions['max(cycles)']):
         xray_structure0 = deepcopy(xray_structure)
         f0jeval.cctbx2tsc(xray_structure, miller_array, tsc_path)
@@ -120,12 +123,24 @@ def basic_refinement(
             ls,
             table_file_name=tsc_path
         )
+
+        if new_weighting is not None:
+            norm_eq.weighting_scheme = new_weighting
         norm_eq.restraints_manager = restraints_manager
         RefinementWrapper =  build_refinement_wrapper(solver_name)
         _ = RefinementWrapper(norm_eq)
         print('-' * 20)
+        print('R1(F^2):', norm_eq.r1_factor()[0])
         print('wR2: ', norm_eq.wR2())
         if check_convergence_har(xray_structure, xray_structure0, norm_eq, har_convergence_conditions):
+            print('All conditions have converged')
             break
         print('-' * 20)
+        if update_weights:
+            new_weighting = norm_eq.weighting_scheme.optimise_parameters(
+                miller_array.as_xray_observations().fo_sq,
+                norm_eq.fc_sq,
+                norm_eq.scale_factor(),
+                norm_eq.n_parameters
+            )
     return xray_structure, norm_eq
