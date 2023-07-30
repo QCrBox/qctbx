@@ -4,8 +4,7 @@ import warnings
 from ..citations import get_functional_citation
 from ..base_classes import DensityCalculator
 from ..util import dict_merge
-from ...io.cif import read_settings_cif
-from ...conversions import parse_specific_options
+from ...io.cif import read_settings_cif, settings_cif2kwargs
 
 class RegGridDensityCalculator(DensityCalculator):
     available_args = ('method', 'ecut_ev', 'kpoints', 'specific_options', 'calc_options', 'density_type')
@@ -47,26 +46,15 @@ class RegGridDensityCalculator(DensityCalculator):
         }
         cif_entry_start = '_qctbx_reggridwfn_'
 
-        kwargs = {}
-        for cif_key, cif_entry in settings_cif.items():
-            if not cif_key.startswith(cif_entry_start):
-                continue
-            cut_key = cif_key[len(cif_entry_start):]
-            if cut_key == 'software':
-                continue
-            if cut_key not in cls.available_args:
-                warnings.warn(f'Setting key {cif_key} is not implemented')
-                continue
-            if cut_key in dict_entries:
-                options = cif_entry.strip()
-                if len(options) > 0:
-                    kwargs[cut_key] = parse_specific_options(options)
-            else:
-                kwargs[cut_key] = type_funcs[cut_key](cif_entry)
+        kwargs = settings_cif2kwargs(
+            settings_cif,
+            cif_entry_start,
+            dict_entries,
+            type_funcs,
+            cls.available_args
+        )
 
-        new_obj = cls(**kwargs)
-
-        return new_obj
+        return cls(**kwargs)
 
     def update_from_dict(self, update_dict, update_if_present=True):
 

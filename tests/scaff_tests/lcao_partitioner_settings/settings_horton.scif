@@ -4,7 +4,7 @@
 
 settings_Water
 
-_qctbx_lacowfn_software "ORCA"
+_qctbx_lcaowfn_software "ORCA"
 _qctbx_lcaowfn_method "PBE"
 _qctbx_lcaowfn_basisset "def2-SVP"
 _qctbx_lcaowfn_charge 0

@@ -15,7 +15,6 @@ from .base import LCAODensityPartitioner
 defaults = {
     'method': 'mbis',
     'grid_accuracy': 'medium',
-    'cpu_count': 1,
     'specific_options': {},
     'calc_options':{
         'hkl_batch_size': 2000,

@@ -4,11 +4,10 @@ from typing import Any, Dict, Union, List
 from ..citations import get_basis_citation, get_functional_citation
 from ..base_classes import DensityCalculator
 from ..util import dict_merge
-from ...conversions import parse_specific_options
-from ...io.cif import read_settings_cif
+from ...io.cif import read_settings_cif, settings_cif2kwargs
 
 class LCAODensityCalculator(DensityCalculator):
-
+    available_args = ('method', 'basis_set', 'charge', 'multiplicity', 'specific_options', 'calc_options')
     def __init__(
         self,
         method:str=None,
@@ -16,7 +15,6 @@ class LCAODensityCalculator(DensityCalculator):
         charge:int=None,
         multiplicity:int=None,
         specific_options:Dict[Any, Any]=None,
-        cpu_count:int=None,
         calc_options=None
     ):
         self.method = method
@@ -27,11 +25,33 @@ class LCAODensityCalculator(DensityCalculator):
             self.specific_options = {}
         else:
             self.specific_options = specific_options
-        self.cpu_count = cpu_count
         if calc_options is None:
             self.calc_options = {}
         else:
             self.calc_options = calc_options
+
+    @classmethod
+    def from_settings_cif(cls, scif_path, block_name):
+        settings_cif = read_settings_cif(scif_path, block_name)
+
+        dict_entries = ('specific_options', 'calc_options')
+        type_funcs = {
+            'method': str,
+            'basis_set': int,
+            'charge': int,
+            'multiplicity': int
+        }
+        cif_entry_start = '_qctbx_lcaowfn_'
+
+        kwargs = settings_cif2kwargs(
+            settings_cif,
+            cif_entry_start,
+            dict_entries,
+            type_funcs,
+            cls.available_args
+        )
+
+        return cls(**kwargs)
 
     def update_from_dict(self, update_dict, update_if_present=True):
         condition = (self.method is None) or update_if_present
@@ -49,10 +69,6 @@ class LCAODensityCalculator(DensityCalculator):
         condition = (self.multiplicity is None) or update_if_present
         if condition and 'multiplicity' in update_dict:
             self.multiplicity = update_dict['multiplicity']
-
-        condition = (self.cpu_count is None) or update_if_present
-        if condition and 'cpu_count' in update_dict:
-            self.cpu_count = update_dict['cpu_count']
 
         #dictionaries are merged instead of replaced
         updates = update_dict.get('specific_options', {})
@@ -90,40 +106,3 @@ class LCAODensityCalculator(DensityCalculator):
             + f" in {software_name} [{software_bibtex_key}]"
         )
         return report_string, '\n\n\n'.join((software_bibtex_entry, method_bibtex_entry, basis_bibtex_entry))
-
-    @classmethod
-    def from_settings_cif(cls, scif_path, block_name):
-        settings_cif = read_settings_cif(scif_path, block_name)
-
-        cif_specific_options = settings_cif.get('_qctbx_lcaowfn_specific_options', '').strip()
-        if len(cif_specific_options) > 0:
-            specific_options = parse_specific_options(cif_specific_options)
-        else:
-            specific_options = {}
-
-        cif_calc_options = settings_cif.get('_qctbx_lcaowfn_calc_options', '').strip()
-        if len(cif_calc_options) > 0:
-            calc_options = parse_specific_options(cif_calc_options)
-        else:
-            calc_options = {}
-
-        new_obj = cls(
-            method=str(settings_cif['_qctbx_lcaowfn_method']),
-            basis_set=str(settings_cif['_qctbx_lcaowfn_basisset']),
-            charge=int(settings_cif['_qctbx_lcaowfn_charge']),
-            multiplicity=int(settings_cif['_qctbx_lcaowfn_multiplicity']),
-            cpu_count=int(settings_cif['_qctbx_lcaowfn_cpu_count']),
-            specific_options=specific_options,
-            calc_options=calc_options
-        )
-
-        return new_obj
-
-
-
-
-
-
-
-
-

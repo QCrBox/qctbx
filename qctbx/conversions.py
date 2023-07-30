@@ -370,8 +370,3 @@ def split_error(string: str) -> Union[Tuple[float, float], Tuple[int, int]]:
         return float(string), 0.0
 
 
-def parse_specific_options(string):
-    #TODO: change this from JSON to final format (phil?)
-    import json
-    read_json = json.loads(string)
-    return dict(read_json)

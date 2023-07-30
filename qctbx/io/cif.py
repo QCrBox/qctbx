@@ -1,4 +1,5 @@
 from io import StringIO
+import warnings
 
 import numpy as np
 
@@ -83,3 +84,28 @@ def read_settings_cif(scif_path, block_name):
         cif_data = cif.reader(file_object=io_obj).model()
     settings_cif = cif_data.blocks['settings_input_' + block_name]
     return settings_cif
+
+def settings_cif2kwargs(settings_cif_obj, cif_entry_start, dict_entries, type_funcs, available_args):
+    kwargs = {}
+    for cif_key, cif_entry in settings_cif_obj.items():
+        if not cif_key.startswith(cif_entry_start):
+            continue
+        cut_key = cif_key[len(cif_entry_start):]
+        if cut_key == 'software':
+            continue
+        if cut_key not in available_args:
+            warnings.warn(f'Setting key {cif_key} is not implemented')
+            continue
+        if cut_key in dict_entries:
+            options = cif_entry.strip()
+            if len(options) > 0:
+                kwargs[cut_key] = parse_specific_options(options)
+        else:
+            kwargs[cut_key] = type_funcs[cut_key](cif_entry)
+    return kwargs
+
+def parse_specific_options(string):
+    #TODO: change this from JSON to final format (phil?)
+    import json
+    read_json = json.loads(string)
+    return dict(read_json)

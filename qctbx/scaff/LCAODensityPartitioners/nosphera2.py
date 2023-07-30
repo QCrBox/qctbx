@@ -17,11 +17,11 @@ from .base import LCAODensityPartitioner
 defaults = {
     'method': 'hirshfeld',
     'grid_accuracy': 'medium',
-    'cpu_count': 4,
     'specific_options': {},
     'calc_options':{
         'nosphera2_path': './NoSpherA2',
-        'calc_folder': '.'
+        'calc_folder': '.',
+        'cpu_count': 4,
     }
 }
 
@@ -96,7 +96,7 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
         pass_options = deepcopy(self.specific_options)
         pass_options.update(self.calc_options)
         pass_options['nosphera2_accuracy'] = grid_accuracy_names.index(self.grid_accuracy) + 1
-        pass_options['cpu_count'] = self.cpu_count
+        pass_options['cpu_count'] = self.calc_options['cpu_count']
         pass_options['density_path'] = os.path.abspath(density_path)
 
         subprocess.check_call('{nosphera2_path} -hkl mock.hkl -wfn {density_path} -cif npa2.cif -asym_cif npa2_asym.cif -acc {nosphera2_accuracy} -cores {cpu_count}'.format(**pass_options), shell=True, stdout=subprocess.DEVNULL, cwd=self.calc_options['calc_folder'])

@@ -6,8 +6,8 @@ from scipy.integrate import simps
 
 from ..base_classes import DensityPartitioner
 from ..util import dict_merge
-from ...io.cif import read_settings_cif
-from ...conversions import cell_dict2atom_sites_dict, parse_specific_options
+from ...io.cif import read_settings_cif, settings_cif2kwargs
+from ...conversions import cell_dict2atom_sites_dict
 
 def calc_f0j_core(
     cell_dict: Dict[str, Any],
@@ -94,22 +94,13 @@ class RegGridDensityPartitioner(DensityPartitioner):
         }
         cif_entry_start = '_qctbx_reggridpartition_'
 
-        kwargs = {}
-        for cif_key, cif_entry in settings_cif.items():
-            if not cif_key.startswith(cif_entry_start):
-                continue
-            cut_key = cif_key[len(cif_entry_start):]
-            if cut_key == 'software':
-                continue
-            if cut_key not in cls.available_args:
-                warnings.warn(f'Setting key {cif_key} is not implemented')
-                continue
-            if cut_key in dict_entries:
-                options = cif_entry.strip()
-                if len(options) > 0:
-                    kwargs[cut_key] = parse_specific_options(options)
-            else:
-                kwargs[cut_key] = type_funcs[cut_key](cif_entry)
+        kwargs = settings_cif2kwargs(
+            settings_cif,
+            cif_entry_start,
+            dict_entries,
+            type_funcs,
+            cls.available_args
+        )
 
         if '_qctbx_density_atomic_atom_type' in settings_cif:
             kwargs['qctbx_density_atomic_dict'] = {
