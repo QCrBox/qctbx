@@ -6,30 +6,29 @@ import pytest
 from qctbx.io.cif import cif2dicts
 from qctbx.scaff.LCAODensityCalculators.nwchem import NWChemLCAODensityCalculator
 from qctbx.scaff.LCAODensityCalculators.orca import ORCADensityCalculator
-folder = 'test_lcao_density_minimal'
 
 @pytest.mark.parametrize('calculator, settings_cif_path, cif_path, cif_dataset', [
     (
         NWChemLCAODensityCalculator,
-        './settings_nwchem.scif',
-        '../datasets/minimal_tests/Water.cif',
+        './scaff_tests/lcao_density_settings/settings_nwchem.scif',
+        './datasets/minimal_tests/Water.cif',
         'Water'
     ),
     (
         ORCADensityCalculator,
-        './settings_orca.scif',
-        '../datasets/minimal_tests/Water.cif',
+        './scaff_tests/lcao_density_settings/settings_orca.scif',
+        './datasets/minimal_tests/Water.cif',
         'Water'
     )
 ])
 def test_water_runs(calculator, settings_cif_path, cif_path, cif_dataset):
     atom_site_dict, cell_dict, *_ = cif2dicts(
-        os.path.join(folder, cif_path),
+        cif_path,
         cif_dataset
     )
 
     chosen_calc = calculator.from_settings_cif(
-        os.path.join(folder, settings_cif_path),
+        settings_cif_path,
         cif_dataset
     )
     work_dir = os.path.join('temp_calculation_dir')

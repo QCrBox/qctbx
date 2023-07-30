@@ -11,8 +11,8 @@ from qctbx.scaff.RegGridDensityPartitioners.gpaw import GPAWDensityPartitioner
 
 
 @pytest.mark.parametrize('part_base, part_settings', [
-    (PythonRegGridPartitioner, './test_reggrid_partitioner/settings_python.scif'),
-    (GPAWDensityPartitioner, './test_reggrid_partitioner/settings_gpaw.scif')
+    (PythonRegGridPartitioner, './scaff_tests/reggrid_partitioner_settings/settings_python.scif'),
+    (GPAWDensityPartitioner, './scaff_tests/reggrid_partitioner_settings/settings_gpaw.scif')
 
 ])
 def test_water_runs(part_base, part_settings):

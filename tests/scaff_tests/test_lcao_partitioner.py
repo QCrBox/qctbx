@@ -11,8 +11,8 @@ from qctbx.scaff.LCAODensityPartitioners.nosphera2 import NoSpherA2Partitioner
 
 
 @pytest.mark.parametrize('part_base, part_settings', [
-    (HortonPartitioner, './test_lcao_partitioner/settings_horton.scif'),
-    (NoSpherA2Partitioner, './test_lcao_partitioner/settings_nosphera2.scif')
+    (HortonPartitioner, './scaff_tests/lcao_partitioner_settings/settings_horton.scif'),
+    (NoSpherA2Partitioner, './scaff_tests/lcao_partitioner_settings/settings_nosphera2.scif')
 
 ])
 def test_water_runs(part_base, part_settings):
