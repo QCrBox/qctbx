@@ -151,7 +151,7 @@ class F0jSource:
         hkl = np.array(miller_array.expand_to_p1().indices()).T
 
         refln_dict = {
-            f'_refln_index{mil}': vals for mil, vals in zip(('h', 'k', 'l'), hkl)
+            f'_refln_index_{mil}': vals for mil, vals in zip(('h', 'k', 'l'), hkl)
         }
 
         self.write_tsc(
