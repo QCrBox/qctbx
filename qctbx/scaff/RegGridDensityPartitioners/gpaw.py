@@ -1,3 +1,5 @@
+from copy import deepcopy
+import io
 from typing import Any, Dict, List
 import os
 
@@ -24,13 +26,13 @@ defaults = {
     'density_type': 'valence',
     'specific_options': {
         'gpaw_options' : {
-                'xc': 'PBE',
-                'txt': 'gpaw_partition.txt'
+                'xc': 'PBE'
             },
         'grid_interpolation': 2
     },
     'calc_options': {
-        'work_directory': '.'
+        'work_directory': '.',
+        'log_file': 'gpaw_partition.log'
     }
 }
 
@@ -138,10 +140,6 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
         super().__init__(*args, **kwargs)
         self.update_from_dict(defaults, update_if_present=False)
 
-        self.specific_options['gpaw_options']['txt'] = os.path.join(
-            self.calc_options['work_directory'], self.specific_options['gpaw_options']['txt']
-        )
-
     def check_availability(self) -> bool:
         return True
 
@@ -182,6 +180,13 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
         assert np.all((np.round((np.array(density.shape) / grid_interpolation), 10) % 1.0) == 0.0), 'grid_interpolation produces a remainder for size of cube file density grid'
 
         coarse_grid_size = tuple(int(val / grid_interpolation) for val in density.shape)
+        gpaw_options = deepcopy(self.specific_options['gpaw_options'])
+        if self.calc_options['log_file'] == '_' or self.calc_options['log_file'] is None:
+            gpaw_options['txt'] = '-'
+        elif isinstance(self.calc_options['log_file'], io.IOBase):
+            gpaw_options['txt'] = self.calc_options['log_file']
+        else:
+            gpaw_options['txt'] = os.path.join(self.calc_options['work_directory'], self.calc_options['log_file'])
 
         calc = GPAW(gpts=coarse_grid_size, **self.specific_options['gpaw_options'])
         atoms.calc = calc

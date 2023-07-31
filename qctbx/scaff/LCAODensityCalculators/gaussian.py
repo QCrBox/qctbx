@@ -12,7 +12,7 @@ calc_defaults = {
 
 qm_defaults = {
     'method': 'PBE',
-    'basis_set': 'def2-SVP',
+    'basisset': 'def2-SVP',
     'multiplicity': 1,
     'charge': 0,
     'link0': {},

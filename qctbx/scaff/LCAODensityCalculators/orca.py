@@ -10,7 +10,7 @@ from .base import LCAODensityCalculator
 
 defaults = {
     'method': 'PBE',
-    'basis_set': 'def2-SVP',
+    'basisset': 'def2-SVP',
     'charge': 0,
     'multiplicity': 1,
     'specific_options': {
@@ -35,7 +35,7 @@ class ORCADensityCalculator(LCAODensityCalculator):
         provides_output (tuple): The output formats supported by the calculator.
         method: str: Either functional or orther quantum chemical method
             for the density calculation. Default: 'PBE'
-        basis_set: str: Basis set for the wavefunction description.
+        basisset: str: Basis set for the wavefunction description.
             Default: 'def2-SVP'
         multiplicity: int: spin multiplicity of the system. Default: 1
         charge: charge of the system. Default: 0
@@ -120,10 +120,10 @@ class ORCADensityCalculator(LCAODensityCalculator):
         keywords = [self.method]
         blocks = {}
 
-        if '\n' in self.basis_set:
-            blocks['basis'] = self.basis_set
+        if '\n' in self.basisset:
+            blocks['basis'] = self.basisset
         else:
-            keywords.append(self.basis_set)
+            keywords.append(self.basisset)
 
         self._calculator.set_atoms(
             list(atom_site_dict['_atom_site_type_symbol']),

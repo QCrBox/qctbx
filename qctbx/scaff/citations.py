@@ -58,13 +58,13 @@ def get_functional_citation(name):
     warnings.warn(f'No library bibtex entry found for {name}. You need to add the source manually.')
     return name + '??', ''
 
-basis_set_synonyms = {
+basisset_synonyms = {
     'def2-svp': 'karlsruhe',
     'def2-tzvp': 'karlsruhe',
     'def2-qzvp': 'karlsruhe',
 }
 
-basis_set_bibtex = {
+basisset_bibtex = {
     'karlsruhe': (
         'KarlsruheBasis',
         """
@@ -85,11 +85,11 @@ basis_set_bibtex = {
 }
 
 def get_basis_citation(name):
-    if name.lower() in basis_set_synonyms:
-        name = basis_set_synonyms[name.lower()]
+    if name.lower() in basisset_synonyms:
+        name = basisset_synonyms[name.lower()]
 
-    if name.lower() in basis_set_bibtex:
-        bibtex_key, bibtex_entry = basis_set_bibtex[name.lower()]
+    if name.lower() in basisset_bibtex:
+        bibtex_key, bibtex_entry = basisset_bibtex[name.lower()]
         return bibtex_key, dedent(bibtex_entry).strip()
 
     warnings.warn(f'No library bibtex entry found for {name}. You need to add the source manually.')

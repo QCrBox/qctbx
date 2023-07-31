@@ -11,14 +11,14 @@ _qctbx_reggridwfn_method "PBE"
 _qctbx_reggridwfn_ecut_ev 30
 _qctbx_reggridwfn_kpoints "1 1 1"
 _qctbx_reggridwfn_density_type "total"
-_qctbx_reggridwfn_specific_options
+_qctbx_reggridwfn_calc_options
 ;
 {
-  "txt": "./temp_calculation_dir/gpaw_calc.txt"
+  "work_directory": "./temp_calculation_dir"
 }
 ;
 
-_qctbx_reggridpartition_software "qctbx.python"
+_qctbx_reggridpartition_software "python"
 _qctbx_reggridpartition_density_type "total"
 
 loop_

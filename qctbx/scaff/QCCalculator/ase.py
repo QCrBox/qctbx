@@ -66,12 +66,11 @@ class AsePBCCalculator(RegGrQCCalculator):
     def __init__(self, *args, calc = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.calc = calc
-
     def run_calculation(self):
         atoms = crystal(
             symbols=self.symbols,
             basis=self.positions_frac,
-            cell=self._cell_mat_m
+            cell=self._cell_mat_m.T
         )
 
         atoms.calc = self.calc

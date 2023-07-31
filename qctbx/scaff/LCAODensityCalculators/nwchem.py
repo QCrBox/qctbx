@@ -15,7 +15,7 @@ from .base import LCAODensityCalculator
 
 defaults = {
     'method': 'hcth407p',
-    'basis_set': 'def2-SVP',
+    'basisset': 'def2-SVP',
     'multiplicity': 1,
     'charge': 0,
     'specific_options': {},
@@ -107,7 +107,7 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
         ase_options['dft'] = {
             'xc': self.method,
         }
-        ase_options['basis'] = self.basis_set
+        ase_options['basis'] = self.basisset
         ase_options['charge'] = self.charge
         if self.multiplicity != 1:
             ase_options['dft']['MULT'] = self.multiplicity

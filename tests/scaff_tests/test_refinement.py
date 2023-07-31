@@ -8,16 +8,13 @@ from iotbx import cif
 import pytest
 
 from smtbx.refinement import restraints
-from smtbx.refinement import least_squares
-from smtbx.refinement import constraints
-from cctbx.array_family import flex
 
 from qctbx.scaff.scaff_f0j import ScaffF0jSource
 from qctbx.refine.basic_refinement import basic_refinement
 
 def randomword(length):
-   letters = string.ascii_lowercase
-   return ''.join(random.choice(letters) for i in range(length))
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for i in range(length))
 
 @pytest.mark.parametrize('scif_path, partitioning_overwrite', [
     ('./scaff_tests/refinement_settings/settings_nosphera2.scif', None),
@@ -33,7 +30,7 @@ def test_refinement(scif_path, partitioning_overwrite):
     cif_path = './datasets/crystal_data/epoxide.cif'
     block_name = 'epoxide'
 
-    with open(cif_path, "r") as f:
+    with open(cif_path, "r", encoding='ASCII') as f:
         ciftbx_object = cif.reader(file_object=f)
     structure = ciftbx_object.build_crystal_structures()[block_name]
 

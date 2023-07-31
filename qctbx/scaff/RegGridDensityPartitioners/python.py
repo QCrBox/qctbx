@@ -1,4 +1,3 @@
-from copy import deepcopy
 import functools
 from itertools import product
 from typing import Any, Dict, List, Optional, Union
@@ -141,7 +140,7 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
         cell_lengths = np.array([cell_dict[f'_cell_length_{axis}'] for axis in ('a', 'b', 'c')])
 
         cube = read_cube(density_path)
-        density = cube[0] / ANGSTROM_PER_BOHR**3 * np.linalg.det(np.stack(tuple((cube[1]['xvec'], cube[1]['yvec'], cube[1]['zvec']))) * ANGSTROM_PER_BOHR)
+        density = cube[0] / ANGSTROM_PER_BOHR**3 * np.linalg.det(np.stack(tuple((cube[1]['xvec'], cube[1]['yvec'], cube[1]['zvec'])), axis=0) * ANGSTROM_PER_BOHR) #
         linspaces = (np.linspace(0.0, 1.0, npoints, endpoint=False) for npoints in density.shape)
         xyz_cart_cell = np.einsum('xy, abcy -> abcx', cell_mat_m, np.stack(np.meshgrid(*linspaces, indexing='ij'), axis=-1))
 
@@ -154,13 +153,13 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
         for atom_site in partioned_atoms:
             try:
                 spline = self.atom_splines[atom_site['_atom_site_type_symbol']]
-            except KeyError:
+            except KeyError as exc:
                 at_type = atom_site['_atom_site_type_symbol']
-                raise KeyError(f'Could not find entries for atom_type {at_type}. Make sure it is present in the qctbx_density_atomic dict/loop.')
-            xyz_cart = cell_mat_m[0] * (atom_site['_atom_site_fract_x'] % 1) + cell_mat_m[1] * (atom_site['_atom_site_fract_y'] % 1)+ cell_mat_m[2] * (atom_site['_atom_site_fract_z'] % 1)
+                raise KeyError(f'Could not find entries for atom_type {at_type}. Make sure it is present in the qctbx_density_atomic dict/loop.') from exc
+            xyz_frac = np.array([atom_site['_atom_site_fract_x'], atom_site['_atom_site_fract_y'], atom_site['_atom_site_fract_z']]) % 1
             n_supercell = np.ceil(spline.cutoff / cell_lengths).astype(np.int64)
-            for x_add, y_add, z_add in product(*[np.arange(-n, n+1, 1) for n in n_supercell]):
-                xyz_cart_dash = xyz_cart + cell_mat_m[0] * x_add + cell_mat_m[1] * y_add + cell_mat_m[2] * z_add
+            for xyz_add in product(*[np.arange(-n, n + 1, 1) for n in n_supercell]):
+                xyz_cart_dash = cell_mat_m @ (xyz_frac + np.array(xyz_add))
                 distances = np.linalg.norm(xyz_cart_dash[None, None, None, :] - xyz_cart_cell, axis=-1)
                 all_atom_weights[distances < spline.cutoff] += spline(distances[distances < spline.cutoff])
 
@@ -170,10 +169,10 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
         non_partitioned_atoms = [entry for entry in atom_site_pivot if entry['_atom_site_label'] not in atom_labels]
         for atom_site in non_partitioned_atoms:
             spline = self.atom_splines[atom_site['_atom_site_type_symbol']]
-            xyz_cart = cell_mat_m[0] * (atom_site['_atom_site_fract_x'] % 1) + cell_mat_m[1] * (atom_site['_atom_site_fract_y'] % 1)+ cell_mat_m[2] * (atom_site['_atom_site_fract_z'] % 1)
+            xyz_frac = np.array([atom_site['_atom_site_fract_x'], atom_site['_atom_site_fract_y'], atom_site['_atom_site_fract_z']]) % 1
             n_supercell = np.ceil(spline.cutoff / cell_lengths).astype(np.int64)
-            for x_add, y_add, z_add in product(*[np.arange(-n, n+1, 1) for n in n_supercell]):
-                xyz_cart_dash = xyz_cart + cell_mat_m[0] * x_add + cell_mat_m[1] * y_add + cell_mat_m[2] * z_add
+            for xyz_add in product(*[np.arange(-n, n + 1, 1) for n in n_supercell]):
+                xyz_cart_dash = cell_mat_m @ (xyz_frac + np.array(xyz_add))
                 distances = np.linalg.norm(xyz_cart_dash[None, :] - eval_xyz_cart_cell, axis=-1)
                 eval_all_atom_weights[distances < spline.cutoff] += spline(distances[distances < spline.cutoff])
         all_atom_weights[all_atom_weights != 0] += eval_all_atom_weights
@@ -190,11 +189,10 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
             atom_weight = np.zeros_like(density)
             atom_site = atom_site_pivot[all_atom_labels.index(atom_label)]
             spline = self.atom_splines[atom_site['_atom_site_type_symbol']]
-            xyz_frac = np.array([atom_site['_atom_site_fract_x'] % 1, atom_site['_atom_site_fract_y'] % 1, atom_site['_atom_site_fract_z'] % 1])
-            xyz_cart = cell_mat_m @ xyz_frac
+            xyz_frac = np.array([atom_site['_atom_site_fract_x'], atom_site['_atom_site_fract_y'], atom_site['_atom_site_fract_z']]) % 1
             n_supercell = np.ceil(spline.cutoff / cell_lengths).astype(np.int64)
-            for x_add, y_add, z_add in product(*[np.arange(-n, n+1, 1) for n in n_supercell]):
-                xyz_cart_dash = xyz_cart + cell_mat_m[0] * x_add + cell_mat_m[1] * y_add + cell_mat_m[2] * z_add
+            for xyz_add in product(*[np.arange(-n, n + 1, 1) for n in n_supercell]):
+                xyz_cart_dash = cell_mat_m @ (xyz_frac + np.array(xyz_add))
                 distances = np.linalg.norm(xyz_cart_dash[None, None, None, :] - xyz_cart_cell, axis=-1)
                 atom_weight[distances < spline.cutoff] += spline(distances[distances < spline.cutoff])
 

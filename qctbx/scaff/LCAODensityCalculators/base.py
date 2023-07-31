@@ -7,18 +7,18 @@ from ..util import dict_merge
 from ...io.cif import read_settings_cif, settings_cif2kwargs
 
 class LCAODensityCalculator(DensityCalculator):
-    available_args = ('method', 'basis_set', 'charge', 'multiplicity', 'specific_options', 'calc_options')
+    available_args = ('method', 'basisset', 'charge', 'multiplicity', 'specific_options', 'calc_options')
     def __init__(
         self,
         method:str=None,
-        basis_set:str=None,
+        basisset:str=None,
         charge:int=None,
         multiplicity:int=None,
         specific_options:Dict[Any, Any]=None,
         calc_options=None
     ):
         self.method = method
-        self.basis_set = basis_set
+        self.basisset = basisset
         self.charge = charge
         self.multiplicity = multiplicity
         if specific_options is None:
@@ -37,7 +37,7 @@ class LCAODensityCalculator(DensityCalculator):
         dict_entries = ('specific_options', 'calc_options')
         type_funcs = {
             'method': str,
-            'basis_set': int,
+            'basisset': int,
             'charge': int,
             'multiplicity': int
         }
@@ -58,9 +58,9 @@ class LCAODensityCalculator(DensityCalculator):
         if condition and 'method' in update_dict:
             self.method = update_dict['method']
 
-        condition = (self.basis_set is None) or update_if_present
-        if condition and 'basis_set' in update_dict:
-            self.basis_set = update_dict['basis_set']
+        condition = (self.basisset is None) or update_if_present
+        if condition and 'basisset' in update_dict:
+            self.basisset = update_dict['basisset']
 
         condition = (self.charge is None) or update_if_present
         if condition and 'charge' in update_dict:
@@ -100,9 +100,9 @@ class LCAODensityCalculator(DensityCalculator):
         software_bibtex_entry
     ):
         method_bibtex_key, method_bibtex_entry = get_functional_citation(self.method)
-        basis_bibtex_key, basis_bibtex_entry = get_basis_citation(self.basis_set)
+        basis_bibtex_key, basis_bibtex_entry = get_basis_citation(self.basisset)
         report_string = (
-            f"The wavefunction was calculated using {self.method}[{method_bibtex_key}]/{self.basis_set}[{basis_bibtex_key}]"
+            f"The wavefunction was calculated using {self.method}[{method_bibtex_key}]/{self.basisset}[{basis_bibtex_key}]"
             + f" in {software_name} [{software_bibtex_key}]"
         )
         return report_string, '\n\n\n'.join((software_bibtex_entry, method_bibtex_entry, basis_bibtex_entry))

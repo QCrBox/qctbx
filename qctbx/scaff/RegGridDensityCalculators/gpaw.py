@@ -1,3 +1,5 @@
+from copy import deepcopy
+import io
 import os
 
 from ..QCCalculator.ase import AsePBCCalculator
@@ -54,15 +56,18 @@ defaults = {
     'kpoints': (1,1,1),
     'density_type': 'total',
     'specific_options': {
-        'convergence':{'density': 1e-6},
-        'symmetry':{'symmorphic': False},
-        'txt': 'gpaw_calculation.txt'
+        'gpaw_options': {
+            'convergence':{'density': 1e-6},
+            'symmetry':{'symmorphic': False},
+        },
+        'grid_interpolation': 4,
+
     },
     'calc_options': {
         'label': 'gpaw',
         'work_directory': '.',
         'output_format': 'cube',
-        'grid_interpolation': 4,
+        'log_file': 'gpaw_calculation.log'
     }
 }
 
@@ -73,9 +78,6 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.update_from_dict(defaults, update_if_present=False)
-        self.specific_options['txt'] = os.path.join(
-            self.calc_options['work_directory'], self.specific_options['txt']
-        )
 
     def check_availability(self):
         return import_worked
@@ -85,16 +87,25 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
         atom_site_dict,
         cell_dict
     ):
-        if 'xc' in self.specific_options:
-            self.method = self.specific_options['xc']
-            del(self.specific_options['xc'])
-        if 'h' in self.specific_options:
-            self.ecut_ev = gridspacing2cutoff(self.specific_options['h']) / Hartree
-            del(self.specific_options['h'])
+        gpaw_options = deepcopy(self.specific_options['gpaw_options'])
+
+        if 'xc' in gpaw_options:
+            self.method = gpaw_options['xc']
+            del gpaw_options['xc']
+        if 'h' in gpaw_options:
+            self.ecut_ev = gridspacing2cutoff(gpaw_options['h']) / Hartree
+            del gpaw_options['h']
+
+        if self.calc_options['log_file'] == '_' or self.calc_options['log_file'] is None:
+            gpaw_options['txt'] = '-'
+        elif isinstance(self.calc_options['log_file'], io.IOBase):
+            gpaw_options['txt'] = self.calc_options['log_file']
+        else:
+            gpaw_options['txt'] = os.path.join(self.calc_options['work_directory'], self.calc_options['log_file'])
         ase_calc = GPAW(
             xc=self.method,
             h=cutoff2gridspacing(self.ecut_ev * Hartree),
-            **self.specific_options
+            **gpaw_options
         )
 
         calculator = AsePBCCalculator(
@@ -106,9 +117,9 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
         atoms, calc = calculator.run_calculation()
 
         if self.density_type == 'total':
-            density = calc.get_all_electron_density(gridrefinement=self.calc_options['grid_interpolation'])
+            density = calc.get_all_electron_density(gridrefinement=self.specific_options['grid_interpolation'])
         elif self.density_type == 'valence':
-            density = calc.get_all_electron_density(skip_core=True, gridrefinement=self.calc_options['grid_interpolation'])
+            density = calc.get_all_electron_density(skip_core=True, gridrefinement=self.specific_options['grid_interpolation'])
         else:
             raise NotImplementedError('output_type needs to be valence or total')
         path = os.path.join (self.calc_options['work_directory'], f"{self.calc_options['label']}.cube")
@@ -128,5 +139,3 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
         software_bibtex_entry = '\n\n\n'.join((ase_bibtex_entry, gpaw_bibtex_entry))
 
         return self.generate_description(software_name, software_key, software_bibtex_entry)
-
-
