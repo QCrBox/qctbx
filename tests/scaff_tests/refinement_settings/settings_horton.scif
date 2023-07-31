@@ -2,7 +2,7 @@
 # *future* calculation. As soon as they are used, they can be
 # copied 1:1 to data to indicate what has been used for calculation.
 
-settings_Water
+settings_epoxide
 
 _qctbx_lcaowfn_software "ORCA"
 _qctbx_lcaowfn_method "PBE"
@@ -16,20 +16,19 @@ _qctbx_lcaowfn_specific_options
 _qctbx_lcaowfn_calc_options
 ;
 {
-    "output_format": "wfn",
+    "output_format": "mkl",
     "cpu_count": 1,
     "ram_mb": 2000
 }
 ;
 
-_qctbx_lcaopartition_software "NoSpherA2"
+_qctbx_lcaopartition_software "Horton"
 _qctbx_lcaopartition_method "hirshfeld"
 _qctbx_lcaopartition_grid_accuracy "medium"
 _qctbx_lcaopartition_calc_options
 ;
 {
-    "nosphera2_path": "/mnt/d/qctbx_dev/executables/NoSpherA2",
-    "work_directory": "./temp_calculation_dir",
-    "cpu_count": 4
+    "atomdb_path": "/mnt/d/qctbx_dev/data/horton_atomdb/atoms.h5",
+    "log_file": "./horton.log"
 }
 ;

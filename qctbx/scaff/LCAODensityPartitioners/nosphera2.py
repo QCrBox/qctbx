@@ -20,7 +20,7 @@ defaults = {
     'specific_options': {},
     'calc_options':{
         'nosphera2_path': './NoSpherA2',
-        'calc_folder': '.',
+        'work_directory': '.',
         'cpu_count': 4,
     }
 }
@@ -63,7 +63,7 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
     @method.setter
     def method(self, value):
         if value.lower() != 'hirshfeld':
-            raise NotImplementedError('Currently only Hirshfeld partitioning is implemented')
+            raise NotImplementedError(f'No method: {value}. Currently only Hirshfeld partitioning is implemented')
 
     def run_nospherA2(
         self,
@@ -89,9 +89,9 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
         select_atom_site_dict = {
             key: [value[i] for i in atom_indexes] for key, value in atom_site_dict.items()
         }
-        write_minimal_cif(os.path.join(self.calc_options['calc_folder'], 'npa2.cif'), cell_dict, cleaned_sg_dict, atom_site_dict)
-        write_minimal_cif(os.path.join(self.calc_options['calc_folder'], 'npa2_asym.cif'), cell_dict, cleaned_sg_dict, select_atom_site_dict)
-        write_mock_hkl(os.path.join(self.calc_options['calc_folder'], 'mock.hkl'), refln_dict)
+        write_minimal_cif(os.path.join(self.calc_options['work_directory'], 'npa2.cif'), cell_dict, cleaned_sg_dict, atom_site_dict)
+        write_minimal_cif(os.path.join(self.calc_options['work_directory'], 'npa2_asym.cif'), cell_dict, cleaned_sg_dict, select_atom_site_dict)
+        write_mock_hkl(os.path.join(self.calc_options['work_directory'], 'mock.hkl'), refln_dict)
 
         pass_options = deepcopy(self.specific_options)
         pass_options.update(self.calc_options)
@@ -99,7 +99,7 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
         pass_options['cpu_count'] = self.calc_options['cpu_count']
         pass_options['density_path'] = os.path.abspath(density_path)
 
-        subprocess.check_call('{nosphera2_path} -hkl mock.hkl -wfn {density_path} -cif npa2.cif -asym_cif npa2_asym.cif -acc {nosphera2_accuracy} -cores {cpu_count}'.format(**pass_options), shell=True, stdout=subprocess.DEVNULL, cwd=self.calc_options['calc_folder'])
+        subprocess.check_call('{nosphera2_path} -hkl mock.hkl -wfn {density_path} -cif npa2.cif -asym_cif npa2_asym.cif -acc {nosphera2_accuracy} -cores {cpu_count}'.format(**pass_options), shell=True, stdout=subprocess.DEVNULL, cwd=self.calc_options['work_directory'])
 
 
     def calc_f0j(
@@ -112,15 +112,15 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
         density_path: Path
     ):
         self.run_nospherA2(atom_labels, atom_site_dict, cell_dict, space_group_dict, refln_dict, density_path)
-        if os.path.exists(os.path.join(self.calc_options['calc_folder'],'experimental.tscb')):
-            tsc = TSCBFile.from_file(os.path.join(self.calc_options['calc_folder'],'experimental.tscb'))
+        if os.path.exists(os.path.join(self.calc_options['work_directory'],'experimental.tscb')):
+            tsc = TSCBFile.from_file(os.path.join(self.calc_options['work_directory'],'experimental.tscb'))
         else:
-            tsc = TSCFile.from_file(os.path.join(self.calc_options['calc_folder'],'experimental.tsc'))
+            tsc = TSCFile.from_file(os.path.join(self.calc_options['work_directory'],'experimental.tsc'))
         f0j = np.array([
             tsc.data[(h, k, l)] if (h, k, l) in tsc.data.keys() else np.conj(tsc.data[(-h, -k, -l)]) for h, k, l in zip(refln_dict['_refln_index_h'], refln_dict['_refln_index_k'], refln_dict['_refln_index_l'])
         ]).T
 
-        with open(os.path.join(self.calc_options['calc_folder'], 'NoSpherA2.log'), 'r') as fobj:
+        with open(os.path.join(self.calc_options['work_directory'], 'NoSpherA2.log'), 'r') as fobj:
             content = fobj.read()
 
         charge_table_match = re.search(r'Atom\s+Becke\s+Spherical\s+Hirshfeld(.*)\nTotal number of electrons', content, flags=re.DOTALL)

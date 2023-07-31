@@ -1,4 +1,5 @@
 from typing import Any, Dict, List
+import os
 
 import numpy as np
 from ase.spacegroup import crystal
@@ -27,6 +28,9 @@ defaults = {
                 'txt': 'gpaw_partition.txt'
             },
         'grid_interpolation': 2
+    },
+    'calc_options': {
+        'work_directory': '.'
     }
 }
 
@@ -133,6 +137,10 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.update_from_dict(defaults, update_if_present=False)
+
+        self.specific_options['gpaw_options']['txt'] = os.path.join(
+            self.calc_options['work_directory'], self.specific_options['gpaw_options']['txt']
+        )
 
     def check_availability(self) -> bool:
         return True

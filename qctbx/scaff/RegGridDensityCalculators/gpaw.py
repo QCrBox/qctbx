@@ -73,6 +73,9 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.update_from_dict(defaults, update_if_present=False)
+        self.specific_options['txt'] = os.path.join(
+            self.calc_options['work_directory'], self.specific_options['txt']
+        )
 
     def check_availability(self):
         return import_worked
@@ -108,7 +111,7 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
             density = calc.get_all_electron_density(skip_core=True, gridrefinement=self.calc_options['grid_interpolation'])
         else:
             raise NotImplementedError('output_type needs to be valence or total')
-        path = os.path.join (self.calc_options['work_directory'], f" {self.calc_options['label']}.cube")
+        path = os.path.join (self.calc_options['work_directory'], f"{self.calc_options['label']}.cube")
         write(path, atoms, data=density * Bohr**3)
         return path
 

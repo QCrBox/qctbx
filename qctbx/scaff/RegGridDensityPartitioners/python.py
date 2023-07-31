@@ -152,7 +152,11 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
 
         all_atom_weights = np.zeros_like(density)
         for atom_site in partioned_atoms:
-            spline = self.atom_splines[atom_site['_atom_site_type_symbol']]
+            try:
+                spline = self.atom_splines[atom_site['_atom_site_type_symbol']]
+            except KeyError:
+                at_type = atom_site['_atom_site_type_symbol']
+                raise KeyError(f'Could not find entries for atom_type {at_type}. Make sure it is present in the qctbx_density_atomic dict/loop.')
             xyz_cart = cell_mat_m[0] * (atom_site['_atom_site_fract_x'] % 1) + cell_mat_m[1] * (atom_site['_atom_site_fract_y'] % 1)+ cell_mat_m[2] * (atom_site['_atom_site_fract_z'] % 1)
             n_supercell = np.ceil(spline.cutoff / cell_lengths).astype(np.int64)
             for x_add, y_add, z_add in product(*[np.arange(-n, n+1, 1) for n in n_supercell]):

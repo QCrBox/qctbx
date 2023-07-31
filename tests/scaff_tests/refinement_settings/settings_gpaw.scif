@@ -1,0 +1,32 @@
+# values in the settings block list entries that are to be used in a
+# *future* calculation. As soon as they are used, they can be
+# copied 1:1 to data to indicate what has been used for calculation.
+# calc_options should be computer specific, so that they do not need
+# to be copied
+
+settings_epoxide
+
+_qctbx_reggridwfn_software "GPAW"
+_qctbx_reggridwfn_method "PBE"
+_qctbx_reggridwfn_ecut_ev 30
+_qctbx_reggridwfn_kpoints "1 1 1"
+_qctbx_reggridwfn_density_type "total"
+_qctbx_reggridwfn_specific_options
+;
+{
+  "txt": "gpaw_calc.txt"
+}
+;
+
+
+_qctbx_reggridpartition_software "GPAW"
+_qctbx_reggridpartition_density_type "total"
+
+_qctbx_reggridpartition_specific_options
+;
+{
+  "gpaw_options": {
+    "txt": "gpaw_part.txt"
+  }
+}
+;

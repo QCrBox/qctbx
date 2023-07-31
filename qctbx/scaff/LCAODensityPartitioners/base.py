@@ -32,7 +32,7 @@ class LCAODensityPartitioner(DensityPartitioner):
             'method': str,
             'grid_accuracy': str,
         }
-        cif_entry_start = '_qctbx_lcaowfn_'
+        cif_entry_start = '_qctbx_lcaopartition_'
 
         kwargs = settings_cif2kwargs(
             settings_cif,

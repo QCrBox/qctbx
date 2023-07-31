@@ -9,10 +9,14 @@ _qctbx_lcaowfn_method "hcth407p"
 _qctbx_lcaowfn_basisset "def2-SVP"
 _qctbx_lcaowfn_charge 0
 _qctbx_lcaowfn_multiplicity 1
-_qctbx_lcaowfn_cpu_count 1
-_qctbx_lcaowfn_ram_mb 2000
 _qctbx_lcaowfn_specific_options
 ;
 
 ;
-
+_qctbx_lcaowfn_calc_options
+;
+{
+    "cpu_count": 1,
+    "ram_mb": 2000
+}
+;

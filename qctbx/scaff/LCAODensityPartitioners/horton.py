@@ -1,4 +1,5 @@
 import atexit
+import os
 import sys
 from typing import Any, Dict, List, Optional
 
@@ -18,7 +19,8 @@ defaults = {
     'specific_options': {},
     'calc_options':{
         'hkl_batch_size': 2000,
-        'log_file': 'horton.log'
+        'log_file': 'horton.log',
+        'work_directory': '.'
     }
 }
 
@@ -49,7 +51,7 @@ class HortonPartitioner(LCAODensityPartitioner):
         self.update_from_dict(defaults, update_if_present=False)
         if self.calc_options['log_file'] is not None:
             atexit.unregister(horton.log.print_footer)
-            self._log_fo = open(self.calc_options['log_file'], 'a')
+            self._log_fo = open(os.path.join(self.calc_options['work_directory'], self.calc_options['log_file']), 'a')
             horton.log._file = self._log_fo
 
         else:
@@ -60,7 +62,6 @@ class HortonPartitioner(LCAODensityPartitioner):
 
     def __del__(self):
         if self._log_fo is not None:
-            horton.log.print_footer()
             horton.log._file = sys.stdout
             if not self._log_fo.closed:
                 self._log_fo.close()
@@ -82,6 +83,8 @@ class HortonPartitioner(LCAODensityPartitioner):
         Args:
             density_path (str): Path to the density data file.
         """
+        self.update_from_dict(defaults, update_if_present=False)
+
         assert density_path is not None, 'So far density has not been partitioned, so a path is needed'
 
         mol = horton.IOData.from_file(density_path)
