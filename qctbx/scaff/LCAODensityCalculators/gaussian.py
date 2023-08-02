@@ -23,6 +23,7 @@ qm_defaults = {
 
 class GaussianDensityCalculator(LCAODensityCalculator):
     provides_output = ('wfn', 'wfx')
+    software = 'gaussian'
 
     def __init__(self, *args, gauss_path=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -71,7 +72,7 @@ class GaussianDensityCalculator(LCAODensityCalculator):
             raise NotImplementedError('output_format from GaussianDensityCalculator is not implemented. Choose wfn or wfx')
 
 
-    def cif_output(self) -> str:
+    def citation_strings(self) -> str:
 
         self._calc_options = dict_merge(calc_defaults, self.calc_options)
         self._qm_options = dict_merge(qm_defaults, self.qm_options)

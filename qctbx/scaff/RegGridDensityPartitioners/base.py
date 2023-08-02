@@ -61,7 +61,7 @@ def separate_atoms_in_dict(qctbx_density_atomic_dict):
 
 class RegGridDensityPartitioner(DensityPartitioner):
     _density_type = None
-    available_args = ('method', 'density_type', 'qctbx_density_atomic_dict', 'specific_options', 'calc_options')
+    available_args = ('software', 'method', 'density_type', 'specific_options', 'calc_options', 'qctbx_density_atomic_dict')
     def __init__(
         self,
         method:str=None,

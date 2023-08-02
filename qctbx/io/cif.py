@@ -1,13 +1,15 @@
 from io import StringIO
+import json
+from typing import Union
 import warnings
 
 import numpy as np
+from iotbx import cif
 
 from ..conversions import (cell_dict2atom_sites_dict, create_hkl_dmin,
                           split_error)
 
 def cif2dicts(cif_filename, cif_dataset, complete_dmin=False):
-    from iotbx import cif
 
     cif_model = cif.reader(cif_filename).model()
     block = cif_model[cif_dataset]
@@ -75,7 +77,6 @@ def cif2dicts(cif_filename, cif_dataset, complete_dmin=False):
     return atom_site_dict, cell_dict, space_group_dict, refln_dict
 
 def read_settings_cif(scif_path, block_name):
-    from iotbx import cif
     with open(scif_path, encoding='ASCII') as fobj:
         content = fobj.read()
     new_str = content.replace('\nsettings_', '\ndata_settings_input_')
@@ -99,13 +100,16 @@ def settings_cif2kwargs(settings_cif_obj, cif_entry_start, dict_entries, type_fu
         if cut_key in dict_entries:
             options = cif_entry.strip()
             if len(options) > 0:
-                kwargs[cut_key] = parse_specific_options(options)
+                kwargs[cut_key] = parse_options(options)
         else:
             kwargs[cut_key] = type_funcs[cut_key](cif_entry)
     return kwargs
 
-def parse_specific_options(string):
+def parse_options(string):
     #TODO: change this from JSON to final format (phil?)
-    import json
     read_json = json.loads(string)
     return dict(read_json)
+
+def stringify_options(options_dict):
+    string = json.dumps(options_dict, indent=2)
+    return string

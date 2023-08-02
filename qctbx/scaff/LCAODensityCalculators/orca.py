@@ -53,6 +53,7 @@ class ORCADensityCalculator(LCAODensityCalculator):
             keys such as 'label', 'work_directory' and 'output_format'.
     """
     provides_output = ('mkl', 'wfn')
+    software = 'orca'
 
     def __init__(
         self,
@@ -155,11 +156,6 @@ class ORCADensityCalculator(LCAODensityCalculator):
             return os.path.join(self.calc_options['work_directory'], self.calc_options['label'] + '.wfn')
         else:
             raise NotImplementedError('output_format from OrcaCalculator is not implemented. Choose either mkl or wfn')
-
-    def cif_output(self) -> str:
-        # TODO: Implement the logic to generate a CIF output from the calculation
-        return 'Someone needs to implement this before production'
-
 
     def citation_strings(self):
         self.update_from_dict(defaults, update_if_present=False)

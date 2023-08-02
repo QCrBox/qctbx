@@ -1,9 +1,10 @@
+from copy import deepcopy
 from typing import Dict, List, Any, Union
 from .RegGridDensityCalculators.base import RegGridDensityCalculator
 from .base_classes import DensityCalculator, DensityPartitioner
-from ..conversions import expand_atom_site_table_symm
+from ..conversions import expand_atom_site_table_symm, symm_mat_vec2str, symm_to_matrix_vector
 from ..f0j_source_base import F0jSource
-from ..io.cif import read_settings_cif
+from ..io.cif import read_settings_cif, parse_options
 from . import name2lcaodensity, name2lcaopartition, name2reggriddensity,name2reggridpartition
 
 class ScaffF0jSource(F0jSource):
@@ -68,7 +69,6 @@ class ScaffF0jSource(F0jSource):
         cls,
         scif_path,
         block_name,
-        expand_positions: Dict[str, Union[str, List[str]]] = None,
         use_charges: bool=False
     ):
         settings_cif = read_settings_cif(scif_path, block_name)
@@ -85,6 +85,10 @@ class ScaffF0jSource(F0jSource):
             part_cls = name2reggridpartition(settings_cif['_qctbx_reggridpartition_software'])
         else:
             raise KeyError('Need either _qctbx_lcaopartition_software or _qctbx_reggridpartition_software in scif file')
+        if '_qctbx_expanded_fragment' in settings_cif:
+            expand_positions = parse_options(settings_cif['_qctbx_expanded_fragment'])
+        else:
+            expand_positions = {}
         #TODO also find cif representation for expand_positions and use_charges
         return cls(
             density_calculator = calc_cls.from_settings_cif(scif_path, block_name),
@@ -127,8 +131,13 @@ class ScaffF0jSource(F0jSource):
             The calculated aspherical atomic form factors.
         """
         if isinstance(self.density_calculator, RegGridDensityCalculator):
-            expand_positions = {op: 'all' for op in space_group_dict['_space_group_symop_operation_xyz']}
-            atom_site_dict_exp = expand_atom_site_table_symm(atom_site_dict, expand_positions, cell_dict, check_special=True)
+            known_ops = (symm_mat_vec2str(*symm_to_matrix_vector(op)) for op in self.expand_positions.keys())
+            expand_positions_complete = deepcopy(self.expand_positions)
+            for symm_op in space_group_dict['_space_group_symop_operation_xyz']:
+                normalised = symm_mat_vec2str(*symm_to_matrix_vector(symm_op))
+                if normalised not in known_ops:
+                    expand_positions_complete[symm_op] = 'all'
+            atom_site_dict_exp = expand_atom_site_table_symm(atom_site_dict, expand_positions_complete, cell_dict, check_special=True)
         elif len(self.expand_positions) > 0:
             atom_site_dict_exp = expand_atom_site_table_symm(atom_site_dict, self.expand_positions, check_special=False)
         else:

@@ -7,7 +7,7 @@ from ..util import dict_merge
 from ...io.cif import read_settings_cif, settings_cif2kwargs
 
 class LCAODensityCalculator(DensityCalculator):
-    available_args = ('method', 'basisset', 'charge', 'multiplicity', 'specific_options', 'calc_options')
+    available_args = ('software', 'method', 'basisset', 'charge', 'multiplicity', 'specific_options', 'calc_options')
     def __init__(
         self,
         method:str=None,
@@ -37,7 +37,7 @@ class LCAODensityCalculator(DensityCalculator):
         dict_entries = ('specific_options', 'calc_options')
         type_funcs = {
             'method': str,
-            'basisset': int,
+            'basisset': str,
             'charge': int,
             'multiplicity': int
         }

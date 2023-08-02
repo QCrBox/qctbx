@@ -39,6 +39,7 @@ class HortonPartitioner(LCAODensityPartitioner):
     _log_fo = None
 
     accepts_input = ('mkl', 'wfn')
+    software = 'horton'
 
     def __init__(self, *args, **kwargs):
         """
@@ -193,6 +194,3 @@ class HortonPartitioner(LCAODensityPartitioner):
         )
         bibtex_string = '\n\n\n'.join((method_bibtex_entry, horton_bibtex_entry))
         return description_string, bibtex_string
-
-    def cif_output(self) -> str:
-        return 'To be implemented'

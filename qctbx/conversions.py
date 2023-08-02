@@ -219,14 +219,17 @@ def expand_atom_site_table_symm(
         if np.sum(np.abs(symm_mat - np.eye(3))) + np.sum(np.abs(symm_vec)) < 1e-5:
             # do not include x, y, z
             continue
-        if expanded_atoms.strip().startswith('all'):
+        if str(expanded_atoms).strip().startswith('all'):
             if 'skip' in expanded_atoms:
                 skipped_atoms = expanded_atom.split('skip')[1].strip().split()
                 expanded_atoms = [elem for elem in atom_site_dict['_atom_site_label'] if elem not in skipped_atoms]
             else:
                 expanded_atoms = list(atom_site_dict['_atom_site_label'])
         for expanded_atom in expanded_atoms:
-            new_atom = deepcopy(atoms_dict[expanded_atom])
+            try:
+                new_atom = deepcopy(atoms_dict[expanded_atom])
+            except KeyError as exc:
+                raise KeyError(f'Atom {expanded_atom} is in expanded fragment but not in atom list') from exc
             xyz = np.array([new_atom[col] for col in xyz_cols])
             new_xyz = symm_mat @ xyz + symm_vec
             if check_special:
@@ -369,4 +372,25 @@ def split_error(string: str) -> Union[Tuple[float, float], Tuple[int, int]]:
         # no error found
         return float(string), 0.0
 
+def space_group_dict2crystal_system(space_group_dict):
+
+    unique_dir_inv_mats = (
+        ((0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0), 'Cubic'),
+        ((1.0, -1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0), 'Hexagonal'),
+        ((0.0, -1.0, 0.0, 1.0, -1.0, 0.0, 0.0, 0.0, 1.0), 'Trigonal'),
+        ((0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0), 'Tetragonal'),
+        ((1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0), 'Orthorhombic'),
+        ((-1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, -1.0), 'Monoclinic'),
+        ((1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0), 'Triclinic')
+    )
+    for symm_element in space_group_dict['_space_group_symop_operation_xyz'].values():
+        symm_mat, _ = symm_to_matrix_vector(symm_element)
+        compare = tuple(symm_mat.ravel())
+        compare_inv = tuple(-symm_mat.ravel())
+        for compare_crystsys, cryst_sys in unique_dir_inv_mats:
+            if all(val1 == val2 for val1, val2 in zip(compare_crystsys, compare)):
+                return cryst_sys
+            if all(val1 == val2 for val1, val2 in zip(compare_crystsys, compare_inv)):
+                return cryst_sys
+    raise ValueError('There is not even the unit matrix in your space group?')
 

@@ -7,7 +7,7 @@ from ..util import dict_merge
 from ...io.cif import read_settings_cif, settings_cif2kwargs
 
 class RegGridDensityCalculator(DensityCalculator):
-    available_args = ('method', 'ecut_ev', 'kpoints', 'specific_options', 'calc_options', 'density_type')
+    available_args = ('software', 'method', 'ecut_ev', 'kpoints', 'specific_options', 'calc_options', 'density_type')
 
     def __init__(
         self,

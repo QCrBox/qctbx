@@ -55,6 +55,7 @@ molden2aimfile = 'molden= -1\nwfn= 1\nwfncheck= 1\nwfx= 1\nwfxcheck= 1\nnbo= -1\
 class NWChemLCAODensityCalculator(LCAODensityCalculator):
     xyz_format = 'cartesian'
     provides_output = tuple(('wfn'))
+    software = 'nwchem'
 
     def __init__(self, *args, nwchem_path='nwchem', molden2aimpath=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -155,9 +156,6 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
         self.update_from_dict(defaults, update_if_present=False)
         with open(os.path.join(self.calc_options['work_directory'], self.calc_options['label'], 'm2a.ini'), 'w') as fobj:
             fobj.write(molden2aimfile)
-
-    def cif_output(self):
-        return 'Implement me'
 
     def citation_strings(self) -> str:
         self.update_from_dict(defaults, update_if_present=False)

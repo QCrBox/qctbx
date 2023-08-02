@@ -3,7 +3,7 @@ from ..util import dict_merge
 from ...io.cif import read_settings_cif, settings_cif2kwargs
 
 class LCAODensityPartitioner(DensityPartitioner):
-    available_args = ('method', 'grid_accuracy', 'specific_options', 'calc_options')
+    available_args = ('software', 'method', 'grid_accuracy', 'specific_options', 'calc_options')
     def __init__(
         self,
         method=None,

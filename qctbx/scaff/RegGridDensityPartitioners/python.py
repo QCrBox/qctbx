@@ -14,6 +14,7 @@ from .base import RegGridDensityPartitioner, calc_f0j_core, separate_atoms_in_di
 from .cubetools import read_cube
 
 defaults = {
+    'method': 'hirshfeld',
     'density_type': 'valence',
     'specific_options': {
         'missing_e_atomic_max': 1e-4
@@ -67,6 +68,7 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
     atom_splines: Dict[str, Any]
     atom_n_elec: Dict[str, float]
     charges: Optional[np.ndarray]
+    software:str = 'python'
 
     def __init__(self, *args, **kwargs):
         """
@@ -212,6 +214,3 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
             + 'using the buildin routine of qctbx'
         )
         return description_string, method_bibtex_entry
-
-    def cif_output(self) -> str:
-        return 'To be implemented'

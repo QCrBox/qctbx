@@ -74,6 +74,7 @@ defaults = {
 class GPAWDensityCalculator(RegGridDensityCalculator):
     xyz_format = 'fractional'
     provides_output = ('cube')
+    software = 'gpaw'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -125,9 +126,6 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
         path = os.path.join (self.calc_options['work_directory'], f"{self.calc_options['label']}.cube")
         write(path, atoms, data=density * Bohr**3)
         return path
-
-    def cif_output(self):
-        return 'Implement me'
 
     def citation_strings(self) -> str:
 

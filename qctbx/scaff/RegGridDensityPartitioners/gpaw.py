@@ -23,6 +23,7 @@ from .base import RegGridDensityPartitioner, calc_f0j_core
 from .cubetools import read_cube
 
 defaults = {
+    'method': 'hirshfeld',
     'density_type': 'valence',
     'specific_options': {
         'gpaw_options' : {
@@ -136,6 +137,7 @@ class HirshfeldDensity(RealSpaceDensity):
 
 
 class GPAWDensityPartitioner(RegGridDensityPartitioner):
+    software:str = 'gpaw'
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.update_from_dict(defaults, update_if_present=False)
@@ -247,9 +249,4 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
         )
         bibtex_entry = '\n\n\n'.join((method_bibtex_entry, gpaw_bibtex_entry))
         return description_string, bibtex_entry
-
-    def cif_output(self) -> str:
-        return 'To be implemented'
-
-
 

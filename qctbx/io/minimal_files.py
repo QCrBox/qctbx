@@ -1,6 +1,6 @@
 from iotbx import cif
 
-def write_minimal_cif(filename, cell_dict, space_group_dict, atom_site_dict):
+def write_minimal_cif(filename, cell_dict, space_group_dict, atom_site_dict, block_name='qctbx_minimal'):
     new_block = cif.model.block()
     for key, value in cell_dict.items():
         new_block[key] = value
@@ -18,11 +18,10 @@ def write_minimal_cif(filename, cell_dict, space_group_dict, atom_site_dict):
     new_block.add_loop(new_loop)
 
     new_model = cif.model.cif()
-    new_model['nospa2'] = new_block
+    new_model[block_name] = new_block
 
     with open(filename, 'w') as fobj:
         fobj.write(str(new_model))
-
 
 def write_mock_hkl(filename, refln_dict):
     with open(filename, 'w') as fobj:

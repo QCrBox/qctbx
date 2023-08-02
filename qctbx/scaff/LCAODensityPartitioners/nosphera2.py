@@ -46,6 +46,7 @@ grid_accuracy_names = ('coarse', 'medium', 'fine', 'veryfine', 'ultrafine', 'ins
 
 class NoSpherA2Partitioner(LCAODensityPartitioner):
     _method = 'hirshfeld'
+    software = 'nosphera2'
 
     accepts_input = ('wfn', 'wfx')
 
@@ -116,8 +117,10 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
             tsc = TSCBFile.from_file(os.path.join(self.calc_options['work_directory'],'experimental.tscb'))
         else:
             tsc = TSCFile.from_file(os.path.join(self.calc_options['work_directory'],'experimental.tsc'))
+        tsc_asym_data = tsc[atom_labels]
+        hkl_zip = zip(refln_dict['_refln_index_h'], refln_dict['_refln_index_k'], refln_dict['_refln_index_l'])
         f0j = np.array([
-            tsc.data[(h, k, l)] if (h, k, l) in tsc.data.keys() else np.conj(tsc.data[(-h, -k, -l)]) for h, k, l in zip(refln_dict['_refln_index_h'], refln_dict['_refln_index_k'], refln_dict['_refln_index_l'])
+            tsc_asym_data[(h, k, l)] if (h, k, l) in tsc_asym_data.keys() else np.conj(tsc_asym_data[(-h, -k, -l)]) for h, k, l in hkl_zip
         ]).T
 
         with open(os.path.join(self.calc_options['work_directory'], 'NoSpherA2.log'), 'r') as fobj:
@@ -144,6 +147,3 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
         )
         bibtex_string = '\n\n\n'.join((method_bibtex_entry, nosphera2_bibtex_entry))
         return description_string, bibtex_string
-
-    def cif_output(self) -> str:
-        return 'To be implemented'
