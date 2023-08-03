@@ -1,4 +1,4 @@
-from qctbx.io.cif import is_data_array
+from qctbx.scaff.base_classes import is_data_array
 from scitbx.array_family.flex import double
 
 import numpy as np

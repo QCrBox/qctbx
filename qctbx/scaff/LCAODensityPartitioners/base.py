@@ -4,6 +4,7 @@ from ...io.cif import read_settings_cif, settings_cif2kwargs
 
 class LCAODensityPartitioner(DensityPartitioner):
     available_args = ('software', 'method', 'grid_accuracy', 'specific_options', 'calc_options')
+    _cif_entry_start = '_qctbx_lcaopartition_'
     def __init__(
         self,
         method=None,
@@ -32,11 +33,10 @@ class LCAODensityPartitioner(DensityPartitioner):
             'method': str,
             'grid_accuracy': str,
         }
-        cif_entry_start = '_qctbx_lcaopartition_'
 
         kwargs = settings_cif2kwargs(
             settings_cif,
-            cif_entry_start,
+            cls._cif_entry_start,
             dict_entries,
             type_funcs,
             cls.available_args

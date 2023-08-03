@@ -8,6 +8,7 @@ from ...io.cif import read_settings_cif, settings_cif2kwargs
 
 class LCAODensityCalculator(DensityCalculator):
     available_args = ('software', 'method', 'basisset', 'charge', 'multiplicity', 'specific_options', 'calc_options')
+    _cif_entry_start = '_qctbx_lcaowfn_'
     def __init__(
         self,
         method:str=None,
@@ -41,11 +42,11 @@ class LCAODensityCalculator(DensityCalculator):
             'charge': int,
             'multiplicity': int
         }
-        cif_entry_start = '_qctbx_lcaowfn_'
+
 
         kwargs = settings_cif2kwargs(
             settings_cif,
-            cif_entry_start,
+            cls._cif_entry_start,
             dict_entries,
             type_funcs,
             cls.available_args
@@ -91,7 +92,7 @@ class LCAODensityCalculator(DensityCalculator):
         cell_dict: Dict[str, float],
         cluster_charge_dict: Dict[str, List[float]]=None
     ):
-        pass
+        ...
 
     def generate_description(
         self,

@@ -79,7 +79,11 @@ def cif2dicts(cif_filename, cif_dataset, complete_dmin=False):
 def read_settings_cif(scif_path, block_name):
     with open(scif_path, encoding='ASCII') as fobj:
         content = fobj.read()
-    new_str = content.replace('\nsettings_', '\ndata_settings_input_')
+    if content.startswith('settings_'):
+        new_str = 'data_settings_input_' + content[9:]
+    else:
+        new_str = content.replace('\nsettings_', '\ndata_settings_input_')
+
 
     with StringIO(new_str) as io_obj:
         cif_data = cif.reader(file_object=io_obj).model()

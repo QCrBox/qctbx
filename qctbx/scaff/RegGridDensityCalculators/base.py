@@ -8,6 +8,8 @@ from ...io.cif import read_settings_cif, settings_cif2kwargs
 
 class RegGridDensityCalculator(DensityCalculator):
     available_args = ('software', 'method', 'ecut_ev', 'kpoints', 'specific_options', 'calc_options', 'density_type')
+    _cif_entry_start = '_qctbx_reggridwfn_'
+
 
     def __init__(
         self,
@@ -44,11 +46,10 @@ class RegGridDensityCalculator(DensityCalculator):
             'kpoints': lambda x: tuple((int(val) for val in x.split())),
             'density_type': str,
         }
-        cif_entry_start = '_qctbx_reggridwfn_'
 
         kwargs = settings_cif2kwargs(
             settings_cif,
-            cif_entry_start,
+            cls._cif_entry_start,
             dict_entries,
             type_funcs,
             cls.available_args
@@ -111,3 +112,9 @@ class RegGridDensityCalculator(DensityCalculator):
             + f" in {software_name} [{software_bibtex_key}]"
         )
         return report_string, '\n\n\n'.join((software_bibtex_entry, method_bibtex_entry))
+
+    def to_settings_cif(self, cif_path, block_name):
+        save_kpts = self.kpoints
+        self.kpoints = f'{save_kpts[0]} {save_kpts[1]} {save_kpts[2]}'
+        super().to_settings_cif(cif_path, block_name)
+        self.kpoints = save_kpts

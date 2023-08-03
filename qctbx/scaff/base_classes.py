@@ -17,7 +17,13 @@ def is_data_array(cif_value):
 
 
 class DensityHandler(ABC):
-    available_args = ()
+    @property
+    @abstractmethod
+    def _cif_entry_start(self): ...
+
+    @property
+    @abstractmethod
+    def available_args(self): ...
 
     @abstractmethod
     def check_availability(self) -> bool:
@@ -33,7 +39,6 @@ class DensityHandler(ABC):
     def as_cctbx_cif_block(self, skip_calc_options=False):
         assert len(self.available_args) > 0, 'available_args needs to be implemented for this to work. The class definition is incomplete.'
         new_block = cif.model.block()
-        cif_entry_start = '_qctbx_reggridpartition_'
         for arg in self.available_args:
             attr = getattr(self, arg)
             if attr is None:
@@ -53,9 +58,9 @@ class DensityHandler(ABC):
                             new_loop.add_column(key, list(value))
                         new_block.add_loop(new_loop)
                 if no_ciflike:
-                    new_block[cif_entry_start + arg] = stringify_options(attr)
+                    new_block[self._cif_entry_start + arg] = stringify_options(attr)
             else:
-                new_block[cif_entry_start + arg] = attr
+                new_block[self._cif_entry_start + arg] = attr
         return new_block
 
     def data_cif_output(self) -> str:

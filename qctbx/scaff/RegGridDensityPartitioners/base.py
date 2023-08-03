@@ -61,6 +61,7 @@ def separate_atoms_in_dict(qctbx_density_atomic_dict):
 
 class RegGridDensityPartitioner(DensityPartitioner):
     _density_type = None
+    _cif_entry_start = '_qctbx_reggridpartition_'
     available_args = ('software', 'method', 'density_type', 'specific_options', 'calc_options', 'qctbx_density_atomic_dict')
     def __init__(
         self,
@@ -92,11 +93,10 @@ class RegGridDensityPartitioner(DensityPartitioner):
             'method': str,
             'density_type': str,
         }
-        cif_entry_start = '_qctbx_reggridpartition_'
 
         kwargs = settings_cif2kwargs(
             settings_cif,
-            cif_entry_start,
+            cls._cif_entry_start,
             dict_entries,
             type_funcs,
             cls.available_args
@@ -155,3 +155,4 @@ class RegGridDensityPartitioner(DensityPartitioner):
             self.calc_options = dict_merge(self.calc_options, updates)
         else:
             self.calc_options = dict_merge(updates, self.calc_options)
+
