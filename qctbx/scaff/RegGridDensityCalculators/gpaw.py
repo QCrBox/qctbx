@@ -131,7 +131,7 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
 
         gpaw_version = gpaw.__version__
         software_name = f'ASE/GPAW {gpaw_version}'
-        ase_bibtex_key, ase_bibtex_entry = AsePBCCalculator({}, {}).bibtex_strings()
+        ase_bibtex_key, ase_bibtex_entry = AsePBCCalculator().bibtex_strings()
 
         software_key = ','.join((ase_bibtex_key, gpaw_bibtex_key))
         software_bibtex_entry = '\n\n\n'.join((ase_bibtex_entry, gpaw_bibtex_entry))

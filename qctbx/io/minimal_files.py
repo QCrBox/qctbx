@@ -1,26 +1,44 @@
 from iotbx import cif
 
-def write_minimal_cif(filename, cell_dict, space_group_dict, atom_site_dict, block_name='qctbx_minimal'):
+def write_minimal_cif(
+    filename,
+    cell_dict=None,
+    space_group_dict=None,
+    atom_site_dict=None,
+    refln_dict=None,
+    block_name='qctbx_minimal'
+):
     new_block = cif.model.block()
-    for key, value in cell_dict.items():
-        new_block[key] = value
 
-    new_loop = cif.model.loop()
-    for key, value in space_group_dict.items():
-        new_loop.add_column(key, list(value))
+    if cell_dict is not None:
+        for key, value in cell_dict.items():
+            new_block[key] = value
 
-    new_block.add_loop(new_loop)
+    if space_group_dict is not None:
+        new_loop = cif.model.loop()
+        for key, value in space_group_dict.items():
+            new_loop.add_column(key, list(value))
 
-    new_loop = cif.model.loop()
-    for key, value in atom_site_dict.items():
-        new_loop.add_column(key, list(value))
+        new_block.add_loop(new_loop)
 
-    new_block.add_loop(new_loop)
+    if atom_site_dict is not None:
+        new_loop = cif.model.loop()
+        for key, value in atom_site_dict.items():
+            new_loop.add_column(key, list(value))
+
+        new_block.add_loop(new_loop)
+
+    if refln_dict is not None:
+        new_loop = cif.model.loop()
+        for key, value in refln_dict.items():
+            new_loop.add_column(key, list(value))
+
+        new_block.add_loop(new_loop)
 
     new_model = cif.model.cif()
     new_model[block_name] = new_block
 
-    with open(filename, 'w') as fobj:
+    with open(filename, 'w', encoding='ASCII') as fobj:
         fobj.write(str(new_model))
 
 def write_mock_hkl(filename, refln_dict):

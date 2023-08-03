@@ -7,3 +7,5 @@ temp_calculation_dir
 
 
 tests/temp*
+
+horton.log

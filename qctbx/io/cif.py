@@ -45,9 +45,10 @@ def cif2dicts(cif_filename, cif_dataset, complete_dmin=False):
             key: entry for key, entry in block.items() if key.startswith('_refln_')
         }
 
+    space_group_entries = block.get('_space_group_symop_operation_xyz', ())
     space_group_dict = {
-        '_space_group_symop_id': block.get('_space_group_symop_id', np.arange(1, len(block['_space_group_symop_operation_xyz']) + 1)),
-        '_space_group_symop_operation_xyz': [val.upper() for val in block['_space_group_symop_operation_xyz']]
+        '_space_group_symop_id': block.get('_space_group_symop_id', np.arange(1, len(space_group_entries) + 1)),
+        '_space_group_symop_operation_xyz': [val.upper() for val in space_group_entries]
     }
 
     atom_site_keys = (

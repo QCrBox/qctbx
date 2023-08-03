@@ -1,7 +1,7 @@
-from qctbx.scaff.base_classes import is_data_array
+import numpy as np
 from scitbx.array_family.flex import double
 
-import numpy as np
+from qctbx.scaff.base_classes import is_data_array
 
 
 def test_is_data_array():
