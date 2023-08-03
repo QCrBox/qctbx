@@ -18,6 +18,7 @@ from ...conversions import cell_dict2atom_sites_dict
 from ...custom_typing import Path
 from ..citations import get_partitioning_citation
 from ..constants import ANGSTROM_PER_BOHR, ATOMIC_N_ELEC
+from ..util import dict_merge
 from ..RegGridDensityCalculators.gpaw import gpaw_bibtex_entry, gpaw_bibtex_key
 from .base import RegGridDensityPartitioner, calc_f0j_core
 from .cubetools import read_cube
@@ -199,14 +200,15 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
             skip_core = True
             y00 = 0.5 * np.pi**(-0.5)
             splines = {setup.symbol: (setup.get_partial_waves()[2], setup.rgd.r_g) for setup in calc.density.setups}
-            qubox_density_atomic_dicts = {
-                symbol: {
+            qubox_density_atomic_dicts = (
+                {
+                    '_qctbx_density_atomic_atom_type': [symbol] * len(rgrid),
                     '_qctbx_density_atomic_rgrid': rgrid * ANGSTROM_PER_BOHR,
                     '_qctbx_density_atomic_core': spline.map(rgrid) / ANGSTROM_PER_BOHR**3 * y00
                 } for symbol, (spline, rgrid) in splines.items()
-            }
+            )
 
-            f0j_core_dict, n_elec_core = calc_f0j_core(cell_dict, refln_dict, qubox_density_atomic_dicts)
+            f0j_core_dict, n_elec_core = calc_f0j_core(cell_dict, refln_dict, dict_merge(*qubox_density_atomic_dicts))
         elif self.density_type == 'total':
             skip_core = False
         else:
