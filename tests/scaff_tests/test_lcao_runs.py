@@ -7,17 +7,18 @@ from qctbx.io.cif import cif2dicts
 from qctbx.scaff.LCAODensityCalculators.nwchem import NWChemLCAODensityCalculator
 from qctbx.scaff.LCAODensityCalculators.orca import ORCADensityCalculator
 
+@pytest.mark.density_runs
 @pytest.mark.parametrize('calculator, settings_cif_path, cif_path, cif_dataset', [
     (
         NWChemLCAODensityCalculator,
-        './scaff_tests/lcao_density_settings/settings_nwchem.scif',
-        './datasets/minimal_tests/Water.cif',
+        './tests/scaff_tests/lcao_density_settings/settings_nwchem.scif',
+        './tests/datasets/minimal_tests/Water.cif',
         'Water'
     ),
     (
         ORCADensityCalculator,
-        './scaff_tests/lcao_density_settings/settings_orca.scif',
-        './datasets/minimal_tests/Water.cif',
+        './tests/scaff_tests/lcao_density_settings/settings_orca.scif',
+        './tests/datasets/minimal_tests/Water.cif',
         'Water'
     )
 ])
@@ -43,4 +44,6 @@ def test_water_runs(calculator, settings_cif_path, cif_path, cif_dataset):
 
     if os.path.exists(work_dir):
         shutil.rmtree(work_dir)
+
+# TODO: Test that the output from fully set up in python and scif is equal
 

@@ -9,15 +9,15 @@ from qctbx.scaff.RegGridDensityPartitioners.python import PythonRegGridPartition
 from qctbx.scaff.RegGridDensityPartitioners.gpaw import GPAWDensityPartitioner
 
 
-
+@pytest.mark.partitioner_runs
 @pytest.mark.parametrize('part_base, part_settings', [
-    (PythonRegGridPartitioner, './scaff_tests/reggrid_partitioner_settings/settings_python.scif'),
-    (GPAWDensityPartitioner, './scaff_tests/reggrid_partitioner_settings/settings_gpaw.scif')
+    (PythonRegGridPartitioner, './tests/scaff_tests/reggrid_partitioner_settings/settings_python.scif'),
+    (GPAWDensityPartitioner, './tests/scaff_tests/reggrid_partitioner_settings/settings_gpaw.scif')
 
 ])
 def test_water_runs(part_base, part_settings):
     #calc_settings = './test_lcao_density_minimal/settings_orca.scif'
-    cif_path = './datasets/minimal_tests/Water.cif'
+    cif_path = './tests/datasets/minimal_tests/Water.cif'
     cif_dataset = 'Water'
 
     atom_site_dict, cell_dict, space_group_dict, refln_dict = cif2dicts(

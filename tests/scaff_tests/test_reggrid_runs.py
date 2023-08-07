@@ -6,11 +6,12 @@ import pytest
 from qctbx.io.cif import cif2dicts
 from qctbx.scaff.RegGridDensityCalculators.gpaw import GPAWDensityCalculator
 
+@pytest.mark.density_runs
 @pytest.mark.parametrize('calculator, settings_cif_path, cif_path, cif_dataset', [
     (
         GPAWDensityCalculator,
-        './scaff_tests/reggrid_density_settings/settings_gpaw.scif',
-        './datasets/minimal_tests/Water.cif',
+        './tests/scaff_tests/reggrid_density_settings/settings_gpaw.scif',
+        './tests/datasets/minimal_tests/Water.cif',
         'Water'
     )
 ])

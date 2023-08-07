@@ -12,22 +12,23 @@ from smtbx.refinement import restraints
 from qctbx.scaff.scaff_f0j import ScaffF0jSource
 from qctbx.refine.basic_refinement import basic_refinement
 
-def randomword(length):
-    letters = string.ascii_lowercase
-    return ''.join(random.choice(letters) for i in range(length))
-
+@pytest.mark.refine
 @pytest.mark.parametrize('scif_path, partitioning_overwrite', [
-    ('./scaff_tests/refinement_settings/settings_nosphera2.scif', None),
-    ('./scaff_tests/refinement_settings/settings_horton.scif', 'hirshfeld'),
-    ('./scaff_tests/refinement_settings/settings_horton.scif', 'hirshfeld-i'),
-    ('./scaff_tests/refinement_settings/settings_horton.scif', 'iterative-stockholder'),
-    ('./scaff_tests/refinement_settings/settings_horton.scif', 'mbis'),
-    ('./scaff_tests/refinement_settings/settings_python.scif', None),
-    ('./scaff_tests/refinement_settings/settings_gpaw.scif', None),
+    ('./tests/scaff_tests/refinement_settings/settings_nosphera2.scif', None),
+    ('./tests/scaff_tests/refinement_settings/settings_horton.scif', 'hirshfeld'),
+    ('./tests/scaff_tests/refinement_settings/settings_horton.scif', 'hirshfeld-i'),
+    ('./tests/scaff_tests/refinement_settings/settings_horton.scif', 'iterative-stockholder'),
+    ('./tests/scaff_tests/refinement_settings/settings_horton.scif', 'mbis'),
+    ('./tests/scaff_tests/refinement_settings/settings_python.scif', None),
+    ('./tests/scaff_tests/refinement_settings/settings_gpaw.scif', None),
 ])
 def test_refinement(scif_path, partitioning_overwrite):
 
-    cif_path = './datasets/crystal_data/epoxide.cif'
+    test_id = scif_path.split('_')[-1][:-4]
+    if partitioning_overwrite is not None:
+        test_id += partitioning_overwrite
+
+    cif_path = './tests/datasets/crystal_data/epoxide.cif'
     block_name = 'epoxide'
 
     with open(cif_path, "r", encoding='ASCII') as f:
@@ -53,7 +54,7 @@ def test_refinement(scif_path, partitioning_overwrite):
             sc.flags.set_grad_site(True)
             sc.flags.set_grad_u_iso(True)
 
-    work_dir = 'temp_' + randomword(10)
+    work_dir = 'temp_' + test_id
     if os.path.exists(work_dir):
         shutil.rmtree(work_dir)
     os.mkdir(work_dir)

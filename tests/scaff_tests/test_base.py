@@ -1,9 +1,10 @@
 import numpy as np
+import pytest
 from scitbx.array_family.flex import double
 
 from qctbx.scaff.base_classes import is_data_array
 
-
+@pytest.mark.small_funcs
 def test_is_data_array():
     test_np_array = np.random.random(20 * 2)
 

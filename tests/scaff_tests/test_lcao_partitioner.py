@@ -8,16 +8,14 @@ from qctbx.scaff.LCAODensityCalculators.orca import ORCADensityCalculator
 from qctbx.scaff.LCAODensityPartitioners.horton import HortonPartitioner
 from qctbx.scaff.LCAODensityPartitioners.nosphera2 import NoSpherA2Partitioner
 
-
-
+@pytest.mark.partitioner_runs
 @pytest.mark.parametrize('part_base, part_settings', [
-    (HortonPartitioner, './scaff_tests/lcao_partitioner_settings/settings_horton.scif'),
-    (NoSpherA2Partitioner, './scaff_tests/lcao_partitioner_settings/settings_nosphera2.scif')
-
+    (HortonPartitioner, './tests/scaff_tests/lcao_partitioner_settings/settings_horton.scif'),
+    (NoSpherA2Partitioner, './tests/scaff_tests/lcao_partitioner_settings/settings_nosphera2.scif')
 ])
 def test_water_runs(part_base, part_settings):
     #calc_settings = './test_lcao_density_minimal/settings_orca.scif'
-    cif_path = './datasets/minimal_tests/Water.cif'
+    cif_path = './tests/datasets/minimal_tests/Water.cif'
     cif_dataset = 'Water'
 
     atom_site_dict, cell_dict, space_group_dict, refln_dict = cif2dicts(
