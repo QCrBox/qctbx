@@ -1,0 +1,34 @@
+# values in the settings block list entries that are to be used in a
+# *future* calculation. As soon as they are used, they can be
+# copied 1:1 to data to indicate what has been used for calculation.
+
+settings_epoxide
+
+_qctbx_lcaowfn_software "ORCA"
+_qctbx_lcaowfn_method "PBE"
+_qctbx_lcaowfn_basisset "def2-SVP"
+_qctbx_lcaowfn_charge 0
+_qctbx_lcaowfn_multiplicity 1
+_qctbx_lcaowfn_specific_options
+;
+
+;
+_qctbx_lcaowfn_calc_options
+;
+{
+    "output_format": "mkl",
+    "cpu_count": 1,
+    "ram_mb": 2000
+}
+;
+
+_qctbx_lcaopartition_software "Horton"
+_qctbx_lcaopartition_method "hirshfeld"
+_qctbx_lcaopartition_grid_accuracy "medium"
+_qctbx_lcaopartition_calc_options
+;
+{
+    "atomdb_path": "/mnt/d/qctbx_dev/data/horton_atomdb/atoms.h5",
+    "log_file": "./horton.log"
+}
+;

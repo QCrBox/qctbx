@@ -42,6 +42,6 @@ def write_minimal_cif(
         fobj.write(str(new_model))
 
 def write_mock_hkl(filename, refln_dict):
-    with open(filename, 'w') as fobj:
+    with open(filename, 'w', encoding='ASCII') as fobj:
         for h, k, l in zip(refln_dict['_refln_index_h'], refln_dict['_refln_index_k'], refln_dict['_refln_index_l']):
             fobj.write(f'{int(h): 4d}{int(k): 4d}{int(l): 4d}{0.0: 8.2f}{0.0: 8.2f}\n')

@@ -63,7 +63,7 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
 
     @method.setter
     def method(self, value):
-        if value.lower() != 'hirshfeld':
+        if value is not None and value.lower() != 'hirshfeld':
             raise NotImplementedError(f'No method: {value}. Currently only Hirshfeld partitioning is implemented')
 
     def run_nospherA2(

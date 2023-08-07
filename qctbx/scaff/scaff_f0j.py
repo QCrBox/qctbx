@@ -89,7 +89,6 @@ class ScaffF0jSource(F0jSource):
             expand_positions = parse_options(settings_cif['_qctbx_expanded_fragment'])
         else:
             expand_positions = {}
-        #TODO also find cif representation for expand_positions and use_charges
         return cls(
             density_calculator = calc_cls.from_settings_cif(scif_path, block_name),
             partitioner=part_cls.from_settings_cif(scif_path, block_name),

@@ -121,7 +121,7 @@ class RegGridDensityPartitioner(DensityPartitioner):
 
     @density_type.setter
     def density_type(self, value):
-        if value not in ('total', 'valence'):
+        if value is not None and value not in ('total', 'valence'):
             raise NotImplementedError('density_type can be either valence or total')
         self._density_type = value
 

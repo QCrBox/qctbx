@@ -1,6 +1,7 @@
 import functools
 from itertools import product
 from typing import Any, Dict, List, Optional, Union
+import warnings
 
 import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline
@@ -76,11 +77,12 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
         """
         super().__init__(*args, **kwargs)
 
-        assert self.qctbx_density_atomic_dict is not None, 'atomic densities need to be provided'
-
         self.update_from_dict(defaults, update_if_present=False)
 
-        self.generate_splines()
+        if self.qctbx_density_atomic_dict is not None:
+            self.generate_splines()
+        else:
+            warnings.warn('atomic densities need to be provided, running the calculation will fail')
 
     def check_availability(self) -> bool:
         """
@@ -132,6 +134,8 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
     ) -> np.ndarray:
 
         self.update_from_dict(defaults, update_if_present=False)
+
+        assert self.qctbx_density_atomic_dict is not None, 'atomic densities need to be provided'
 
         if self.density_type == 'valence':
             f0j_core_dict, _ = calc_f0j_core(cell_dict, refln_dict, self.qctbx_density_atomic_dict)
