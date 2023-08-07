@@ -1,5 +1,10 @@
-import ase
-from ase.spacegroup import crystal
+try:
+    import ase
+    from ase.spacegroup import crystal
+except ImportError:
+    _ase_imported = False
+else:
+    _ase_imported = True
 
 from .base import LCAOQCCalculator, RegGrQCCalculator
 

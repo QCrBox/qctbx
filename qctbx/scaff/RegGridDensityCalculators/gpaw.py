@@ -2,7 +2,7 @@ from copy import deepcopy
 import io
 import os
 
-from ..QCCalculator.ase import AsePBCCalculator
+from ..QCCalculator.ase import AsePBCCalculator, _ase_imported
 from .base import RegGridDensityCalculator
 
 try:
@@ -11,9 +11,10 @@ try:
     from ase.units import Bohr, Hartree
     from gpaw import GPAW
     from gpaw.utilities.tools import cutoff2gridspacing, gridspacing2cutoff
-    import_worked = True
 except ImportError:
-    import_worked = False
+    _gpaw_imported = False
+else:
+    _gpaw_imported = True
 
 gpaw_bibtex_key = 'GPAW1,GPAW2'
 
@@ -81,7 +82,7 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
         self.update_from_dict(defaults, update_if_present=False)
 
     def check_availability(self):
-        return import_worked
+        return _gpaw_imported and _ase_imported
 
     def calculate_density(
         self,

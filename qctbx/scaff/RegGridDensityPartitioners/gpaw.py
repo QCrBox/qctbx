@@ -4,15 +4,20 @@ from typing import Any, Dict, List
 import os
 
 import numpy as np
-from ase.spacegroup import crystal
-from gpaw import GPAW
-from gpaw.density import RealSpaceDensity
-from gpaw.io.logger import GPAWLogger
-from gpaw.lfc import BasisFunctions
-from gpaw.mpi import world
-from gpaw.setup import Setups
-from gpaw.utilities.partition import AtomPartition
-from gpaw.xc import XC
+try:
+    from ase.spacegroup import crystal
+    from gpaw import GPAW
+    from gpaw.density import RealSpaceDensity
+    from gpaw.io.logger import GPAWLogger
+    from gpaw.lfc import BasisFunctions
+    from gpaw.mpi import world
+    from gpaw.setup import Setups
+    from gpaw.utilities.partition import AtomPartition
+    from gpaw.xc import XC
+except ImportError:
+    _gpaw_imported = False
+else:
+    _gpaw_imported = True
 
 from ...conversions import cell_dict2atom_sites_dict
 from ...custom_typing import Path
@@ -144,7 +149,7 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
         self.update_from_dict(defaults, update_if_present=False)
 
     def check_availability(self) -> bool:
-        return True
+        return _gpaw_imported
 
     @property
     def qctbx_density_atomic_dict(self):

@@ -3,7 +3,6 @@ import os
 import sys
 from typing import Any, Dict, List, Optional
 
-import horton
 import numpy as np
 
 from ...conversions import cell_dict2atom_sites_dict
@@ -12,6 +11,13 @@ from ..citations import get_partitioning_citation
 from ..constants import ANGSTROM_PER_BOHR
 from ..util import batched
 from .base import LCAODensityPartitioner
+
+try:
+    import horton
+except ImportError:
+    _horton_imported = False
+else:
+    _horton_imported = True
 
 defaults = {
     'method': 'mbis',
@@ -50,7 +56,7 @@ class HortonPartitioner(LCAODensityPartitioner):
         """
         super().__init__(*args, **kwargs)
         self.update_from_dict(defaults, update_if_present=False)
-        if self.calc_options['log_file'] is not None:
+        if self.calc_options['log_file'] is not None and _horton_imported:
             atexit.unregister(horton.log.print_footer)
             self._log_fo = open(os.path.join(self.calc_options['work_directory'], self.calc_options['log_file']), 'a')
             horton.log._file = self._log_fo
@@ -62,7 +68,7 @@ class HortonPartitioner(LCAODensityPartitioner):
             assert 'atomdb_path' in self.calc_options, 'The Hirshfeld methods need a valid path to an an h5 file generated with horton-atomdb.py under the keyword "atomdb_path"'
 
     def __del__(self):
-        if self._log_fo is not None:
+        if self._log_fo is not None and _horton_imported:
             horton.log._file = sys.stdout
             if not self._log_fo.closed:
                 self._log_fo.close()
@@ -74,7 +80,7 @@ class HortonPartitioner(LCAODensityPartitioner):
         Returns:
             bool: True if HORTON is available, False otherwise.
         """
-        return None
+        return _horton_imported
 
     def partition(self, density_path: Path):
         """

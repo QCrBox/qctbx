@@ -6,10 +6,16 @@ import warnings
 from typing import Dict, List, Union
 
 import numpy as np
-from ase.calculators.nwchem import NWChem
+
+try:
+    from ase.calculators.nwchem import NWChem
+    from ..QCCalculator.ase import AseLCAOCalculator
+except ImportError:
+    _ase_imported = False
+else:
+    _ase_imported = True
 
 from ...conversions import add_cart_pos
-from ..QCCalculator.ase import AseLCAOCalculator
 from .base import LCAODensityCalculator
 
 
@@ -72,7 +78,7 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
             bool: True if the nwchem executable is available, False otherwise.
         """
         path = pathlib.Path(self.nwchem_path)
-        return path.exists()
+        return path.exists() and _ase_imported
 
     def calculate_density(
         self,

@@ -1,8 +1,21 @@
-import h5py
+
 import numpy as np
-from horton.grid import RTransform
-from horton.grid.radial import RadialGrid
-from horton.part.proatomdb import ProAtomRecord
+
+try:
+    import h5py
+except ImportError:
+    _h5py_imported = False
+else:
+    _h5py_imported = True
+
+try:
+    from horton.grid import RTransform
+    from horton.grid.radial import RadialGrid
+    from horton.part.proatomdb import ProAtomRecord
+except ImportError:
+    _horton_imported = False
+else:
+    _horton_imported = True
 
 from ..constants import ANGSTROM_PER_BOHR, ATOMIC_N_ELEC
 
