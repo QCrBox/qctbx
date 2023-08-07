@@ -1,119 +1,27 @@
-
-import inspect
 import json
 import os
 import subprocess
-import textwrap
 from copy import deepcopy
 from typing import Any, Dict, List
 
 import numpy as np
 
 from ..custom_typing import Path
-from ..io.cif import cif2dicts, read_settings_cif
+from ..io.cif import read_settings_cif
+from ..io.tsc import TSCBFile
 from ..io.minimal_files import write_minimal_cif
-from . import (name2lcaodensity, name2lcaopartition, name2reggriddensity,
-               name2reggridpartition)
 from .LCAODensityCalculators.base import LCAODensityCalculator
 from .RegGridDensityCalculators.base import RegGridDensityCalculator
 
 defaults = {
     'calc_options': {
         'run_command': 'python',
-        'dewrapped_scif_path' : 'dewrapped.scif',
-        'transfer_cif_path' : 'wrapped_transfer.cif',
+        'base_name': 'qctbx_wrapper',
         'block_name': 'wrapped_qctbx',
-        'density_path_sub': ('', '')
+        'calculation_dir' : '.',
+        'inwrapped_calculation_dir': '.'
     }
 }
-
-# functions for output .py files
-def density_calculation_wr(wrapped_scif_path, wrapped_block_name, wrapped_cif_path):
-    calc_cls = scif2class(wrapped_scif_path, wrapped_block_name)
-
-    calc_obj = calc_cls.from_settings_cif(wrapped_scif_path, wrapped_block_name)
-
-    atom_site_dict, cell_dict, _, _ = cif2dicts(wrapped_cif_path, wrapped_block_name, complete_dmin=False)
-
-    density_path = calc_obj.calculate_density(atom_site_dict, cell_dict)
-
-    with open('density_path.txt', 'w', encoding='UTF-8') as fobj:
-        fobj.write(density_path)
-
-def partition_wr(wrapped_scif_path, wrapped_block_name, wrapped_cif_path):
-    calc_cls = scif2class(wrapped_scif_path, wrapped_block_name)
-
-    calc_obj = calc_cls.from_settings_cif(wrapped_scif_path, wrapped_block_name)
-
-    atom_site_dict, cell_dict, space_group_dict, refln_dict = cif2dicts(wrapped_cif_path, wrapped_block_name, complete_dmin=False)
-
-    information_dict = json.load('wrapped_part_settings.json')
-    atom_labels = information_dict['atom_labels']
-    density_path = information_dict['density_path']
-
-    f0js, charges = calc_obj.calc_f0j(atom_labels, atom_site_dict, cell_dict, space_group_dict, refln_dict, density_path)
-
-    with open('density_path.txt', 'w', encoding='UTF-8') as fobj:
-        fobj.write(density_path)
-
-##########################################################################################
-###              functions + strings for partition and density wrappers                ###
-##########################################################################################
-
-minimal_header = textwrap.dedent("""
-    from qctbx.scaff import name2lcaodensity, name2reggriddensity, name2lcaopartition, name2reggridpartition
-    from qctbx.io.cif import read_settings_cif,cif2dicts
-""")
-
-citations_header = minimal_header + 'import json \n'
-
-check_available_footer = textwrap.dedent("""
-    if __name__ == '__main__':
-        wrapped_scif_path = '{dewrapped_scif_path}'
-        wrapped_block_name = '{block_name}'
-        check_available_wr(wrapped_scif_path, wrapped_block_name)
-""")
-
-citations_footer =  textwrap.dedent("""
-    if __name__ == '__main__':
-        wrapped_scif_path = '{dewrapped_scif_path}'
-        wrapped_block_name = '{block_name}'
-        citation_strings_wr(wrapped_scif_path, wrapped_block_name)
-""")
-
-def scif2class(wrapped_scif_path, wrapped_block_name):
-    settings_cif = read_settings_cif(wrapped_scif_path, wrapped_block_name)
-    if '_qctbx_reggridwfn_software' in settings_cif:
-        calc_cls = name2reggriddensity(settings_cif['_qctbx_reggridwfn_software'])
-    elif '_qctbx_lcaowfn_software' in settings_cif:
-        calc_cls = name2lcaodensity(settings_cif['_qctbx_lcaowfn_software'])
-    elif '_qctbx_reggridpartition_software' in settings_cif:
-        calc_cls = name2reggridpartition(settings_cif['_qctbx_reggridpartition_software'])
-    elif '_qctbx_lcaopartition_software' in settings_cif:
-        calc_cls = name2lcaopartition(settings_cif['_qctbx_lcaopartition_software'])
-    else:
-        raise KeyError('Need either _qctbx_lcaowfn_software or _qctbx_reggridwfn_software in scif file.')
-    return calc_cls
-
-def check_available_wr(wrapped_scif_path, wrapped_block_name):
-    calc_cls = scif2class(wrapped_scif_path, wrapped_block_name)
-
-    calc_obj = calc_cls.from_settings_cif(wrapped_scif_path, wrapped_block_name)
-    avail = calc_obj.check_availability()
-    with open('wrapper_available.txt', 'w', encoding='UTF-8') as fobj:
-        if avail:
-            fobj.write('Y')
-        else:
-            fobj.write('N')
-
-def citation_strings_wr(wrapped_scif_path, wrapped_block_name):
-    calc_cls = scif2class(wrapped_scif_path, wrapped_block_name)
-
-    calc_obj = calc_cls.from_settings_cif(wrapped_scif_path, wrapped_block_name)
-    citation_strings = calc_obj.citation_strings()
-
-    with open('wrapper_citations.json', 'w', encoding='UTF-8') as fobj:
-        json.dump(citation_strings, fobj)
 
 def partitioner_wrapper_factory(base_class):
     class PartitionerWrapper(base_class):
@@ -125,7 +33,10 @@ def partitioner_wrapper_factory(base_class):
             if wrapped_object is not None:
                 assert isinstance(wrapped_object, base_class), 'DensityPartitioner type needs to match the Wrapper type'
                 for attr_name, attr_value in self.__dict__.items():
-                    setattr(self, attr_name, attr_value)
+                    if attr_name == 'software':
+                        self.dewrapped_software = attr_value
+                    else:
+                        setattr(self, attr_name, attr_value)
             self.update_from_dict(defaults, update_if_present=False)
 
         @classmethod
@@ -139,49 +50,68 @@ def partitioner_wrapper_factory(base_class):
             new_obj.software = software_entry
             return new_obj
 
+        @property
+        def dewrapped_software(self):
+            return ':'.join(self.software.split(':')[1:])
+
+        @dewrapped_software.setter
+        def dewrapped_software(self, value):
+            self.software = 'wrapper:' + value
+
         def to_wrapped_settings_cif(self, cif_path, block_name):
             save_calc_options = deepcopy(self.calc_options)
-            saved_software = copy(self.software)
+            saved_software = self.software.copy()
             for option in ('run_command', 'dewrapped_scif_path', 'transfer_cif_path', 'block_name'):
                 del self.calc_options[option]
-            self.software = ':'.join(self.software.split(':')[1:])
+            self.software = self.dewrapped_software
             self.to_settings_cif(cif_path, block_name)
             self.calc_options = save_calc_options
             self.software = saved_software
 
         def check_availability(self):
-            self.to_wrapped_settings_cif(self.calc_options['dewrapped_scif_path'], self.calc_options['block_name'])
+            scif_path = self.calc_options['base_name'] + '.scif'
+            json_path = self.calc_options['base_name'] + '.json'
+            calc_dir = self.calc_options['calculation_dir']
+            inwr_calc_dir = self.calc_options['inwrapped_calculation_dir']
+            block_name = self.calc_options['block_name']
+            self.to_wrapped_settings_cif(os.path.join(calc_dir, scif_path), block_name)
 
-            with open('wrapper_check_avail.py', 'w', encoding='UTF-8') as fobj:
-                fobj.write(minimal_header)
-                fobj.write(inspect.getsource(scif2class))
-                fobj.write(inspect.getsource(check_available_wr))
-                fobj.write(check_available_footer.format(**self.calc_options))
+            r = subprocess.call([
+                *self.calc_options['run_command'].split(), 'qctbx', 'available',
+                '--scif_path', os.path.join(inwr_calc_dir, scif_path),
+                '--block_name', self.calc_options['block_name'],
+                '--output_json', os.path.join(inwr_calc_dir, json_path)
+            ])
+            assert r == 0, 'Failed subprocess call in check_availability'
 
-            subprocess.call(f"{self.calc_options['run_command']} wrapper_check_avail.py", shell=True)
-            with open('wrapper_available.txt', 'r', encoding='UTF-8') as fobj:
-                content = fobj.read()
+            with open(os.path.join(calc_dir, json_path), 'r', encoding='UTF-8') as fobj:
+                check_dict = json.load(fobj)
 
-            os.remove('wrapper_check_avail.py')
-            os.remove('wrapper_available.txt')
-            return content[0] == 'Y'
+            calc_type = self._cif_entry_start.split('_')[2]
+
+            return check_dict[f'{calc_type},{self.dewrapped_software}']
 
         def citation_strings(self):
-            self.to_wrapped_settings_cif(self.calc_options['dewrapped_scif_path'], self.calc_options['block_name'])
+            self.update_from_dict(defaults, update_if_present=False)
 
-            with open('wrapper_citations.py', 'w', encoding='UTF-8') as fobj:
-                fobj.write(citations_header)
-                fobj.write(inspect.getsource(scif2class))
-                fobj.write(inspect.getsource(citation_strings_wr))
-                fobj.write(citations_footer.format(**self.calc_options))
+            scif_path = self.calc_options['base_name'] + '.scif'
+            json_path = self.calc_options['base_name'] + '.json'
+            calc_dir = self.calc_options['calculation_dir']
+            inwr_calc_dir = self.calc_options['inwrapped_calculation_dir']
+            block_name = self.calc_options['block_name']
+            self.to_wrapped_settings_cif(os.path.join(calc_dir, scif_path), block_name)
 
-            subprocess.call(f"{self.calc_options['run_command']} wrapper_citations.py", shell=True)
+            r = subprocess.call([
+                *self.calc_options['run_command'].split(), 'qctbx', 'citation',
+                '--scif_path', os.path.join(inwr_calc_dir, scif_path),
+                '--block_name', self.calc_options['block_name'],
+                '--output_json', os.path.join(inwr_calc_dir, json_path)
+            ])
+            assert r == 0, 'Failed subprocess call in check_availability'
 
-            with open('wrapper_citations.json', 'r', encoding='UTF-8') as fobj:
-                citations = json.load(fobj)
-            os.remove('wrapper_citations.py')
-            os.remove('wrapper_citations.json')
-            return tuple(citations)
+            with open(os.path.join(calc_dir, json_path), 'r', encoding='UTF-8') as fobj:
+                citation_dict = json.load(fobj)
+            return citation_dict['description'], citation_dict['bibtex']
 
         def calc_f0j(
             self,
@@ -193,25 +123,46 @@ def partitioner_wrapper_factory(base_class):
             density_path: Path
         ) -> np.ndarray:
             self.update_from_dict(defaults, update_if_present=False)
+            cif_path = self.calc_options['base_name'] + '.cif'
+            scif_path = self.calc_options['base_name'] + '.scif'
+            tsc_path = self.calc_options['base_name'] + '.tscb'
+            calc_dir = self.calc_options['calculation_dir']
+            inwr_calc_dir = self.calc_options['inwrapped_calculation_dir']
+
+            density_abs_path = os.path.abspath(density_path)
+            calc_dir_abs_path = os.path.abspath(calc_dir)
+            if density_abs_path.startswith(calc_dir_abs_path):
+                cut_path = density_abs_path[len(calc_dir_abs_path):]
+                inwr_density_path = os.path.join(inwr_calc_dir, cut_path)
+            else:
+                inwr_density_path = os.path.join(inwr_calc_dir, density_path)
+
             write_minimal_cif(
-                self.calc_options['transfer_cif_path'],
+                os.path.join(calc_dir, cif_path),
                 cell_dict=cell_dict,
                 space_group_dict=space_group_dict,
                 atom_site_dict=atom_site_dict,
                 refln_dict=refln_dict,
                 block_name=self.calc_options['block_name']
             )
-            outside_wrap_path_part, inside_wrap_path_part = self.calc_options['density_path_sub']
 
-            with open('wrapped_part_settings.json', 'w', encoding='UTF-8') as fobj:
-                json.dump({
-                    'atom_labels': atom_labels,
-                    'density_path': density_path.replace(outside_wrap_path_part, inside_wrap_path_part)
-                }, fobj)
+            r = subprocess.call([
+                *self.calc_options['run_command'].split(), 'qctbx', 'partition',
+                '--cif_path',  os.path.join(inwr_calc_dir, cif_path),
+                '--scif_path', os.path.join(inwr_calc_dir, scif_path),
+                '--input_wfn_path', inwr_density_path,
+                '--atom_labels', *atom_labels,
+                '--block_name', self.calc_options['block_name'],
+                '--tsc_path', os.path.join(inwr_calc_dir, tsc_path)
+            ])
+
+            assert r == 0, 'Error in subprocess partition runtime'
+
+            tsc = TSCBFile.from_file(os.path.join(calc_dir, tsc_path))
+
+            return np.array(list(tsc.data.values())).T
 
     return PartitionerWrapper
-
-#TODO: Use calc_directory to its fullest!
 
 def density_wrapper_factory(base_class):
     class DensityWrapper(base_class):
@@ -221,9 +172,12 @@ def density_wrapper_factory(base_class):
             self.software = software
             super().__init__(*args, **kwargs)
             if wrapped_object is not None:
-                assert isinstance(wrapped_object, base_class), 'Densitycalculator type needs to match the Wrapper type'
+                assert isinstance(wrapped_object, base_class), 'DensityPartitioner type needs to match the Wrapper type'
                 for attr_name, attr_value in self.__dict__.items():
-                    setattr(self, attr_name, attr_value)
+                    if attr_name == 'software':
+                        self.dewrapped_software = attr_value
+                    else:
+                        setattr(self, attr_name, attr_value)
             self.update_from_dict(defaults, update_if_present=False)
 
         @classmethod
@@ -237,49 +191,68 @@ def density_wrapper_factory(base_class):
             new_obj.software = software_entry
             return new_obj
 
+        @property
+        def dewrapped_software(self):
+            return ':'.join(self.software.split(':')[1:])
+
+        @dewrapped_software.setter
+        def dewrapped_software(self, value):
+            self.software = 'wrapper:' + value
+
         def to_wrapped_settings_cif(self, cif_path, block_name):
             save_calc_options = deepcopy(self.calc_options)
-            saved_software = copy(self.software)
+            saved_software = self.software.copy()
             for option in ('run_command', 'dewrapped_scif_path', 'transfer_cif_path', 'block_name'):
                 del self.calc_options[option]
-            self.software = ':'.join(self.software.split(':')[1:])
+            self.software = self.dewrapped_software
             self.to_settings_cif(cif_path, block_name)
             self.calc_options = save_calc_options
             self.software = saved_software
 
         def check_availability(self):
-            self.to_wrapped_settings_cif(self.calc_options['dewrapped_scif_path'], self.calc_options['block_name'])
+            scif_path = self.calc_options['base_name'] + '.scif'
+            json_path = self.calc_options['base_name'] + '.json'
+            calc_dir = self.calc_options['calculation_dir']
+            inwr_calc_dir = self.calc_options['inwrapped_calculation_dir']
+            block_name = self.calc_options['block_name']
+            self.to_wrapped_settings_cif(os.path.join(calc_dir, scif_path), block_name)
 
-            with open('wrapper_check_avail.py', 'w', encoding='UTF-8') as fobj:
-                fobj.write(minimal_header)
-                fobj.write(inspect.getsource(scif2class))
-                fobj.write(inspect.getsource(check_available_wr))
-                fobj.write(check_available_footer.format(**self.calc_options))
+            r = subprocess.call([
+                *self.calc_options['run_command'].split(), 'qctbx', 'available',
+                '--scif_path', os.path.join(inwr_calc_dir, scif_path),
+                '--block_name', self.calc_options['block_name'],
+                '--output_json', os.path.join(inwr_calc_dir, json_path)
+            ])
+            assert r == 0, 'Failed subprocess call in check_availability'
 
-            subprocess.call(f"{self.calc_options['run_command']} wrapper_check_avail.py", shell=True)
-            with open('wrapper_available.txt', 'r', encoding='UTF-8') as fobj:
-                content = fobj.read()
+            with open(os.path.join(calc_dir, json_path), 'r', encoding='UTF-8') as fobj:
+                check_dict = json.load(fobj)
 
-            os.remove('wrapper_check_avail.py')
-            os.remove('wrapper_available.txt')
-            return content[0] == 'Y'
+            calc_type = self._cif_entry_start.split('_')[2]
+
+            return check_dict[f'{calc_type},{self.dewrapped_software}']
 
         def citation_strings(self):
-            self.to_wrapped_settings_cif(self.calc_options['dewrapped_scif_path'], self.calc_options['block_name'])
+            self.update_from_dict(defaults, update_if_present=False)
 
-            with open('wrapper_citations.py', 'w', encoding='UTF-8') as fobj:
-                fobj.write(citations_header)
-                fobj.write(inspect.getsource(scif2class))
-                fobj.write(inspect.getsource(citation_strings_wr))
-                fobj.write(citations_footer.format(**self.calc_options))
+            scif_path = self.calc_options['base_name'] + '.scif'
+            json_path = self.calc_options['base_name'] + '.json'
+            calc_dir = self.calc_options['calculation_dir']
+            inwr_calc_dir = self.calc_options['inwrapped_calculation_dir']
+            block_name = self.calc_options['block_name']
+            self.to_wrapped_settings_cif(os.path.join(calc_dir, scif_path), block_name)
 
-            subprocess.call(f"{self.calc_options['run_command']} wrapper_citations.py", shell=True)
+            r = subprocess.call([
+                *self.calc_options['run_command'].split(), 'qctbx', 'citation',
+                '--scif_path', os.path.join(inwr_calc_dir, scif_path),
+                '--block_name', self.calc_options['block_name'],
+                '--output_json', os.path.join(inwr_calc_dir, json_path)
+            ])
+            assert r == 0, 'Failed subprocess call in check_availability'
 
-            with open('wrapper_citations.json', 'r', encoding='UTF-8') as fobj:
-                citations = json.load(fobj)
-            os.remove('wrapper_citations.py')
-            os.remove('wrapper_citations.json')
-            return tuple(citations)
+            with open(os.path.join(calc_dir, json_path), 'r', encoding='UTF-8') as fobj:
+                citation_dict = json.load(fobj)
+            return citation_dict['description'], citation_dict['bibtex']
 
         def calculate_density(
             self,
@@ -287,35 +260,32 @@ def density_wrapper_factory(base_class):
             cell_dict
         ):
             self.update_from_dict(defaults, update_if_present=False)
+            cif_path = self.calc_options['base_name'] + '.cif'
+            scif_path = self.calc_options['base_name'] + '.scif'
+            text_path = self.calc_options['base_name'] + '.txt'
+            calc_dir = self.calc_options['calculation_dir']
+            inwr_calc_dir = self.calc_options['inwrapped_calculation_dir']
+
             write_minimal_cif(
-                self.calc_options['transfer_cif_path'],
+                os.path.join(calc_dir, cif_path),
                 cell_dict=cell_dict,
                 atom_site_dict=atom_site_dict,
                 block_name=self.calc_options['block_name']
             )
-            self.to_wrapped_settings_cif(self.calc_options['dewrapped_scif_path'], self.calc_options['block_name'])
 
-            density_footer = textwrap.dedent(f"""
-                if __name__ == '__main__':
-                    wrapped_cif_path = '{self.calc_options['transfer_cif_path']}'
-                    wrapped_scif_path = '{self.calc_options['dewrapped_scif_path']}'
-                    wrapped_block_name = '{self.calc_options['block_name']}'
-                    density_calculation_wr(wrapped_scif_path, wrapped_block_name, wrapped_cif_path)
-            """)
+            r = subprocess.call([
+                *self.calc_options['run_command'].split(), 'qctbx', 'density',
+                '--cif_path',  os.path.join(inwr_calc_dir, cif_path),
+                '--scif_path', os.path.join(inwr_calc_dir, scif_path),
+                '--block_name', self.calc_options['block_name'],
+                '--text_output_path', os.path.join(inwr_calc_dir, text_path)
+            ])
+            assert r == 0, 'Failed subprocess call in density'
 
-            with open('wrapper_density_calculation.py', 'w', encoding='UTF-8') as fobj:
-                fobj.write(minimal_header)
-                fobj.write(inspect.getsource(scif2class))
-                fobj.write(inspect.getsource(density_calculation_wr))
-                fobj.write(density_footer)
 
-            subprocess.call(f"{self.calc_options['run_command']} wrapper_density_calculation.py", shell=True)
-            with open('density_path.txt', 'r', encoding='UTF-8') as fobj:
+            with open(os.path.join(calc_dir, text_path), 'r', encoding='UTF-8') as fobj:
                 density_path = fobj.read().strip()
-            os.remove('wrapper_density_calculation.py')
-            os.remove('density_path.txt')
-            outside_wrap_path_part, inside_wrap_path_part = self.calc_options['density_path_sub']
-            return density_path.replace(inside_wrap_path_part, outside_wrap_path_part)
+            return density_path.replace(inwr_calc_dir, calc_dir)
     return DensityWrapper
 
 WrapperRegGridDensityCalculator = density_wrapper_factory(RegGridDensityCalculator)
