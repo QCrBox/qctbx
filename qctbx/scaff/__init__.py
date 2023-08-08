@@ -9,6 +9,9 @@ def name2lcaodensity(name):
     elif name.lower() == 'nwchem':
         from .lcao_density.nwchem import NWChemLCAODensityCalculator
         return NWChemLCAODensityCalculator
+    elif name.lower() == 'pyscf':
+        from lcao_density.pyscf import PyScfLCAOCalculator
+        return PyScfLCAOCalculator
     else:
         raise NotImplementedError(f'LCAO Density calculator "{name}" not found.')
 

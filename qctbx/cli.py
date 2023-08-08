@@ -11,7 +11,7 @@ from .scaff import (name2lcaodensity, name2lcaopartition, name2reggriddensity,
 from .scaff.scaff_f0j import ScaffF0jSource
 
 known_calcs_parts = {
-    'lcaowfn': ('nwchem', 'orca'),
+    'lcaowfn': ('nwchem', 'orca', 'pyscf'),
     'lcaopartition': ('nosphera2', 'horton'),
     'reggridwfn': tuple(['gpaw']),
     'reggridpartition': ('gpaw', 'python')
