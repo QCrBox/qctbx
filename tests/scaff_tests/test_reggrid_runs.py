@@ -4,7 +4,7 @@ import shutil
 import pytest
 
 from qctbx.io.cif import cif2dicts
-from qctbx.scaff.RegGridDensityCalculators.gpaw import GPAWDensityCalculator
+from qctbx.scaff.reggr_density.gpaw import GPAWDensityCalculator
 
 @pytest.mark.density_runs
 @pytest.mark.parametrize('calculator, settings_cif_path, cif_path, cif_dataset', [

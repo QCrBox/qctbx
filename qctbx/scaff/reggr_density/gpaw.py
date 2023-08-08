@@ -2,7 +2,7 @@ from copy import deepcopy
 import io
 import os
 
-from ..QCCalculator.ase import AsePBCCalculator, _ase_imported
+from ..program_wrappers.ase import AsePBCWrapper, _ase_imported
 from .base import RegGridDensityCalculator
 
 try:
@@ -110,7 +110,7 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
             **gpaw_options
         )
 
-        calculator = AsePBCCalculator(
+        calculator = AsePBCWrapper(
             cell_dict=cell_dict,
             atom_site_dict=atom_site_dict,
             calc=ase_calc
@@ -132,7 +132,7 @@ class GPAWDensityCalculator(RegGridDensityCalculator):
 
         gpaw_version = gpaw.__version__
         software_name = f'ASE/GPAW {gpaw_version}'
-        ase_bibtex_key, ase_bibtex_entry = AsePBCCalculator().bibtex_strings()
+        ase_bibtex_key, ase_bibtex_entry = AsePBCWrapper().bibtex_strings()
 
         software_key = ','.join((ase_bibtex_key, gpaw_bibtex_key))
         software_bibtex_entry = '\n\n\n'.join((ase_bibtex_entry, gpaw_bibtex_entry))

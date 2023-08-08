@@ -9,7 +9,7 @@ import numpy as np
 
 try:
     from ase.calculators.nwchem import NWChem
-    from ..QCCalculator.ase import AseLCAOCalculator
+    from ..program_wrappers.ase import AseLCAOWrapper
 except ImportError:
     _ase_imported = False
 else:
@@ -136,7 +136,7 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
 
         nwchem = NWChem(**ase_options)
 
-        calculator = AseLCAOCalculator(
+        calculator = AseLCAOWrapper(
             calc=nwchem,
             positions_cart=positions_cart,
             symbols=list(atom_site_dict['_atom_site_type_symbol'])
@@ -167,7 +167,7 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
         self.update_from_dict(defaults, update_if_present=False)
 
         software_name = 'ASE/NWChem'
-        ase_bibtex_key, ase_bibtex_entry = AseLCAOCalculator({}, {}).bibtex_strings()
+        ase_bibtex_key, ase_bibtex_entry = AseLCAOWrapper({}, {}).bibtex_strings()
 
         software_key = ','.join((ase_bibtex_key, nwchem_bibtex_key))
         software_bibtex_entry = '\n\n\n'.join((ase_bibtex_entry, nwchem_bibtex_entry))

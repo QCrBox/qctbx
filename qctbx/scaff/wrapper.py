@@ -10,8 +10,8 @@ from ..custom_typing import Path
 from ..io.cif import read_settings_cif
 from ..io.tsc import TSCBFile
 from ..io.minimal_files import write_minimal_cif
-from .LCAODensityCalculators.base import LCAODensityCalculator
-from .RegGridDensityCalculators.base import RegGridDensityCalculator
+from .lcao_density.base import LCAODensityCalculator
+from .reggr_density.base import RegGridDensityCalculator
 
 defaults = {
     'calc_options': {

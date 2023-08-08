@@ -6,7 +6,7 @@ import numpy as np
 from ...conversions import cell_dict2atom_sites_dict
 
 
-class BaseQCCalculator:
+class BaseWrapper:
     _positions_cart = np.empty((0,3))
     symbols = []
     _directory = '.'
@@ -54,7 +54,7 @@ class BaseQCCalculator:
         "Method need to return a string containing a bibtex naming key and the corresponding complete bibtex entry as string"
 
 
-class LCAOQCCalculator(BaseQCCalculator):
+class LCAOWrapper(BaseWrapper):
     _charge = 0
     _multiplicity = 1
 
@@ -111,7 +111,7 @@ class LCAOQCCalculator(BaseQCCalculator):
         self.symbols = list(value['_atom_site_type_symbol'])
 
 
-class RegGrQCCalculator(BaseQCCalculator):
+class RegGrWrapper(BaseWrapper):
     _cell_parameters = np.empty(6)
     _cell_mat_m = np.empty((3,3))
     def __init__(

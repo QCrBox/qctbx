@@ -4,8 +4,8 @@ import shutil
 import pytest
 
 from qctbx.io.cif import cif2dicts
-from qctbx.scaff.LCAODensityCalculators.nwchem import NWChemLCAODensityCalculator
-from qctbx.scaff.LCAODensityCalculators.orca import ORCADensityCalculator
+from qctbx.scaff.lcao_density.nwchem import NWChemLCAODensityCalculator
+from qctbx.scaff.lcao_density.orca import ORCADensityCalculator
 
 @pytest.mark.density_runs
 @pytest.mark.parametrize('calculator, settings_cif_path, cif_path, cif_dataset', [

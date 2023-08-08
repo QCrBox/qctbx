@@ -7,10 +7,10 @@ import textwrap
 from typing import Optional
 
 from ..util import batched
-from .base import LCAOQCCalculator
+from .base import LCAOWrapper
 
 
-class ORCACalculator(LCAOQCCalculator):
+class ORCAWrapper(LCAOWrapper):
     cluster_charge_dict = {}
     keywords = []
     blocks = {}

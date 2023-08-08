@@ -4,9 +4,9 @@ import shutil
 import pytest
 
 from qctbx.io.cif import cif2dicts
-from qctbx.scaff.RegGridDensityCalculators.gpaw import GPAWDensityCalculator
-from qctbx.scaff.RegGridDensityPartitioners.python import PythonRegGridPartitioner
-from qctbx.scaff.RegGridDensityPartitioners.gpaw import GPAWDensityPartitioner
+from qctbx.scaff.reggr_density.gpaw import GPAWDensityCalculator
+from qctbx.scaff.reggr_partition.python import PythonRegGridPartitioner
+from qctbx.scaff.reggr_partition.gpaw import GPAWDensityPartitioner
 
 
 @pytest.mark.partitioner_runs

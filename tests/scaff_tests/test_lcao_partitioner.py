@@ -4,9 +4,9 @@ import shutil
 import pytest
 
 from qctbx.io.cif import cif2dicts
-from qctbx.scaff.LCAODensityCalculators.orca import ORCADensityCalculator
-from qctbx.scaff.LCAODensityPartitioners.horton import HortonPartitioner
-from qctbx.scaff.LCAODensityPartitioners.nosphera2 import NoSpherA2Partitioner
+from qctbx.scaff.lcao_density.orca import ORCADensityCalculator
+from qctbx.scaff.lcao_partition.horton import HortonPartitioner
+from qctbx.scaff.lcao_partition.nosphera2 import NoSpherA2Partitioner
 
 @pytest.mark.partitioner_runs
 @pytest.mark.parametrize('part_base, part_settings', [

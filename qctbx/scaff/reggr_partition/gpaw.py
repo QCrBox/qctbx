@@ -24,7 +24,7 @@ from ...custom_typing import Path
 from ..citations import get_partitioning_citation
 from ..constants import ANGSTROM_PER_BOHR, ATOMIC_N_ELEC
 from ..util import dict_merge
-from ..RegGridDensityCalculators.gpaw import gpaw_bibtex_entry, gpaw_bibtex_key
+from ..reggr_density.gpaw import gpaw_bibtex_entry, gpaw_bibtex_key
 from .base import RegGridDensityPartitioner, calc_f0j_core
 from .cubetools import read_cube
 

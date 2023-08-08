@@ -2,7 +2,7 @@ import os
 from typing import Union
 
 from ..constants import ANGSTROM_PER_BOHR
-from .base import RegGrQCCalculator
+from .base import RegGrWrapper
 
 #TODO Check for kpts 1,1,1. Exchange with explicit gamma
 
@@ -52,7 +52,7 @@ def qe_entry_string(
         raise NotImplementedError(f'{type(value)} is not implemented')
     return f'    {name} = {entry_str}'
 
-class BaseQECalculator(RegGrQCCalculator):
+class BaseQEWrapper(RegGrWrapper):
     _mpi_cores = 1
     _omp_numthreads = 1
 
@@ -88,7 +88,7 @@ class BaseQECalculator(RegGrQCCalculator):
             self._omp_numthreads = int(value)
 
 
-class QEPWCalculator(BaseQECalculator):
+class QEPWWrapper(BaseQEWrapper):
     def __init__(self, *args, paw_pot_files, kpoints, **kwargs):
         super().__init__(*args, **kwargs)
         self.paw_pot_files = paw_pot_files
@@ -99,5 +99,5 @@ class QEPWCalculator(BaseQECalculator):
 
 
 
-class QEPPCalculator(BaseQECalculator):
+class QEPPWrapper(BaseQEWrapper):
     pass

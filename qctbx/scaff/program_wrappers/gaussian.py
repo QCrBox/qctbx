@@ -1,4 +1,4 @@
-from .base import LCAOQCCalculator
+from .base import LCAOWrapper
 import platform
 import shutil
 import pathlib
@@ -8,7 +8,7 @@ import warnings
 from ..util import dict_merge
 
 
-class GaussianCalculator(LCAOQCCalculator):
+class GaussianWrapper(LCAOWrapper):
     link0 = {}
     route_section = []
     appendix = ''

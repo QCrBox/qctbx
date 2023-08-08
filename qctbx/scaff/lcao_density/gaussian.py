@@ -1,6 +1,6 @@
 from typing import Dict, Union, List
 
-from ..QCCalculator.gaussian import GaussianCalculator
+from ..program_wrappers.gaussian import GaussianWrapper
 from ..util import dict_merge
 from .base import LCAODensityCalculator
 
@@ -28,7 +28,7 @@ class GaussianDensityCalculator(LCAODensityCalculator):
     def __init__(self, *args, gauss_path=None, **kwargs):
         super().__init__(*args, **kwargs)
         raise NotImplementedError("This class is currently a non-working stub")
-        self._calculator = GaussianCalculator(
+        self._calculator = GaussianWrapper(
             gauss_path=gauss_path
         )
 

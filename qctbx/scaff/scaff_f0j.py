@@ -1,6 +1,6 @@
 from copy import deepcopy
 from typing import Dict, List, Any, Union
-from .RegGridDensityCalculators.base import RegGridDensityCalculator
+from .reggr_density.base import RegGridDensityCalculator
 from .base_classes import DensityCalculator, DensityPartitioner
 from ..conversions import expand_atom_site_table_symm, symm_mat_vec2str, symm_to_matrix_vector
 from ..f0j_source_base import F0jSource

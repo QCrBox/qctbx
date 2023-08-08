@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Union
 import numpy as np
 
 from ...conversions import add_cart_pos
-from ..QCCalculator.orca import ORCACalculator
+from ..program_wrappers.orca import ORCAWrapper
 from .base import LCAODensityCalculator
 
 defaults = {
@@ -73,7 +73,7 @@ class ORCADensityCalculator(LCAODensityCalculator):
         """
 
         super().__init__(*args, **kwargs)
-        self._calculator = ORCACalculator(
+        self._calculator = ORCAWrapper(
             abs_orca_path=abs_orca_path
         )
 
@@ -155,7 +155,7 @@ class ORCADensityCalculator(LCAODensityCalculator):
             subprocess.check_output(['orca_2aim', self.calc_options['label']], cwd=self.calc_options['work_directory'])
             return os.path.join(self.calc_options['work_directory'], self.calc_options['label'] + '.wfn')
         else:
-            raise NotImplementedError('output_format from OrcaCalculator is not implemented. Choose either mkl or wfn')
+            raise NotImplementedError('output_format from ORCAWrapper is not implemented. Choose either mkl or wfn')
 
     def citation_strings(self):
         self.update_from_dict(defaults, update_if_present=False)
