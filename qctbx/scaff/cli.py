@@ -2,13 +2,13 @@ import argparse
 import json
 import textwrap
 
-from .io.cif import cif2dicts, read_settings_cif, parse_options
-from .io.minimal_files import write_minimal_cif
-from .io.tsc import TSCBFile, TSCFile
-from .conversions import expand_atom_site_table_symm
-from .scaff import (name2lcaodensity, name2lcaopartition, name2reggriddensity,
-                    name2reggridpartition)
-from .scaff.scaff_f0j import ScaffF0jSource
+from ..io.cif import cif2dicts, read_settings_cif, parse_options
+from ..io.minimal_files import write_minimal_cif
+from ..io.tsc import TSCBFile, TSCFile
+from ..conversions import expand_atom_site_table_symm
+from . import (name2lcaodensity, name2lcaopartition, name2reggriddensity,
+               name2reggridpartition)
+from .scaff_f0j import ScaffF0jSource
 
 known_calcs_parts = {
     'lcaowfn': ('nwchem', 'orca', 'pyscf'),

@@ -7,7 +7,7 @@ from qctbx.io.cif import cif2dicts
 from qctbx.scaff.lcao_density.nwchem import NWChemLCAODensityCalculator
 from qctbx.scaff.lcao_density.orca import ORCADensityCalculator
 
-@pytest.mark.density_runs
+@pytest.mark.work
 @pytest.mark.parametrize('calculator, settings_cif_path, cif_path, cif_dataset', [
     (
         NWChemLCAODensityCalculator,

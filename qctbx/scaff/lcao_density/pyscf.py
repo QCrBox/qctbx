@@ -1,6 +1,6 @@
 from .base import LCAODensityCalculator
 
-from ...conversions import cell_dict2atom_sites_dict, add_cart_pos
+from ...conversions import add_cart_pos
 
 import os
 import textwrap
@@ -32,7 +32,7 @@ defaults = {
 
 pyscf_bibtex_keys = 'PySCF1,PySCF2'
 
-pyscf_bibtex = textwrap.dedent("""
+pyscf_bibtex = textwrap.dedent(r"""
     @article{PySCF1,
         author = {Sun, Qiming and Berkelbach, Timothy C. and Blunt, Nick S. and Booth, George H. and Guo, Sheng and Li, Zhendong and Liu, Junzi and McClain, James D. and Sayfutyarova, Elvira R. and Sharma, Sandeep and Wouters, Sebastian and Chan, Garnet Kin-Lic},
         title = {PySCF: the Python-based simulations of chemistry framework},
@@ -70,7 +70,7 @@ class PyScfLCAOCalculator(LCAODensityCalculator):
 
     def check_availability(self) -> bool:
         return _pyscf_imported
-    
+
     def calculate_density(
         self,
         atom_site_dict: Dict[str, Union[float, str]],

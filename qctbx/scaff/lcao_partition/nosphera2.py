@@ -46,6 +46,7 @@ grid_accuracy_names = ('coarse', 'medium', 'fine', 'veryfine', 'ultrafine', 'ins
 
 class NoSpherA2Partitioner(LCAODensityPartitioner):
     _method = 'hirshfeld'
+    _nosphera2_path = None
     software = 'nosphera2'
 
     accepts_input = ('wfn', 'wfx')
@@ -55,7 +56,7 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
         self.update_from_dict(defaults, update_if_present=False)
 
     def check_availability(self) -> bool:
-        return os.path.exists(self.calc_options['nosphera2_path'])
+        return os.path.exists(self.nosphera2_path)
 
     @property
     def method(self):
@@ -65,6 +66,22 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
     def method(self, value):
         if value is not None and value.lower() != 'hirshfeld':
             raise NotImplementedError(f'No method: {value}. Currently only Hirshfeld partitioning is implemented')
+
+    @property
+    def nosphera2_path(self):
+        from_calc_opt = self.calc_options.get('nosphera2_path', None)
+        if self._nosphera2_path is not None:
+            return self._nosphera2_path
+        if from_calc_opt is not None:
+            return from_calc_opt
+        if 'NOSPHERA2' in os.environ:
+            return os.environ['NOSPHERA2']
+        else:
+            return None
+
+    @nosphera2_path.setter
+    def nosphera2_path(self, path):
+        self._nosphera2_path = path
 
     def run_nospherA2(
         self,
@@ -96,11 +113,13 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
 
         pass_options = deepcopy(self.specific_options)
         pass_options.update(self.calc_options)
+        pass_options['nosphera2_path'] = self.nosphera2_path
         pass_options['nosphera2_accuracy'] = grid_accuracy_names.index(self.grid_accuracy) + 1
         pass_options['cpu_count'] = self.calc_options['cpu_count']
         pass_options['density_path'] = os.path.abspath(density_path)
 
-        subprocess.check_call('{nosphera2_path} -hkl mock.hkl -wfn {density_path} -cif npa2.cif -asym_cif npa2_asym.cif -acc {nosphera2_accuracy} -cores {cpu_count}'.format(**pass_options), shell=True, stdout=subprocess.DEVNULL, cwd=self.calc_options['work_directory'])
+        call_string = '{nosphera2_path} -hkl mock.hkl -wfn {density_path} -cif npa2.cif -asym_cif npa2_asym.cif -acc {nosphera2_accuracy} -cores {cpu_count}'.format(**pass_options)
+        subprocess.check_call(call_string, shell=True, stdout=subprocess.DEVNULL, cwd=self.calc_options['work_directory'])
 
 
     def calc_f0j(

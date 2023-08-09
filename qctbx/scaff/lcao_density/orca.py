@@ -22,7 +22,8 @@ defaults = {
         'work_directory': '.',
         'output_format': 'mkl',
         'ram_mb': 2000,
-        'cpu_count': 1
+        'cpu_count': 1,
+        'abs_orca_path': None
     }
 }
 
@@ -52,13 +53,13 @@ class ORCADensityCalculator(LCAODensityCalculator):
         calc_options (Dict[str, Any]): Calculation options specific to the ORCA calculation. The dictionary should contain
             keys such as 'label', 'work_directory' and 'output_format'.
     """
+    _abs_orca_path = None
     provides_output = ('mkl', 'wfn')
     software = 'orca'
 
     def __init__(
         self,
         *args,
-        abs_orca_path: Optional[str] = None,
         **kwargs
     ):
         """
@@ -74,10 +75,29 @@ class ORCADensityCalculator(LCAODensityCalculator):
 
         super().__init__(*args, **kwargs)
         self._calculator = ORCAWrapper(
-            abs_orca_path=abs_orca_path
+            abs_orca_path=self.abs_orca_path
         )
 
         self.update_from_dict(defaults, update_if_present=False)
+
+    @property
+    def abs_orca_path(self):
+        from_calc_opt = self.calc_options.get('abs_orca_path', None)
+        if self._abs_orca_path is not None:
+            return self._abs_orca_path
+        if from_calc_opt is not None:
+            return from_calc_opt
+        if 'ORCA_ABSPATH' in os.environ:
+            return os.environ['ORCA_ABSPATH']
+        else:
+            return None
+
+    @abs_orca_path.setter
+    def abs_orca_path(self, path):
+        self._abs_orca_path = path
+        self._calculator = ORCAWrapper(
+            abs_orca_path=path
+        )
 
     def check_availability(self) -> bool:
         """

@@ -43,6 +43,7 @@ horton_bibtex_entry = """
 class HortonPartitioner(LCAODensityPartitioner):
     wpart = None
     _log_fo = None
+    _atomdb_path = None
 
     accepts_input = ('mkl', 'wfn')
     software = 'horton'
@@ -65,13 +66,30 @@ class HortonPartitioner(LCAODensityPartitioner):
             self._log_fo = None
 
         if self.method.lower().startswith('hirshfeld'):
-            assert 'atomdb_path' in self.calc_options, 'The Hirshfeld methods need a valid path to an an h5 file generated with horton-atomdb.py under the keyword "atomdb_path"'
+            assert self.atomdb_path is not None, 'The Hirshfeld methods need a valid path to an an h5 file generated with horton-atomdb.py under the keyword "atomdb_path"'
 
     def __del__(self):
         if self._log_fo is not None and _horton_imported:
             horton.log._file = sys.stdout
             if not self._log_fo.closed:
                 self._log_fo.close()
+
+    @property
+    def atomdb_path(self):
+        from_calc_opt = self.calc_options.get('atomdb_path', None)
+        if self._atomdb_path is not None:
+            return self._atomdb_path
+        if from_calc_opt is not None:
+            return from_calc_opt
+        if 'HORTONATOMDB' in os.environ:
+            return os.environ['HORTONATOMDB']
+        else:
+            return None
+
+    @atomdb_path.setter
+    def atomdb_path(self, path):
+        self._atomdb_path = path
+
 
     def check_availability(self) -> bool:
         """
@@ -99,10 +117,10 @@ class HortonPartitioner(LCAODensityPartitioner):
         moldens = mol.obasis.compute_grid_density_dm(mol.get_dm_full(), grid.points)
 
         if self.method.lower() == 'hirshfeld':
-            atomdb = horton.ProAtomDB.from_file(self.calc_options['atomdb_path'])
+            atomdb = horton.ProAtomDB.from_file(self.atomdb_path)
             wpart = horton.HirshfeldWPart(mol.coordinates, mol.numbers, mol.pseudo_numbers, grid, moldens, atomdb, **self.specific_options)
         elif self.method.lower() == 'hirshfeld-i':
-            atomdb = horton.ProAtomDB.from_file(self.calc_options['atomdb_path'])
+            atomdb = horton.ProAtomDB.from_file(self.atomdb_path)
             wpart = horton.HirshfeldIWPart(mol.coordinates, mol.numbers, mol.pseudo_numbers, grid, moldens, atomdb, **self.specific_options)
         elif self.method.lower() == 'iterative-stockholder':
             wpart = horton.IterativeStockholderWPart(mol.coordinates, mol.numbers, mol.pseudo_numbers, grid, moldens, **self.specific_options)

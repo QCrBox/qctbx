@@ -79,7 +79,7 @@ def partitioner_wrapper_factory(base_class):
             self.to_wrapped_settings_cif(os.path.join(calc_dir, scif_path), block_name)
 
             r = subprocess.call([
-                *self.calc_options['run_command'].split(), 'qctbx', 'available',
+                *self.calc_options['run_command'].split(), 'qctbx.scaff', 'available',
                 '--scif_path', os.path.join(inwr_calc_dir, scif_path),
                 '--block_name', self.calc_options['block_name'],
                 '--output_json', os.path.join(inwr_calc_dir, json_path)
@@ -104,7 +104,7 @@ def partitioner_wrapper_factory(base_class):
             self.to_wrapped_settings_cif(os.path.join(calc_dir, scif_path), block_name)
 
             r = subprocess.call([
-                *self.calc_options['run_command'].split(), 'qctbx', 'citation',
+                *self.calc_options['run_command'].split(), 'qctbx.scaff', 'citation',
                 '--scif_path', os.path.join(inwr_calc_dir, scif_path),
                 '--block_name', self.calc_options['block_name'],
                 '--output_json', os.path.join(inwr_calc_dir, json_path)
@@ -152,7 +152,7 @@ def partitioner_wrapper_factory(base_class):
             )
 
             r = subprocess.call([
-                *self.calc_options['run_command'].split(), 'qctbx', 'partition',
+                *self.calc_options['run_command'].split(), 'qctbx.scaff', 'partition',
                 '--cif_path',  os.path.join(inwr_calc_dir, cif_path),
                 '--scif_path', os.path.join(inwr_calc_dir, scif_path),
                 '--input_wfn_path', inwr_density_path,
@@ -229,7 +229,7 @@ def density_wrapper_factory(base_class):
             self.to_wrapped_settings_cif(os.path.join(calc_dir, scif_path), block_name)
 
             r = subprocess.call([
-                *self.calc_options['run_command'].split(), 'qctbx', 'available',
+                *self.calc_options['run_command'].split(), 'qctbx.scaff', 'available',
                 '--scif_path', os.path.join(inwr_calc_dir, scif_path),
                 '--block_name', self.calc_options['block_name'],
                 '--output_json', os.path.join(inwr_calc_dir, json_path)
@@ -254,7 +254,7 @@ def density_wrapper_factory(base_class):
             self.to_wrapped_settings_cif(os.path.join(calc_dir, scif_path), block_name)
 
             r = subprocess.call([
-                *self.calc_options['run_command'].split(), 'qctbx', 'citation',
+                *self.calc_options['run_command'].split(), 'qctbx.scaff', 'citation',
                 '--scif_path', os.path.join(inwr_calc_dir, scif_path),
                 '--block_name', self.calc_options['block_name'],
                 '--output_json', os.path.join(inwr_calc_dir, json_path)
@@ -287,7 +287,7 @@ def density_wrapper_factory(base_class):
             )
 
             r = subprocess.call([
-                *self.calc_options['run_command'].split(), 'qctbx', 'density',
+                *self.calc_options['run_command'].split(), 'qctbx.scaff', 'density',
                 '--cif_path',  os.path.join(inwr_calc_dir, cif_path),
                 '--scif_path', os.path.join(inwr_calc_dir, scif_path),
                 '--block_name', self.calc_options['block_name'],

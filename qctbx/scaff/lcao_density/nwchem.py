@@ -61,6 +61,7 @@ molden2aimfile = 'molden= -1\nwfn= 1\nwfncheck= 1\nwfx= 1\nwfxcheck= 1\nnbo= -1\
 
 
 class NWChemLCAODensityCalculator(LCAODensityCalculator):
+    _molden2aimpath = None
     xyz_format = 'cartesian'
     provides_output = tuple(('wfn'))
     software = 'nwchem'
@@ -69,6 +70,21 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
         super().__init__(*args, **kwargs)
         self.update_from_dict(defaults, update_if_present=False)
 
+    @property
+    def molden2aimpath(self):
+        if self._molden2aimpath is not None:
+            return self._molden2aimpath
+        from_calc_opt = self.calc_options.get('molden2aimpath', None)
+        if from_calc_opt is not None:
+            return from_calc_opt
+        if 'MOLDEN2AIM' in os.environ:
+            return os.environ['MOLDEN2AIM']
+        else:
+            return None
+
+    @molden2aimpath.setter
+    def molden2aimpath(self, path):
+        self._molden2aimpath = path
 
     def check_availability(self) -> bool:
         """
@@ -119,7 +135,7 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
         if self.multiplicity != 1:
             ase_options['dft']['MULT'] = self.multiplicity
         ase_options['label'] = os.path.join(self.calc_options['work_directory'], self.calc_options['label'])
-        if self.calc_options['molden2aimpath'] is not None:
+        if self.molden2aimpath is not None:
             ase_options['property'] = {
                 'Moldenfile': None,
                 'Molden_norm': 'janpa'
@@ -144,9 +160,9 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
 
         calculator.run_calculation()
 
-        if self.calc_options['molden2aimpath'] is not None:
+        if self.molden2aimpath is not None:
             self._write_molden2aim_ini()
-            abs_path = pathlib.Path(self.calc_options['molden2aimpath']).resolve()
+            abs_path = pathlib.Path(self.molden2aimpath).resolve()
             with open(os.path.join(self.calc_options['work_directory'], 'molden2aim.log'), 'w') as fobj:
                 subprocess.check_call(
                     [abs_path, '-i', f"{self.calc_options['label']}.molden"],
