@@ -118,6 +118,12 @@ def use_partition_parser(args):
         help='List of atom labels that should be evaluated and output in the partitioning (All atoms from cif are used for promolecule).'
     )
     parser.add_argument('--tsc_path', **common_arguments['tsc_path'])
+
+    parser.add_argument(
+        '--charge_json',
+        required=False,
+        help='Optional path for the output of the atomic charges as json'
+    )
     pargs = parser.parse_args(args)
 
     pargs = parser.parse_args(args)
@@ -139,7 +145,7 @@ def use_partition_parser(args):
     output_dicts = cif2dicts(pargs.cif_path, pargs.block_name, complete_dmin=True)
     atom_site_dict, cell_dict, space_group_dict, refln_dict = output_dicts
 
-    f0j, _ = part_obj.calc_f0j(
+    f0j, charges = part_obj.calc_f0j(
         pargs.atom_labels,
         atom_site_dict,
         cell_dict,
@@ -162,6 +168,10 @@ def use_partition_parser(args):
     new_tsc.header['TITLE'] = 'qctbx'
     new_tsc.data = new_data
     new_tsc.to_file(pargs.tsc_path)
+
+    if pargs.charge_json is not None:
+        with open(pargs.charge_json, 'w', encoding='UTF-8') as fobj:
+            json.dump({label: value for label, value in zip(pargs.atom_labels, charges)}, fobj)
 
 
 def use_check_available_parser(args):

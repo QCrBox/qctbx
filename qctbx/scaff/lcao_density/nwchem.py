@@ -30,7 +30,9 @@ defaults = {
         'work_directory': '.',
         'output_format': 'wfn',
         'ram_mb': 2000,
-        'cpu_count': 1
+        'cpu_count': 1,
+        'molden2aimpath': None,
+        'nwchem_path': 'nwchem'
     }
 }
 
@@ -63,10 +65,8 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
     provides_output = tuple(('wfn'))
     software = 'nwchem'
 
-    def __init__(self, *args, nwchem_path='nwchem', molden2aimpath=None, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.nwchem_path = nwchem_path
-        self.molden2aimpath = molden2aimpath
         self.update_from_dict(defaults, update_if_present=False)
 
 
@@ -77,7 +77,7 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
         Returns:
             bool: True if the nwchem executable is available, False otherwise.
         """
-        path = pathlib.Path(self.nwchem_path)
+        path = pathlib.Path(self.calc_options['nwchem_path'])
         return path.exists() and _ase_imported
 
     def calculate_density(
@@ -119,7 +119,7 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
         if self.multiplicity != 1:
             ase_options['dft']['MULT'] = self.multiplicity
         ase_options['label'] = os.path.join(self.calc_options['work_directory'], self.calc_options['label'])
-        if self.molden2aimpath is not None:
+        if self.calc_options['molden2aimpath'] is not None:
             ase_options['property'] = {
                 'Moldenfile': None,
                 'Molden_norm': 'janpa'
@@ -132,7 +132,7 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
         ase_options['memory'] = f"total {int(self.calc_options['ram_mb'])} mb"
 
         if self.calc_options['cpu_count'] > 1:
-            ase_options['command'] = f'mpirun -n {self.calc_options["cpu_count"]} {self.nwchem_path}]'
+            ase_options['command'] = f'mpirun -n {self.calc_options["cpu_count"]} {self.calc_options["nwchem_path"]}]'
 
         nwchem = NWChem(**ase_options)
 
@@ -144,9 +144,9 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
 
         calculator.run_calculation()
 
-        if self.molden2aimpath is not None:
+        if self.calc_options['molden2aimpath'] is not None:
             self._write_molden2aim_ini()
-            abs_path = pathlib.Path(self.molden2aimpath).resolve()
+            abs_path = pathlib.Path(self.calc_options['molden2aimpath']).resolve()
             with open(os.path.join(self.calc_options['work_directory'], 'molden2aim.log'), 'w') as fobj:
                 subprocess.check_call(
                     [abs_path, '-i', f"{self.calc_options['label']}.molden"],

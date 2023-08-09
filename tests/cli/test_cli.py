@@ -121,7 +121,7 @@ def test_cli_density_partition(test_id, scif_path, periodic):
 
     shutil.rmtree(work_dir)
 
-@pytest.mark.work
+@pytest.mark.cli
 @pytest.mark.parametrize('test_id, scif_path', [
     ('horton', './tests/cli/cli_settings/settings_horton.scif'),
     ('nosphera2', './tests/cli/cli_settings/settings_nosphera2.scif'),

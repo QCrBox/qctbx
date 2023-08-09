@@ -12,10 +12,12 @@ from ..io.tsc import TSCBFile
 from ..io.minimal_files import write_minimal_cif
 from .lcao_density.base import LCAODensityCalculator
 from .reggr_density.base import RegGridDensityCalculator
+from .lcao_partition.base import LCAODensityPartitioner
+from .reggr_partition.base import RegGridDensityPartitioner
 
 defaults = {
     'calc_options': {
-        'run_command': 'python',
+        'run_command': 'python -m',
         'base_name': 'qctbx_wrapper',
         'block_name': 'wrapped_qctbx',
         'calculation_dir' : '.',
@@ -60,8 +62,8 @@ def partitioner_wrapper_factory(base_class):
 
         def to_wrapped_settings_cif(self, cif_path, block_name):
             save_calc_options = deepcopy(self.calc_options)
-            saved_software = self.software.copy()
-            for option in ('run_command', 'dewrapped_scif_path', 'transfer_cif_path', 'block_name'):
+            saved_software = self.software
+            for option in defaults['calc_options'].keys():
                 del self.calc_options[option]
             self.software = self.dewrapped_software
             self.to_settings_cif(cif_path, block_name)
@@ -126,14 +128,17 @@ def partitioner_wrapper_factory(base_class):
             cif_path = self.calc_options['base_name'] + '.cif'
             scif_path = self.calc_options['base_name'] + '.scif'
             tsc_path = self.calc_options['base_name'] + '.tscb'
+            json_path = self.calc_options['base_name'] + '.json'
             calc_dir = self.calc_options['calculation_dir']
+            block_name = self.calc_options['block_name']
             inwr_calc_dir = self.calc_options['inwrapped_calculation_dir']
+            self.to_wrapped_settings_cif(os.path.join(calc_dir, scif_path), block_name)
 
             density_abs_path = os.path.abspath(density_path)
             calc_dir_abs_path = os.path.abspath(calc_dir)
             if density_abs_path.startswith(calc_dir_abs_path):
                 cut_path = density_abs_path[len(calc_dir_abs_path):]
-                inwr_density_path = os.path.join(inwr_calc_dir, cut_path)
+                inwr_density_path = '.' + os.path.join(inwr_calc_dir, cut_path)
             else:
                 inwr_density_path = os.path.join(inwr_calc_dir, density_path)
 
@@ -143,7 +148,7 @@ def partitioner_wrapper_factory(base_class):
                 space_group_dict=space_group_dict,
                 atom_site_dict=atom_site_dict,
                 refln_dict=refln_dict,
-                block_name=self.calc_options['block_name']
+                block_name=block_name
             )
 
             r = subprocess.call([
@@ -153,14 +158,20 @@ def partitioner_wrapper_factory(base_class):
                 '--input_wfn_path', inwr_density_path,
                 '--atom_labels', *atom_labels,
                 '--block_name', self.calc_options['block_name'],
-                '--tsc_path', os.path.join(inwr_calc_dir, tsc_path)
+                '--tsc_path', os.path.join(inwr_calc_dir, tsc_path),
+                '--charge_json', os.path.join(inwr_calc_dir, json_path)
             ])
 
             assert r == 0, 'Error in subprocess partition runtime'
 
             tsc = TSCBFile.from_file(os.path.join(calc_dir, tsc_path))
 
-            return np.array(list(tsc.data.values())).T
+            with open(json_path, 'r', encoding='UTF-8') as fobj:
+                charges_dict = json.load(fobj)
+
+            charges = [charges_dict[atom_name] for atom_name in atom_labels]
+
+            return np.array(list(tsc.data.values())).T, charges
 
     return PartitionerWrapper
 
@@ -201,8 +212,8 @@ def density_wrapper_factory(base_class):
 
         def to_wrapped_settings_cif(self, cif_path, block_name):
             save_calc_options = deepcopy(self.calc_options)
-            saved_software = self.software.copy()
-            for option in ('run_command', 'dewrapped_scif_path', 'transfer_cif_path', 'block_name'):
+            saved_software = self.software
+            for option in defaults['calc_options'].keys():
                 del self.calc_options[option]
             self.software = self.dewrapped_software
             self.to_settings_cif(cif_path, block_name)
@@ -265,6 +276,8 @@ def density_wrapper_factory(base_class):
             text_path = self.calc_options['base_name'] + '.txt'
             calc_dir = self.calc_options['calculation_dir']
             inwr_calc_dir = self.calc_options['inwrapped_calculation_dir']
+            self.to_wrapped_settings_cif(os.path.join(calc_dir, scif_path), self.calc_options['block_name'])
+
 
             write_minimal_cif(
                 os.path.join(calc_dir, cif_path),
@@ -290,3 +303,6 @@ def density_wrapper_factory(base_class):
 
 WrapperRegGridDensityCalculator = density_wrapper_factory(RegGridDensityCalculator)
 WrapperLCAODensityCalculator = density_wrapper_factory(LCAODensityCalculator)
+
+WrapperRegGridDensityPartitioner = partitioner_wrapper_factory(RegGridDensityPartitioner)
+WrapperLCAODensityPartitioner = partitioner_wrapper_factory(LCAODensityPartitioner)
