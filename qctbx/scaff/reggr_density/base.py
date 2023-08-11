@@ -111,7 +111,7 @@ class RegGridDensityCalculator(DensityCalculator):
             + k_string
             + f" in {software_name} [{software_bibtex_key}]"
         )
-        return report_string, '\n\n\n'.join((software_bibtex_entry, method_bibtex_entry))
+        return report_string, '\n\n'.join((software_bibtex_entry, method_bibtex_entry))
 
     def to_settings_cif(self, cif_path, block_name):
         save_kpts = self.kpoints

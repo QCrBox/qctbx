@@ -204,17 +204,17 @@ class HortonPartitioner(LCAODensityPartitioner):
             method_string = f'Hirshfeld partitioning [{method_bibtex_key}]'
         elif self.method.lower() == 'hirshfeld-i':
             method_bibtex_key, method_bibtex_entry = get_partitioning_citation('hirshfeld-i')
-            method_string = 'Iterative Hirshfeld partitioning  [{method_bibtex_key}]'
+            method_string = f'Iterative Hirshfeld partitioning  [{method_bibtex_key}]'
         elif self.method.lower() == 'iterative-stockholder':
             method_bibtex_key, method_bibtex_entry = get_partitioning_citation('iterstockholder')
-            method_string = 'Iterative Stockholder partitioning  [{method_bibtex_key}]'
-        elif self.method.lower() == 'iterative-stockholder':
+            method_string = f'Iterative Stockholder partitioning  [{method_bibtex_key}]'
+        elif self.method.lower() == 'mbis':
             method_bibtex_key, method_bibtex_entry = get_partitioning_citation('mbis')
-            method_string = 'Minimal Basis Iterative Stockholder partitioning  [{method_bibtex_key}]'
+            method_string = f'Minimal Basis Iterative Stockholder partitioning  [{method_bibtex_key}]'
 
         description_string = (
-            f'The moleculear electron density was partitioning using {method_string}'
+            f'The molecular electron density was partitioning using {method_string}'
             + f' with the HORTON python library [{horton_bibtex_key}].'
         )
-        bibtex_string = '\n\n\n'.join((method_bibtex_entry, horton_bibtex_entry))
+        bibtex_string = '\n\n'.join((method_bibtex_entry, horton_bibtex_entry))
         return description_string, bibtex_string

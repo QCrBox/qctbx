@@ -186,6 +186,6 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
         ase_bibtex_key, ase_bibtex_entry = AseLCAOWrapper({}, {}).bibtex_strings()
 
         software_key = ','.join((ase_bibtex_key, nwchem_bibtex_key))
-        software_bibtex_entry = '\n\n\n'.join((ase_bibtex_entry, nwchem_bibtex_entry))
+        software_bibtex_entry = '\n\n'.join((ase_bibtex_entry, nwchem_bibtex_entry))
 
         return self.generate_description(software_name, software_key, software_bibtex_entry)

@@ -19,7 +19,7 @@ defaults = {
     'grid_accuracy': 'medium',
     'specific_options': {},
     'calc_options':{
-        'nosphera2_path': './NoSpherA2',
+        'nosphera2_path': None,
         'work_directory': '.',
         'cpu_count': 4,
     }
@@ -161,8 +161,8 @@ class NoSpherA2Partitioner(LCAODensityPartitioner):
     def citation_strings(self) -> str:
         method_bibtex_key, method_bibtex_entry = get_partitioning_citation('hirshfeld')
         description_string = (
-            f'The moleculear electron density was partitioning using Hirshfeld partitioning [{method_bibtex_key}]'
+            f'The molecular electron density was partitioning using Hirshfeld partitioning [{method_bibtex_key}]'
             + f' with the NoSpherA2 [{nosphera2_bibtex_key}] program.'
         )
-        bibtex_string = '\n\n\n'.join((method_bibtex_entry, nosphera2_bibtex_entry))
+        bibtex_string = '\n\n'.join((method_bibtex_entry, nosphera2_bibtex_entry))
         return description_string, bibtex_string

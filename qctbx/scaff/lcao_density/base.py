@@ -106,4 +106,4 @@ class LCAODensityCalculator(DensityCalculator):
             f"The wavefunction was calculated using {self.method}[{method_bibtex_key}]/{self.basisset}[{basis_bibtex_key}]"
             + f" in {software_name} [{software_bibtex_key}]"
         )
-        return report_string, '\n\n\n'.join((software_bibtex_entry, method_bibtex_entry, basis_bibtex_entry))
+        return report_string, '\n\n'.join((software_bibtex_entry, method_bibtex_entry, basis_bibtex_entry))

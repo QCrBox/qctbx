@@ -68,7 +68,7 @@ basisset_bibtex = {
     'karlsruhe': (
         'KarlsruheBasis',
         """
-        @Article{B508541A,
+        @Article{KarlsruheBasis,
             author ="Weigend, Florian and Ahlrichs, Reinhart",
             title  ="Balanced basis sets of split valence{,} triple zeta valence and quadruple zeta valence quality for H to Rn: Design and assessment of accuracy",
             journal  ="Phys. Chem. Chem. Phys.",

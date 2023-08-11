@@ -251,9 +251,9 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
     def citation_strings(self) -> str:
         method_bibtex_key, method_bibtex_entry = get_partitioning_citation('hirshfeld')
         description_string = (
-            f'The moleculear electron density was partitioning using Hirshfeld partitioning [{method_bibtex_key}]'
+            f'The molecular electron density was partitioning using Hirshfeld partitioning [{method_bibtex_key}]'
             + f'using the Hirshfeld partitioning as implemented in GPAW [{gpaw_bibtex_key}]'
         )
-        bibtex_entry = '\n\n\n'.join((method_bibtex_entry, gpaw_bibtex_entry))
+        bibtex_entry = '\n\n'.join((method_bibtex_entry, gpaw_bibtex_entry))
         return description_string, bibtex_entry
 

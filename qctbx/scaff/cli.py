@@ -332,7 +332,7 @@ def use_citations_parser(args):
         bibtex.append(part_bibtex)
 
     with open(pargs.output_json, 'w', encoding='UTF-8') as fobj:
-        json.dump({'description': descr, 'bibtex': '\n\n\n'.join(bibtex)}, fobj)
+        json.dump({'description': descr, 'bibtex': '\n\n'.join(bibtex)}, fobj)
 
 def use_symm_expand_parser(args):
     parser = argparse.ArgumentParser(

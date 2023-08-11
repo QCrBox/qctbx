@@ -1,15 +1,16 @@
-from .base import LCAODensityCalculator
-
-from ...conversions import add_cart_pos
-
 import os
 import textwrap
-from typing import List, Dict, Union
+from typing import Dict, List, Union
+
+import numpy as np
+
+from ...conversions import add_cart_pos
+from .base import LCAODensityCalculator
 
 try:
-    from pyscf import gto, dft, qmmm
-    from pyscf.tools import wfn_format
+    from pyscf import dft, gto, lib, qmmm, scf
     from pyscf.lib.misc import num_threads
+    from pyscf.x2c import x2c
 except ImportError:
     _pyscf_imported = False
 else:
@@ -62,6 +63,74 @@ pyscf_bibtex = textwrap.dedent(r"""
     }
 """).strip()
 
+TYPE_MAP = [
+    [1],  # S
+    [2, 3, 4],  # P
+    [5, 8, 9, 6, 10, 7],  # D
+    [11,14,15,17,20,18,12,16,19,13],  # F
+    [21,24,25,30,33,31,26,34,35,28,22,27,32,29,23],  # G
+    [56,55,54,53,52,51,50,49,48,47,46,45,44,43,42,41,40,39,38,37,36],  # H
+]
+
+def write_wfn(fobj, mol, mo_coeff, mo_energy, mo_occ, tot_ener):
+    """
+    NoSpherA2 function for writing a wfn file even when the calculation is not closed shell
+    """
+
+    mol, ctr = x2c._uncontract_mol(mol, True, 0.)
+    mo_coeff = np.dot(ctr, mo_coeff)
+
+    nmo = mo_coeff.shape[1]
+    mo_cart = []
+    centers = []
+    types = []
+    exps = []
+    p0 = 0
+    for ib in range(mol.nbas):
+        ia = mol.bas_atom(ib)
+        l = mol.bas_angular(ib)
+        es = mol.bas_exp(ib)
+        c = mol._libcint_ctr_coeff(ib)
+        n_p, n_c = c.shape
+        nd = n_c*(2*l+1)
+        mosub = mo_coeff[p0:p0+nd].reshape(-1,n_c,nmo)
+        c2s = gto.cart2sph(l)
+        mosub = np.einsum('yki,cy,pk->pci', mosub, c2s, c)
+        mo_cart.append(mosub.transpose(1,0,2).reshape(-1,nmo))
+
+        for t in TYPE_MAP[l]:
+            types.append([t]*n_p)
+        ncart = mol.bas_len_cart(ib)
+        exps.extend([es]*ncart)
+        centers.extend([ia+1]*(n_p*ncart))
+        p0 += nd
+    mo_cart = np.vstack(mo_cart)
+    centers = np.hstack(centers)
+    types = np.hstack(types)
+    exps = np.hstack(exps)
+    nprim, nmo = mo_cart.shape
+
+    fobj.write('From PySCF\n')
+    fobj.write('GAUSSIAN %14d MOL ORBITALS %6d PRIMITIVES %8d NUCLEI\n'%(mo_cart.shape[1], mo_cart.shape[0], mol.natm))
+    for ia in range(mol.natm):
+        x, y, z = mol.atom_coord(ia)
+        fobj.write('%3s%8d (CENTRE%3d) %12.8f%12.8f%12.8f  CHARGE = %4.1f\n'%(mol.atom_pure_symbol(ia), ia+1, ia+1, x, y, z, mol.atom_charge(ia)))
+    for i0, i1 in lib.prange(0, nprim, 20):
+        fobj.write('CENTRE ASSIGNMENTS  %s\n'% ''.join('%3d'%x for x in centers[i0:i1]))
+    for i0, i1 in lib.prange(0, nprim, 20):
+        fobj.write('TYPE ASSIGNMENTS    %s\n'% ''.join('%3d'%x for x in types[i0:i1]))
+    for i0, i1 in lib.prange(0, nprim, 5):
+        fobj.write('EXPONENTS  %s\n'% ' '.join('%13.7E'%x for x in exps[i0:i1]))
+
+    for k in range(nmo):
+        mo = mo_cart[:,k]
+        fobj.write('MO  %-12d          OCC NO = %12.8f ORB. ENERGY = %12.8f\n'%(k+1, mo_occ[k], mo_energy[k]))
+        for i0, i1 in lib.prange(0, nprim, 5):
+            fobj.write(' %s\n' % ' '.join('%15.8E'%x for x in mo[i0:i1]))
+    fobj.write('END DATA\n')
+    fobj.write(' THE SCF ENERGY =%20.12f THE VIRIAL(-V/T)=   0.00000000\n'%tot_ener)
+
+
 class PyScfLCAOCalculator(LCAODensityCalculator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -83,6 +152,8 @@ class PyScfLCAOCalculator(LCAODensityCalculator):
         num_threads(n=self.calc_options['cpu_count'])
 
         mol = gto.Mole()
+        mol.output = os.path.join(self.calc_options['work_directory'], self.calc_options['label'] + '.log')
+        mol.verbose = 4
         zipped = (atom_site_dict_cartn[f'_atom_site_{col}'] for col in ('type_symbol', 'Cartn_x', 'Cartn_y', 'Cartn_z'))
         mol.atom = [[elem, (x, y, z)] for elem, x, y, z in zip(*zipped)]
         mol.basis = self.basisset
@@ -93,16 +164,39 @@ class PyScfLCAOCalculator(LCAODensityCalculator):
 
         rks = dft.RKS(mol)
         rks.xc = self.method
+        rks = rks.density_fit()
+        rks.grids.radi_method = dft.gauss_chebyshev
+        rks.grids.level = 0
+        rks.with_df.auxbasis = 'def2-tzvp-jkfit'
+        rks.diis_space = 19
+        rks.conv_tol = 0.0033
+        rks.conv_tol_grad = 1e-2
+        rks.level_shift = 0.25
+        rks.damp = 0.600000
         if cluster_charge_dict is not None:
             coords = [tuple(xyz) for xyz in cluster_charge_dict['positions_cart']]
             charges = cluster_charge_dict['charges']
-            mf = qmmm.mm_charge(rks, coords, charges)
-            mf.kernel()
+            used = qmmm.mm_charge(rks, coords, charges)
         else:
-            rks.kernel()
+            used = rks
+
+        used.kernel()
+
+        rks.conv_tol = 1e-9
+        rks.conv_tol_grad = 1e-5
+        rks.level_shift = 0.0
+        rks.damp = 0.0
+        rks = scf.newton(rks)
+        if cluster_charge_dict is not None:
+            coords = [tuple(xyz) for xyz in cluster_charge_dict['positions_cart']]
+            charges = cluster_charge_dict['charges']
+            used = qmmm.mm_charge(rks, coords, charges)
+        else:
+            used = rks
+        used.kernel()
         wfn_path = os.path.join(self.calc_options['work_directory'], self.calc_options['label'] + '.wfn')
         with open(wfn_path, 'w', encoding='UTF-8') as fobj:
-            wfn_format.write_mo(fobj, mol, rks.mo_coeff, rks.mo_energy, rks.mo_occ)
+            write_wfn(fobj, mol, rks.mo_coeff, rks.mo_energy, rks.mo_occ, rks.e_tot)
 
         return wfn_path
 

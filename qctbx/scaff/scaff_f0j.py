@@ -96,6 +96,9 @@ class ScaffF0jSource(F0jSource):
             use_charges=use_charges
         )
 
+    def check_availability(self):
+        return self.density_calculator.check_availability() and self.partitioner.check_availability()
+
     def calc_f0j(
         self,
         atom_site_dict: Dict[str, List[Any]],
@@ -169,7 +172,7 @@ class ScaffF0jSource(F0jSource):
         density_str, density_bib = self.density_calculator.citation_strings()
         part_str, part_bib = self.partitioner.citation_strings()
 
-        return ' '.join((density_str, part_str)), '\n\n\n'.join((density_bib, part_bib))
+        return ' '.join((density_str, part_str)), '\n\n'.join((density_bib, part_bib))
 
 
 

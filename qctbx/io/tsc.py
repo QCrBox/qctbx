@@ -128,6 +128,17 @@ class TSCBase(ABC):
                 unknown = [atom_site_label]
             raise ValueError(f'Unknown atom label(s) used for lookup from TSCFile: {" ".join(unknown)}') from exc
 
+    def refln_lookup(self, refln_dict: Dict[str, int], scatterers: List[str] = None):
+        if scatterers is not None:
+            data = self[scatterers]
+        else:
+            data = self.data
+        hkl_zip = zip(refln_dict['_refln_index_h'], refln_dict['_refln_index_k'], refln_dict['_refln_index_l'])
+        f0j = np.array([
+            data[(h, k, l)] if (h, k, l) in data.keys() else np.conj(data[(-h, -k, -l)]) for h, k, l in hkl_zip
+        ]).T
+        return f0j
+
     @classmethod
     @abstractmethod
     def from_file(cls, filename: Path):
