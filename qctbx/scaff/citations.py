@@ -114,7 +114,7 @@ partitioning_bibtex = {
     ),
     'hirshfeld-i': (
         'Hirshfeld-I',
-        r""""
+        r"""
         @article{Hirshfeld-I,
             author = {Bultinck, Patrick and Van Alsenoy, Christian and Ayers, Paul W. and Carbó-Dorca, Ramon},
             title = "{Critical analysis and extension of the Hirshfeld atoms in molecules}",

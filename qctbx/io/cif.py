@@ -22,12 +22,7 @@ def cif2dicts(cif_filename, cif_dataset, complete_dmin=False):
     cell_mat_f = np.linalg.inv(cell_mat_m).T
 
     if complete_dmin:
-        if '_reflns_d_resolution_high' in block:
-            reslim = float(block['_reflns_d_resolution_high']) - 0.01
-        elif '_diffrn_reflns_theta_max' in block and '_diffrn_radiation_wavelength' in block:
-            theta = np.deg2rad(float(block['_diffrn_reflns_theta_max']))
-            reslim = float(block['_diffrn_radiation_wavelength']) / (2 * np.sin(theta)) - 0.001
-        elif '_refln_index_h' in block:
+        if '_refln_index_h' in block:
             hkl = np.stack([np.array(block[f'_refln_index_{mil}'], dtype=np.float64) for mil in ('h', 'k', 'l')], axis=1)
             r_star = np.linalg.norm(np.einsum('xy, zy -> zx', cell_mat_f, hkl), axis=1)
             reslim = 1 / r_star.max() - 0.001
@@ -35,6 +30,11 @@ def cif2dicts(cif_filename, cif_dataset, complete_dmin=False):
             hkl = np.stack([np.array(block[f'_diffrn_refln_index_{mil}'], dtype=np.float64) for mil in ('h', 'k', 'l')], axis=1)
             r_star = np.linalg.norm(np.einsum('xy, zy -> zx', cell_mat_f, hkl), axis=1)
             reslim = 1 / r_star.max() - 0.001
+        elif '_reflns_d_resolution_high' in block:
+            reslim = float(block['_reflns_d_resolution_high']) - 0.01
+        elif '_diffrn_reflns_theta_max' in block and '_diffrn_radiation_wavelength' in block:
+            theta = np.deg2rad(float(block['_diffrn_reflns_theta_max']))
+            reslim = float(block['_diffrn_radiation_wavelength']) / (2 * np.sin(theta)) - 0.001
         else:
             raise NotImplementedError('Could not determine the resolution from the given cif entries. Give either reflns_d_resolution_high, diffrn_reflns_theta_max and diffrn_radiation_wavelength or the (diffrn_)refln_index entries.')
 

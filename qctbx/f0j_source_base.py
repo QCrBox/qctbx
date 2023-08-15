@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -9,7 +9,7 @@ from .io.cif import cif2dicts
 from .io.tsc import TSCBFile, TSCFile
 
 
-class F0jSource:
+class F0jSource(ABC):
     """
     Abstract base class for a F0jSource object, used for calculating structure
     factors and writing them to a file in the .tsc or .tscb format.

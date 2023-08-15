@@ -292,7 +292,7 @@ def create_hkl_dmin(
         '_refln_index_l': l.ravel()
     }
     refln_dict = add_sin_theta_ov_lambda(cell_dict, refln_dict)
-    condition = np.logical_and(refln_dict['_refln_sint/lambda'] <= 0.5 / d_min, refln_dict['_refln_sint/lambda'] > 0.5)
+    condition = np.logical_and(refln_dict['_refln_sint/lambda'] <= 0.5 / d_min, refln_dict['_refln_sint/lambda'] > 1e-8)
     return {
         '_refln_index_h': refln_dict['_refln_index_h'][condition].copy(),
         '_refln_index_k': refln_dict['_refln_index_k'][condition].copy(),
