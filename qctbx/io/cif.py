@@ -9,9 +9,9 @@ from iotbx import cif
 from ..conversions import (cell_dict2atom_sites_dict, create_hkl_dmin,
                           split_error)
 
-def cif2dicts(cif_filename, cif_dataset, complete_dmin=False):
+def cif2dicts(cif_path, cif_dataset, complete_dmin=False):
 
-    cif_model = cif.reader(cif_filename).model()
+    cif_model = cif.reader(cif_path).model()
     block = cif_model[cif_dataset]
 
     cell_dict = {
@@ -112,6 +112,8 @@ def settings_cif2kwargs(settings_cif_obj, cif_entry_start, dict_entries, type_fu
 
 def parse_options(string):
     #TODO: change this from JSON to final format (phil?)
+    if len(string.strip()) == 0:
+        return {}
     read_json = json.loads(string)
     return dict(read_json)
 

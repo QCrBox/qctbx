@@ -141,11 +141,11 @@ class TSCBase(ABC):
 
     @classmethod
     @abstractmethod
-    def from_file(cls, filename: Path):
+    def from_file(cls, path: Path):
         pass
 
     @abstractmethod
-    def to_file(self, filename: Path):
+    def to_file(self, path: Path):
         pass
 
 class TSCFile(TSCBase):
@@ -170,7 +170,7 @@ class TSCFile(TSCBase):
     """
 
     @classmethod
-    def from_file(cls, filename: Path) -> "TSCFile":
+    def from_file(cls, path: Path) -> "TSCFile":
         """
         Constructs a TSCFile object from a file.
 
@@ -179,7 +179,7 @@ class TSCFile(TSCBase):
 
         Parameters
         ----------
-        filename : Path
+        path : Path
             The name of the TSC file to read.
 
         Returns
@@ -187,7 +187,7 @@ class TSCFile(TSCBase):
         TSCFile
             A TSCFile instance with data loaded from the file.
         """
-        with open(filename, 'r') as fobj:
+        with open(path, 'r') as fobj:
             tsc_content = fobj.read()
         header_str, data_str = tsc_content.split('DATA:\n')
 
@@ -201,7 +201,7 @@ class TSCFile(TSCBase):
 
         return new_obj
 
-    def to_file(self, filename: Path) -> None:
+    def to_file(self, path: Path) -> None:
         """
         Writes the TSCFile object to a file.
 
@@ -211,14 +211,14 @@ class TSCFile(TSCBase):
 
         Parameters
         ----------
-        filename : Path
+        path : Path
             The name of the file to write.
         """
         header_str = '\n'.join(f'{key}: {value}' for key, value in self.header.items())
         data_iter = iter(f"{int(hkl[0])} {int(hkl[1])} {int(hkl[2])} {' '.join(f'{np.real(val):.8e},{np.imag(val):.8e}' for val in values)}" for hkl, values in self.data.items())
         data_str = '\n'.join(data_iter)
 
-        with open(filename, 'w') as fobj:
+        with open(path, 'w') as fobj:
             fobj.write(f'{header_str}\nDATA:\n{data_str}\n')
 
 
@@ -244,7 +244,7 @@ class TSCBFile(TSCBase):
     """
 
     @classmethod
-    def from_file(cls, filename: Path) -> "TSCBFile":
+    def from_file(cls, path: Path) -> "TSCBFile":
         """
         Constructs a TSCFile object from a file.
 
@@ -253,7 +253,7 @@ class TSCBFile(TSCBase):
 
         Parameters
         ----------
-        filename : Path
+        path : Path
             The name of the TSC file to read.
 
         Returns
@@ -262,7 +262,7 @@ class TSCBFile(TSCBase):
             A TSCBFile instance with data loaded from the file.
         """
         new_obj = cls()
-        with open(filename, 'rb') as fobj:
+        with open(path, 'rb') as fobj:
             additional_header_size, n_bytes_labels = struct.unpack('2i', fobj.read(8))
             if additional_header_size > 0:
                 header_str = fobj.read(additional_header_size).decode('ASCII')
@@ -277,7 +277,7 @@ class TSCBFile(TSCBase):
             }
         return new_obj
 
-    def to_file(self, filename: Path) -> None:
+    def to_file(self, path: Path) -> None:
         """
         Writes the TSCBFile object to a file.
 
@@ -287,14 +287,14 @@ class TSCBFile(TSCBase):
 
         Parameters
         ----------
-        filename : str
+        path : str
             The name of the file to write.
         """
         if not next(iter(self.data.values())).dtype == np.complex128:
             self.data = {key: value.astype(np.complex128) for key, value in self.data.items()}
         omitted_header_entries = ('SCATTERERS', 'TITLE', 'SYMM')
         header_string = '\n'.join(f'{name}: {entry}' for name, entry in self.header.items() if name not in omitted_header_entries)
-        with open(filename, 'wb') as fobj:
+        with open(path, 'wb') as fobj:
             fobj.write(struct.pack('2i', len(header_string), len(self.header['SCATTERERS'])))
             fobj.write(header_string.encode('ASCII'))
             fobj.write(self.header['SCATTERERS'].encode('ASCII'))

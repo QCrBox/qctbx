@@ -52,14 +52,14 @@ class GaussianWrapper(LCAOWrapper):
     def run_calculation(self):
         input_content = self._generate_gaussian_input()
 
-        input_filename = f"{self.label}.com"
-        with open(input_filename, 'w') as fobj:
+        input_path = f"{self.label}.com"
+        with open(input_path, 'w') as fobj:
             fobj.write(input_content)
 
-        out_filename = f"{self.label}.log"
-        with open(out_filename, 'w') as fobj:
+        out_path = f"{self.label}.log"
+        with open(out_path, 'w') as fobj:
             subprocess.call(
-                [self.abs_g16_path, input_filename],
+                [self.abs_g16_path, input_path],
                 stdout=fobj,
                 stderr=subprocess.STDOUT
             )

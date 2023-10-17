@@ -71,27 +71,27 @@ class ORCAWrapper(LCAOWrapper):
     def run_calculation(self):
         if len(self.cluster_charge_dict.get('charges', [])) > 0:
             cc_file = self._generate_cluster_charge_file()
-            cc_filename = f"{self.label}.pc"
-            with open(cc_filename, 'w', encoding='UTF-8') as fobj:
+            cc_path = f"{self.label}.pc"
+            with open(cc_path, 'w', encoding='UTF-8') as fobj:
                 fobj.write(cc_file)
 
-            self.blocks['pointcharges'] = f"{cc_filename}"
+            self.blocks['pointcharges'] = f"{cc_path}"
 
         # Create the input file content
         input_content = self._generate_orca_input()
 
         # Write the input file to disk
-        input_filename = f"{self.label}.inp"
-        with open(os.path.join(self.directory, input_filename), 'w', encoding='UTF-8') as fobj:
+        input_path = f"{self.label}.inp"
+        with open(os.path.join(self.directory, input_path), 'w', encoding='UTF-8') as fobj:
             fobj.write(input_content)
 
         #Execute ORCA with the generated input file
-        out_filename = os.path.join(self.directory, f"{self.label}.out")
+        out_path = os.path.join(self.directory, f"{self.label}.out")
         if self.abs_orca_path is None or not os.path.exists(self.abs_orca_path):
             raise FileNotFoundError('Could not find ORCA executable. Set abs_orca_path manually.')
-        with open(out_filename, 'w', encoding='UTF-8') as fobj:
+        with open(out_path, 'w', encoding='UTF-8') as fobj:
             subprocess.call(
-                [self.abs_orca_path, input_filename],
+                [self.abs_orca_path, input_path],
                 stdout=fobj,
                 stderr=subprocess.STDOUT,
                 cwd=self.directory

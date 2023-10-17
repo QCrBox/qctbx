@@ -73,7 +73,7 @@ class MATTSF0jSource(F0jSource):
     work_folder : Path
         Path to the working directory.
     filebase : str
-        The base of the filename to use when creating files.
+        The base of the path to use when creating files.
     """
     def __init__(
         self,

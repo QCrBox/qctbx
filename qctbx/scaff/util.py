@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from functools import reduce
 from itertools import islice
+from pathlib import Path
 from typing import Any, Dict, Iterable
 
 
@@ -110,6 +111,11 @@ def dict_merge(
                     if not case_sensitive:
                         del(a[a_key])
                     a[b_key] = b[b_key]
+                elif a[a_key] is None:
+                    a[b_key] = b[b_key]
+                elif isinstance(a[a_key], Path) or isinstance(b[b_key], Path):
+                    # pathes can also be strings so always copy
+                    a[b_key] = b[b_key]
                 else:
                     raise ValueError(f"Types of entries do not match at {'.'.join(path + [str(b_key)])}, type1 {str(type(b[b_key]))}, type2 {str(type(a[a_key]))}")
             else:
@@ -122,7 +128,7 @@ def dict_merge(
 @contextmanager
 def tempinput(data, suffix='.cif'):
     """Creates a temporary file in a contextmanager in order to feed that file
-    with its filename to other functions.
+    with its path to other functions.
 
     Copied from Martijn Pieters answer in
     https://stackoverflow.com/questions/11892623/

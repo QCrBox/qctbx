@@ -7,7 +7,7 @@ import numpy as np
 from ..constants import ANGSTROM_PER_BOHR
 
 def upf_file2atomic_densities(
-        filename: Path,
+        path: Path,
         atom_type: str
     ) -> Dict[str, List[Union[str, float]]]:
     """
@@ -18,7 +18,7 @@ def upf_file2atomic_densities(
     elemental charges per cubic angstrom.
     Parameters
     ----------
-    filename : Path
+    path : Path
         The path of the .UPF file containing the UltraSoft Pseudopotential information.
     atom_type : str
         The atomic species (element symbol) matching the file.
@@ -38,7 +38,7 @@ def upf_file2atomic_densities(
             - 'qubox_density_atomic_total':
               List of total electron density (float) values for the atom type.
     """
-    tree = ET.parse(filename)
+    tree = ET.parse(path)
 
     root = tree.getroot()
 

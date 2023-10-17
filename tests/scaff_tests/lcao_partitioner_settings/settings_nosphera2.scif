@@ -28,8 +28,7 @@ _qctbx_lcaopartition_grid_accuracy "medium"
 _qctbx_lcaopartition_calc_options
 ;
 {
-    "nosphera2_path": "/mnt/d/qctbx_dev/executables/NoSpherA2",
-    "work_directory": "./temp_calculation_dir",
+    "work_directory": "$WORKDIRPLACEHOLDER",
     "cpu_count": 4
 }
 ;

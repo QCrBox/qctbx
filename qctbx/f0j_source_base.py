@@ -44,7 +44,7 @@ class F0jSource(ABC):
 
     def write_tsc(
         self,
-        tsc_filename: Path,
+        tsc_path: Path,
         atom_site_dict: Dict[str, List[Any]],
         cell_dict: Dict[str, Any],
         space_group_dict: Dict[str, Any],
@@ -56,7 +56,7 @@ class F0jSource(ABC):
 
         Parameters
         ----------
-        tsc_filename : Path
+        tsc_path : Path
             File path to the .tsc or .tscb file to be written.
         atom_site_dict : Dict[str, List[Any]]
             Dictionary containing information about the atomic sites.
@@ -78,7 +78,7 @@ class F0jSource(ABC):
 
         #TODO: Implement culling of inversion equivalent reflections
         f0j = self.calc_f0j(atom_site_dict, cell_dict, space_group_dict, refln_dict)
-        if tsc_filename.endswith('.tscb'):
+        if tsc_path.endswith('.tscb'):
             new_tsc = TSCBFile()
         else:
             new_tsc = TSCFile()
@@ -92,13 +92,13 @@ class F0jSource(ABC):
         new_data = {(h, k, l): form_factors for h, k, l, form_factors in hkl_zip}
         new_tsc.header['TITLE'] = tsc_title
         new_tsc.data = new_data
-        new_tsc.to_file(tsc_filename)
+        new_tsc.to_file(tsc_path)
 
     def cctbx2tsc(
         self,
         structure: Any,
         miller_array: Any,
-        tsc_filename: Path,
+        tsc_path: Path,
         tsc_title: str = 'qctbx tsc file'
     ) -> None:
         """
@@ -110,7 +110,7 @@ class F0jSource(ABC):
             CCTBX structure object containing atomic site information.
         miller_array : Any
             CCTBX miller array object containing reflection indices.
-        tsc_filename : Path
+        tsc_path : Path
             File path to the .tsc file to be written.
         tsc_title : str, optional
             Title to be written in the file header, by default 'qctbx tsc file'.
@@ -155,7 +155,7 @@ class F0jSource(ABC):
         }
 
         self.write_tsc(
-            tsc_filename,
+            tsc_path,
             atom_site_dict,
             cell_dict,
             space_group_dict,
@@ -165,9 +165,9 @@ class F0jSource(ABC):
 
     def cif2tsc(
         self,
-        cif_filename: Path,
+        cif_path: Path,
         cif_dataset: str,
-        tsc_filename: Path,
+        tsc_path: Path,
         tsc_title: str = 'qctbx-export'
     ) -> None:
         """
@@ -175,19 +175,19 @@ class F0jSource(ABC):
 
         Parameters
         ----------
-        cif_filename : Path
+        cif_path : Path
             File path to the CIF file.
         cif_dataset : str
             Dataset from the CIF file to be converted.
-        tsc_filename : Path
+        tsc_path : Path
             File path to the .tsc file to be written.
         tsc_title : str, optional
             Title to be written in the file header, by default 'qctbx-export'.
         """
-        read_dicts = cif2dicts(cif_filename, cif_dataset, complete_dmin=True)
+        read_dicts = cif2dicts(cif_path, cif_dataset, complete_dmin=True)
 
         self.write_tsc(
-            tsc_filename,
+            tsc_path,
             *read_dicts,
             tsc_title
         )

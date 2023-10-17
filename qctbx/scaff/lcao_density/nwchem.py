@@ -171,8 +171,11 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
                 )
         else:
             warnings.warn('The wfn output without molden2aim might not be compatible with all partitioners (NoSpherA2 should work)')
-
-        return os.path.join(self.calc_options['work_directory'], self.calc_options['label'], f"{self.calc_options['label']}.wfn")
+        end = self.calc_options['output_format']
+        if end in ('wfx', 'wfn'):
+            return os.path.join(self.calc_options['work_directory'], self.calc_options['label'], f"{self.calc_options['label']}." + end)
+        else:
+            raise NotImplementedError('Choose wfn or wfx for output format.')
 
     def _write_molden2aim_ini(self):
         self.update_from_dict(defaults, update_if_present=False)

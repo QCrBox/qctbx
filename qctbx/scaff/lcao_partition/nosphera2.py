@@ -21,7 +21,7 @@ defaults = {
     'calc_options':{
         'nosphera2_path': None,
         'work_directory': '.',
-        'cpu_count': 4,
+        'cpu_count': 4
     }
 }
 

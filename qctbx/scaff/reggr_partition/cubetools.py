@@ -152,7 +152,7 @@ def read_cube(fname):
     Read cube file into numpy array
 
     params:
-        fname: filename of cube file
+        fname: path of cube file
 
     returns: (data: np.array, metadata: dict)
     """
@@ -177,11 +177,11 @@ def read_imcube(rfname, ifname = ""):
     """
     Convenience function to read in two cube files at once,
     where one contains the real part and the other contains the
-    imag part. If only one filename given, other filename is inferred.
+    imag part. If only one path given, other path is inferred.
 
     params:
-        rfname: filename of cube file of real part
-        ifname: optional, filename of cube file of imag part
+        rfname: path of cube file of real part
+        ifname: optional, path of cube file of imag part
 
     returns: np.array (real part + j*imag part)
     """
@@ -205,7 +205,7 @@ def write_cube(data, meta, fname):
             atoms: list of atoms in the form (mass, [position])
             org: origin
             xvec,yvec,zvec: lattice vector basis
-        fname: filename of cubefile (existing files overwritten)
+        fname: path of cubefile (existing files overwritten)
 
     returns: None
     """
@@ -232,7 +232,7 @@ def write_imcube(data, meta, rfname, ifname=""):
     Convenience function to write two cube files from complex valued
     volumetric data, one for the real part and one for the imaginary part.
     Data about atoms, origin and lattice vectors are kept same for both.
-    If only one filename given, other filename is inferred.
+    If only one path given, other path is inferred.
 
     params:
         data: volumetric data consisting complex values
@@ -240,8 +240,8 @@ def write_imcube(data, meta, rfname, ifname=""):
             atoms: list of atoms in the form (mass, [position])
             org: origin
             xvec,yvec,zvec: lattice vector basis
-        rfname: filename of cube file containing real part
-        ifname: optional, filename of cube file containing imag part
+        rfname: path of cube file containing real part
+        ifname: optional, path of cube file containing imag part
 
     returns: None
     """
