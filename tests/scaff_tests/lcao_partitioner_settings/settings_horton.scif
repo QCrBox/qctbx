@@ -28,8 +28,7 @@ _qctbx_lcaopartition_grid_accuracy "medium"
 _qctbx_lcaopartition_calc_options
 ;
 {
-    "atomdb_path": "/mnt/d/qctbx_dev/data/horton_atomdb/atoms.h5",
-    "log_file": "./temp_calculation_dir/horton.log",
+    "log_file": "$WORKDIRPLACEHOLDER/horton.log",
     "cpu_count": 1
 }
 ;

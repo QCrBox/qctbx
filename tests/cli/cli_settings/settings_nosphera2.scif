@@ -18,7 +18,8 @@ _qctbx_lcaowfn_calc_options
 {
     "output_format": "wfn",
     "cpu_count": 1,
-    "ram_mb": 2000
+    "ram_mb": 2000,
+    "work_directory": "$WORKDIRPLACEHOLDER"
 }
 ;
 
@@ -28,8 +29,7 @@ _qctbx_lcaopartition_grid_accuracy "medium"
 _qctbx_lcaopartition_calc_options
 ;
 {
-    "nosphera2_path": "/mnt/d/qctbx_dev/executables/NoSpherA2",
-    "work_directory": ".",
+    "work_directory": "$WORKDIRPLACEHOLDER",
     "cpu_count": 4
 }
 ;

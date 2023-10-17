@@ -18,7 +18,8 @@ _qctbx_lcaowfn_calc_options
 {
     "output_format": "mkl",
     "cpu_count": 1,
-    "ram_mb": 2000
+    "ram_mb": 2000,
+    "work_directory": "$WORKDIRPLACEHOLDER"
 }
 ;
 
@@ -29,6 +30,7 @@ _qctbx_lcaopartition_calc_options
 ;
 {
     "atomdb_path": "/mnt/d/qctbx_dev/data/horton_atomdb/atoms.h5",
-    "log_file": "./horton.log"
+    "log_file": "$WORKDIRPLACEHOLDER/horton.log",
+    "work_directory": "$WORKDIRPLACEHOLDER"
 }
 ;

@@ -1,7 +1,4 @@
 import os
-import shutil
-
-import random, string
 
 from iotbx import cif
 
@@ -14,15 +11,15 @@ from qctbx.refine.basic_refinement import basic_refinement
 
 @pytest.mark.refine
 @pytest.mark.parametrize('scif_path, partitioning_overwrite', [
-    ('./tests/scaff_tests/refinement_settings/settings_nosphera2.scif', None),
+    ('./tests/scaff_tests/refinement_settings/settings_nosphera2.scif', 'hirshfeld'),
     ('./tests/scaff_tests/refinement_settings/settings_horton.scif', 'hirshfeld'),
     ('./tests/scaff_tests/refinement_settings/settings_horton.scif', 'hirshfeld-i'),
     ('./tests/scaff_tests/refinement_settings/settings_horton.scif', 'iterative-stockholder'),
     ('./tests/scaff_tests/refinement_settings/settings_horton.scif', 'mbis'),
-    ('./tests/scaff_tests/refinement_settings/settings_python.scif', None),
-    ('./tests/scaff_tests/refinement_settings/settings_gpaw.scif', None),
+    ('./tests/scaff_tests/refinement_settings/settings_python.scif', 'hirshfeld'),
+    ('./tests/scaff_tests/refinement_settings/settings_gpaw.scif', 'hirshfeld'),
 ])
-def test_refinement(scif_path, partitioning_overwrite):
+def test_refinement(scif_path, partitioning_overwrite, tmp_path):
 
     test_id = scif_path.split('_')[-1][:-4]
     if partitioning_overwrite is not None:
@@ -54,16 +51,11 @@ def test_refinement(scif_path, partitioning_overwrite):
             sc.flags.set_grad_site(True)
             sc.flags.set_grad_u_iso(True)
 
-    work_dir = 'temp_' + test_id
-    if os.path.exists(work_dir):
-        shutil.rmtree(work_dir)
-    os.mkdir(work_dir)
-
     f0jeval = ScaffF0jSource.from_settings_cif(scif_path, block_name)
     if partitioning_overwrite is not None:
         f0jeval.partitioner.method = partitioning_overwrite
-    f0jeval.density_calculator.calc_options['work_directory'] = work_dir
-    f0jeval.partitioner.calc_options['work_directory'] = work_dir
+    f0jeval.density_calculator.calc_options['work_directory'] = tmp_path
+    f0jeval.partitioner.calc_options['work_directory'] = tmp_path
 
     har_convergence_conditions = {
         'position(abs)': 5e-4,
@@ -72,7 +64,7 @@ def test_refinement(scif_path, partitioning_overwrite):
         'uij/esd': 1e-1,
         'max(cycles)': 20
     }
-    tsc_path = os.path.join(work_dir, 'qctbx.tscb')
+    tsc_path = os.path.join(tmp_path, 'qctbx.tscb')
 
     structure, normal_eqns = basic_refinement(
         structure,
@@ -86,6 +78,3 @@ def test_refinement(scif_path, partitioning_overwrite):
     )
 
     assert normal_eqns.wR2() < 0.12, 'too large wR2'
-
-    if os.path.exists(work_dir):
-        shutil.rmtree(work_dir)

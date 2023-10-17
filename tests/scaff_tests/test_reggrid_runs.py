@@ -15,7 +15,7 @@ from qctbx.scaff.reggr_density.gpaw import GPAWDensityCalculator
         'Water'
     )
 ])
-def test_water_runs(calculator, settings_cif_path, cif_path, cif_dataset):
+def test_water_runs(calculator, settings_cif_path, cif_path, cif_dataset, tmp_path):
     atom_site_dict, cell_dict, *_ = cif2dicts(
         cif_path,
         cif_dataset
@@ -25,16 +25,8 @@ def test_water_runs(calculator, settings_cif_path, cif_path, cif_dataset):
         settings_cif_path,
         cif_dataset
     )
-    work_dir = os.path.join('temp_calculation_dir')
-    chosen_calc.calc_options['work_directory'] = work_dir
+    chosen_calc.calc_options['work_directory'] = tmp_path
 
-    if os.path.exists(work_dir):
-        shutil.rmtree(work_dir)
-    os.mkdir(work_dir)
     output_file = chosen_calc.calculate_density(atom_site_dict, cell_dict)
 
     assert os.path.exists(output_file)
-
-    if os.path.exists(work_dir):
-        shutil.rmtree(work_dir)
-

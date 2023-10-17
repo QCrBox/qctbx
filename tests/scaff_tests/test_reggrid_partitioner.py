@@ -1,6 +1,3 @@
-import os
-import shutil
-
 import pytest
 
 from qctbx.io.cif import cif2dicts
@@ -15,7 +12,7 @@ from qctbx.scaff.reggr_partition.gpaw import GPAWDensityPartitioner
     (GPAWDensityPartitioner, './tests/scaff_tests/reggrid_partitioner_settings/settings_gpaw.scif')
 
 ])
-def test_water_runs(part_base, part_settings):
+def test_water_runs(part_base, part_settings, tmp_path):
     #calc_settings = './test_lcao_density_minimal/settings_orca.scif'
     cif_path = './tests/datasets/minimal_tests/Water.cif'
     cif_dataset = 'Water'
@@ -30,12 +27,8 @@ def test_water_runs(part_base, part_settings):
         part_settings,
         cif_dataset
     )
-    work_dir = os.path.join('temp_calculation_dir')
-    calc.calc_options['work_directory'] = work_dir
+    calc.calc_options['work_directory'] = tmp_path
 
-    if os.path.exists(work_dir):
-        shutil.rmtree(work_dir)
-    os.mkdir(work_dir)
     density_path =  calc.calculate_density(atom_site_dict, cell_dict)
 
     part = part_base.from_settings_cif(part_settings, cif_dataset)
@@ -50,8 +43,4 @@ def test_water_runs(part_base, part_settings):
     )
 
     assert sum(charges) == pytest.approx(0, abs=1e-2)
-
-    if os.path.exists(work_dir):
-        shutil.rmtree(work_dir)
-
 
