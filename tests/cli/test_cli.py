@@ -3,19 +3,13 @@ import os
 import subprocess
 
 from qctbx.scaff.cli import known_calcs_parts
+from ..helper_funcs import new_scif_with_workdir
 
 import pytest
 
 cif_path = './tests/datasets/crystal_data/epoxide.cif'
 block_name = 'epoxide'
 
-def new_scif_with_workdir(input_scif_path, work_dir, output_scif_path):
-    work_dir_str = str(work_dir)
-    with open(input_scif_path, 'r', encoding='ASCII') as fo:
-        scif_content = fo.read()
-
-    with open(output_scif_path, 'w', encoding='ASCII') as fo:
-        fo.write(scif_content.replace("$WORKDIRPLACEHOLDER", work_dir_str))
 
 @pytest.mark.density_runs
 @pytest.mark.parametrize('test_id, scif_path, checks', [

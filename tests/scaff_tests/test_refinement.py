@@ -9,8 +9,10 @@ from smtbx.refinement import restraints
 from qctbx.scaff.scaff_f0j import ScaffF0jSource
 from qctbx.refine.basic_refinement import basic_refinement
 
+from ..helper_funcs import new_scif_with_workdir
+
 @pytest.mark.refine
-@pytest.mark.parametrize('scif_path, partitioning_overwrite', [
+@pytest.mark.parametrize('settings_cif_path, partitioning_overwrite', [
     ('./tests/scaff_tests/refinement_settings/settings_nosphera2.scif', 'hirshfeld'),
     ('./tests/scaff_tests/refinement_settings/settings_horton.scif', 'hirshfeld'),
     ('./tests/scaff_tests/refinement_settings/settings_horton.scif', 'hirshfeld-i'),
@@ -19,11 +21,9 @@ from qctbx.refine.basic_refinement import basic_refinement
     ('./tests/scaff_tests/refinement_settings/settings_python.scif', 'hirshfeld'),
     ('./tests/scaff_tests/refinement_settings/settings_gpaw.scif', 'hirshfeld'),
 ])
-def test_refinement(scif_path, partitioning_overwrite, tmp_path):
-
-    test_id = scif_path.split('_')[-1][:-4]
-    if partitioning_overwrite is not None:
-        test_id += partitioning_overwrite
+def test_refinement(settings_cif_path, partitioning_overwrite, tmp_path):
+    new_scif_path = tmp_path / 'settings.scif'
+    new_scif_with_workdir(settings_cif_path, tmp_path, new_scif_path)
 
     cif_path = './tests/datasets/crystal_data/epoxide.cif'
     block_name = 'epoxide'
@@ -51,11 +51,11 @@ def test_refinement(scif_path, partitioning_overwrite, tmp_path):
             sc.flags.set_grad_site(True)
             sc.flags.set_grad_u_iso(True)
 
-    f0jeval = ScaffF0jSource.from_settings_cif(scif_path, block_name)
+    f0jeval = ScaffF0jSource.from_settings_cif(new_scif_path, block_name)
     if partitioning_overwrite is not None:
         f0jeval.partitioner.method = partitioning_overwrite
-    f0jeval.density_calculator.calc_options['work_directory'] = tmp_path
-    f0jeval.partitioner.calc_options['work_directory'] = tmp_path
+    #f0jeval.density_calculator.calc_options['work_directory'] = tmp_path
+    #f0jeval.partitioner.calc_options['work_directory'] = tmp_path
 
     har_convergence_conditions = {
         'position(abs)': 5e-4,

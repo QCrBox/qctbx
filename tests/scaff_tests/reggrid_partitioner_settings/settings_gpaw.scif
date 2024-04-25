@@ -14,7 +14,7 @@ _qctbx_reggridwfn_density_type "total"
 _qctbx_reggridwfn_calc_options
 ;
 {
-  "work_directory": "./temp_calculation_dir"
+  "work_directory": "$WORKDIRPLACEHOLDER"
 }
 ;
 
@@ -25,6 +25,6 @@ _qctbx_reggridpartition_density_type "total"
 _qctbx_reggridpartition_calc_options
 ;
 {
-  "work_directory": "./temp_calculation_dir"
+  "work_directory": "$WORKDIRPLACEHOLDER"
 }
 ;

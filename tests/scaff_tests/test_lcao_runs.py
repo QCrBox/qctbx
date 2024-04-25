@@ -7,6 +7,8 @@ from qctbx.io.cif import cif2dicts
 from qctbx.scaff.lcao_density.nwchem import NWChemLCAODensityCalculator
 from qctbx.scaff.lcao_density.orca import ORCADensityCalculator
 
+from ..helper_funcs import new_scif_with_workdir
+
 @pytest.mark.work
 @pytest.mark.parametrize('calculator, settings_cif_path, cif_path, cif_dataset', [
     (
@@ -23,13 +25,16 @@ from qctbx.scaff.lcao_density.orca import ORCADensityCalculator
     )
 ])
 def test_water_runs(calculator, settings_cif_path, cif_path, cif_dataset, tmp_path):
+    new_scif_path = tmp_path / 'settings.scif'
+    new_scif_with_workdir(settings_cif_path, tmp_path, new_scif_path)
+
     atom_site_dict, cell_dict, *_ = cif2dicts(
         cif_path,
         cif_dataset
     )
 
     chosen_calc = calculator.from_settings_cif(
-        settings_cif_path,
+        new_scif_path,
         cif_dataset
     )
 

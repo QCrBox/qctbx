@@ -1,6 +1,7 @@
 from copy import deepcopy
 import os
 import pathlib
+import shutil
 import subprocess
 import warnings
 from typing import Dict, List, Union
@@ -94,6 +95,12 @@ class NWChemLCAODensityCalculator(LCAODensityCalculator):
             bool: True if the nwchem executable is available, False otherwise.
         """
         path = pathlib.Path(self.calc_options['nwchem_path'])
+        if not path.exists():
+            try:
+                abs_path = shutil.which(self.calc_options['nwchem_path'])
+                path = pathlib.Path(abs_path)
+            except AttributeError:
+                pass
         return path.exists() and _ase_imported
 
     def calculate_density(

@@ -140,7 +140,6 @@ class MATTSF0jSource(F0jSource):
         f0j = np.array([
             tsc.data[(h, k, l)] if (h, k, l) in tsc.data.keys() else np.conj(tsc.data[(-h, -k, -l)]) for h, k, l in hkl_zip
         ]).T
-
         return f0j
 
     def citation_strings(self):
@@ -153,5 +152,4 @@ class MATTSF0jSource(F0jSource):
             A tuple containing the description and the bibtex entries required.
         """
         description_string = f'Aspherical atomic form factors were generated using the MATTS interface of discamb2tsc [{bibtex_key}]'
-
         return description_string, bibtex_entry

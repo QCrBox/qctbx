@@ -16,6 +16,7 @@ _qctbx_lcaowfn_specific_options
 _qctbx_lcaowfn_calc_options
 ;
 {
+    "work_directory": "$WORKDIRPLACEHOLDER",
     "output_format": "wfn",
     "cpu_count": 1,
     "ram_mb": 2000

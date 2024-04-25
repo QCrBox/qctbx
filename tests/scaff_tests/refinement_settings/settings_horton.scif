@@ -16,6 +16,7 @@ _qctbx_lcaowfn_specific_options
 _qctbx_lcaowfn_calc_options
 ;
 {
+    "work_directory": "$WORKDIRPLACEHOLDER",
     "output_format": "mkl",
     "cpu_count": 1,
     "ram_mb": 2000
@@ -28,6 +29,7 @@ _qctbx_lcaopartition_grid_accuracy "medium"
 _qctbx_lcaopartition_calc_options
 ;
 {
+    "work_directory": "$WORKDIRPLACEHOLDER",
     "log_file": "$WORKDIRPLACEHOLDER/horton.log"
 }
 ;
