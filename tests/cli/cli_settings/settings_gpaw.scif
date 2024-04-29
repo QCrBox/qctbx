@@ -6,7 +6,7 @@
 
 settings_epoxide
 
-_qctbx_reggridwfn_software "GPAW"
+_qctbx_reggridwfn_software "wrapper:GPAW"
 _qctbx_reggridwfn_method "PBE"
 _qctbx_reggridwfn_ecut_ev 30
 _qctbx_reggridwfn_kpoints "1 1 1"
@@ -14,15 +14,21 @@ _qctbx_reggridwfn_density_type "total"
 _qctbx_reggridwfn_calc_options
 ;
 {
+    "run_command": "mpiexec python -m",
+    "calculation_dir": "$WORKDIRPLACEHOLDER",
+    "inwrapped_calculation_dir": "$WORKDIRPLACEHOLDER",
     "work_directory": "$WORKDIRPLACEHOLDER"
 }
 ;
 
-_qctbx_reggridpartition_software "GPAW"
+_qctbx_reggridpartition_software "wrapper:GPAW"
 _qctbx_reggridpartition_density_type "total"
 _qctbx_reggridpartition_calc_options
 ;
 {
+    "run_command": "python -m",
+    "calculation_dir": "$WORKDIRPLACEHOLDER",
+    "inwrapped_calculation_dir": "$WORKDIRPLACEHOLDER",
     "work_directory": "$WORKDIRPLACEHOLDER"
 }
 ;

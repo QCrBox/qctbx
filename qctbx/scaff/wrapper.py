@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import shlex
 from copy import deepcopy
 from typing import Any, Dict, List
 
@@ -137,8 +138,8 @@ def partitioner_wrapper_factory(base_class):
             density_abs_path = os.path.abspath(density_path)
             calc_dir_abs_path = os.path.abspath(calc_dir)
             if density_abs_path.startswith(calc_dir_abs_path):
-                cut_path = density_abs_path[len(calc_dir_abs_path):]
-                inwr_density_path = '.' + os.path.join(inwr_calc_dir, cut_path)
+                cut_path = density_abs_path[len(calc_dir_abs_path) + 1:]
+                inwr_density_path = os.path.join(inwr_calc_dir, cut_path)
             else:
                 inwr_density_path = os.path.join(inwr_calc_dir, density_path)
 
@@ -150,23 +151,32 @@ def partitioner_wrapper_factory(base_class):
                 refln_dict=refln_dict,
                 block_name=block_name
             )
+            cmd_list = shlex.split(self.calc_options['run_command'])
 
-            r = subprocess.call([
-                *self.calc_options['run_command'].split(), 'qctbx.scaff', 'partition',
-                '--cif_path',  os.path.join(inwr_calc_dir, cif_path),
-                '--scif_path', os.path.join(inwr_calc_dir, scif_path),
-                '--input_wfn_path', inwr_density_path,
-                '--atom_labels', *atom_labels,
-                '--block_name', self.calc_options['block_name'],
-                '--tsc_path', os.path.join(inwr_calc_dir, tsc_path),
-                '--charge_json', os.path.join(inwr_calc_dir, json_path)
-            ])
+            process = subprocess.run(
+                [
+                    *cmd_list, 'qctbx.scaff', 'partition',
+                    '--cif_path',  os.path.join(inwr_calc_dir, cif_path),
+                    '--scif_path', os.path.join(inwr_calc_dir, scif_path),
+                    '--input_wfn_path', inwr_density_path,
+                    '--atom_labels', *atom_labels,
+                    '--block_name', self.calc_options['block_name'],
+                    '--tsc_path', os.path.join(inwr_calc_dir, tsc_path),
+                    '--charge_json', os.path.join(inwr_calc_dir, json_path)
+                ],
+                text=True,
+                capture_output=True,
+                check=False
+            )
 
-            assert r == 0, 'Error in subprocess partition runtime'
+            if process.returncode != 0:
+                raise RuntimeError(
+                    f'Error in subprocess partition runtime.\nSTDERR:\n{process.stderr}'
+                    + f'\n\nSTDOUT:\n{process.stdout}')
 
             tsc = TSCBFile.from_file(os.path.join(calc_dir, tsc_path))
 
-            with open(json_path, 'r', encoding='UTF-8') as fobj:
+            with open(os.path.join(calc_dir, json_path), 'r', encoding='UTF-8') as fobj:
                 charges_dict = json.load(fobj)
 
             charges = [charges_dict[atom_name] for atom_name in atom_labels]

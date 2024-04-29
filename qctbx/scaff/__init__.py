@@ -12,6 +12,9 @@ def name2lcaodensity(name):
     elif name.lower() == 'pyscf':
         from .lcao_density.pyscf import PyScfLCAOCalculator
         return PyScfLCAOCalculator
+    elif name.lower().startswith('wrapper:'):
+        from .wrapper import WrapperLCAODensityCalculator
+        return WrapperLCAODensityCalculator
     else:
         raise NotImplementedError(f'LCAO Density calculator "{name}" not found.')
 
@@ -19,6 +22,9 @@ def name2reggriddensity(name):
     if name.lower() == 'gpaw':
         from .reggr_density.gpaw import GPAWDensityCalculator
         return GPAWDensityCalculator
+    elif name.lower().startswith('wrapper:'):
+        from .wrapper import WrapperRegGridDensityCalculator
+        return WrapperRegGridDensityCalculator
     else:
         raise NotImplementedError(f'Regular Grid Density calculator "{name}" not found.')
 
@@ -29,6 +35,9 @@ def name2lcaopartition(name):
     elif name.lower() == 'horton':
         from .lcao_partition.horton import HortonPartitioner
         return HortonPartitioner
+    elif name.lower().startswith('wrapper:'):
+        from .wrapper import WrapperLCAODensityPartitioner
+        return WrapperLCAODensityPartitioner
     else:
         raise NotImplementedError(f'LCAO Density partitioner "{name}" not found.')
 
@@ -39,5 +48,8 @@ def name2reggridpartition(name):
     elif name.lower() == 'gpaw':
         from .reggr_partition.gpaw import GPAWDensityPartitioner
         return GPAWDensityPartitioner
+    elif name.lower().startswith('wrapper:'):
+        from .wrapper import WrapperRegGridDensityPartitioner
+        return WrapperRegGridDensityPartitioner
     else:
         raise NotImplementedError(f'Regular Grid Density partitioner "{name}" not found.')

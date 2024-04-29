@@ -196,7 +196,7 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
         else:
             gpaw_options['txt'] = os.path.join(self.calc_options['work_directory'], self.calc_options['log_file'])
 
-        calc = GPAW(gpts=coarse_grid_size, **self.specific_options['gpaw_options'])
+        calc = GPAW(gpts=coarse_grid_size, **gpaw_options)
         atoms.calc = calc
         calc.initialize(atoms)
         calc.set_positions(atoms)

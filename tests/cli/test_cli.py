@@ -1,5 +1,6 @@
 import json
 import os
+import shlex
 import subprocess
 
 from qctbx.scaff.cli import known_calcs_parts
@@ -61,10 +62,10 @@ def test_cli_citations(test_id, scif_path, tmp_path):
     out_json_path = os.path.join(tmp_path, 'available.json')
     use_scif_path = os.path.join(tmp_path, f'{test_id}.scif')
     new_scif_with_workdir(scif_path, tmp_path, use_scif_path)
+    shell_cmd = f'python -m qctbx.scaff citation --scif_path {use_scif_path} --block_name {block_name} --output_json {out_json_path}'
+    process = subprocess.run(shlex.split(shell_cmd), text=True, capture_output=True, check=True)
 
-    r = subprocess.call(f'python -m qctbx.scaff citation --scif_path {use_scif_path} --block_name {block_name} --output_json {out_json_path}', shell=True)
-
-    assert r == 0, 'Error in subprocess runtime'
+    assert process.returncode == 0, 'Error in subprocess runtime'
     with open(out_json_path, 'r', encoding='UTF-8') as fobj:
         results_dict = json.load(fobj)
     assert 'author' in results_dict['bibtex']
@@ -87,8 +88,9 @@ def test_cli_density_partition(test_id, scif_path, periodic, tmp_path):
 
     if periodic:
         used_cif_path = os.path.join(tmp_path, 'expanded.cif')
-        r = subprocess.call(f'python -m qctbx.scaff symm_expand --cif_path {cif_path} --block_name {block_name} --to_p1 --out_cif_path {used_cif_path}', shell=True)
-        assert r == 0, 'Error in subprocess symm_expand runtime'
+        to_p1_cmd = f'python -m qctbx.scaff symm_expand --cif_path {cif_path} --block_name {block_name} --to_p1 --out_cif_path {used_cif_path}'
+        process = subprocess.run(shlex.split(to_p1_cmd), text=True, capture_output=True, check=True)
+        assert process.returncode == 0, 'Error in subprocess symm_expand runtime'
 
     else:
         used_cif_path = cif_path
@@ -101,9 +103,11 @@ def test_cli_density_partition(test_id, scif_path, periodic, tmp_path):
         density_path = fobj.read().strip()
 
     atom_labels_str = ' '.join(['O1', 'C2', 'H2a', 'H2b', 'C3', 'H3a', 'H3b'])
-    r = subprocess.call(f'python -m qctbx.scaff partition --cif_path {cif_path} --scif_path {use_scif_path} --block_name {block_name} --input_wfn_path {density_path} --atom_labels {atom_labels_str} --tsc_path {tsc_path}', shell=True)
+    partition_cmd = f'python -m qctbx.scaff partition --cif_path {used_cif_path} --scif_path {use_scif_path} --block_name {block_name} --input_wfn_path {density_path} --atom_labels {atom_labels_str} --tsc_path {tsc_path}'
+    process = subprocess.run(shlex.split(partition_cmd), text=True, capture_output=True, check=False)
 
-    assert r == 0, 'Error in subprocess partition runtime'
+    if process.returncode != 0:
+        raise(RuntimeError(f'Error in subprocess partition runtime.\nSTDERR:\n{process.stderr}\n\nSTDOUT:\n{process.stdout}'))
 
     assert os.path.exists(tsc_path)
 
