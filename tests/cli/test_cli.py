@@ -4,6 +4,7 @@ import shlex
 import subprocess
 
 from qctbx.scaff.cli import known_calcs_parts
+from qctbx.scaff.util import default_subprocess_run
 from ..helper_funcs import new_scif_with_workdir
 
 import pytest
@@ -24,9 +25,10 @@ def test_cli_available_scif(test_id, scif_path, checks, tmp_path):
     use_scif_path = os.path.join(tmp_path, f'{test_id}.scif')
     new_scif_with_workdir(scif_path, tmp_path, use_scif_path)
 
-    r = subprocess.call(f'python -m qctbx.scaff available --scif_path {use_scif_path} --block_name {block_name} --output_json {out_json_path}', shell=True)
+    args_str = f'python -m qctbx.scaff available --scif_path {use_scif_path} --block_name {block_name} --output_json {out_json_path}'
 
-    assert r == 0, 'Error in subprocess runtime'
+    _ = default_subprocess_run(args_str=args_str)
+
     with open(out_json_path, 'r', encoding='UTF-8') as fobj:
         results_dict = json.load(fobj)
 
@@ -40,8 +42,8 @@ def test_cli_available_options(tmp_path):
     for flag, options in known_calcs_parts.items():
         flags += '--' + flag + ' ' + ' '.join(options) + ' dummy '
 
-    r = subprocess.call(f'python -m qctbx.scaff available {flags} --output_json {out_json_path}', shell=True)
-    assert r == 0, 'Error in subprocess runtime'
+    args_str = f'python -m qctbx.scaff available {flags} --output_json {out_json_path}'
+    _ = default_subprocess_run(args_str=args_str)
 
     with open(out_json_path, 'r', encoding='UTF-8') as fobj:
         results_dict = json.load(fobj)
@@ -94,21 +96,16 @@ def test_cli_density_partition(test_id, scif_path, periodic, tmp_path):
 
     else:
         used_cif_path = cif_path
-
-    r = subprocess.call(f'python -m qctbx.scaff density --cif_path {used_cif_path} --scif_path {use_scif_path} --block_name {block_name} --text_output_path {density_text_path}', shell=True)
-
-    assert r == 0, 'Error in subprocess density runtime'
+    args_str =f'python -m qctbx.scaff density --cif_path {used_cif_path} --scif_path {use_scif_path} --block_name {block_name} --text_output_path {density_text_path}'
+    _ = default_subprocess_run(args_str=args_str)
 
     with open(density_text_path, 'r', encoding='UTF-8') as fobj:
         density_path = fobj.read().strip()
 
     atom_labels_str = ' '.join(['O1', 'C2', 'H2a', 'H2b', 'C3', 'H3a', 'H3b'])
     partition_cmd = f'python -m qctbx.scaff partition --cif_path {used_cif_path} --scif_path {use_scif_path} --block_name {block_name} --input_wfn_path {density_path} --atom_labels {atom_labels_str} --tsc_path {tsc_path}'
-    process = subprocess.run(shlex.split(partition_cmd), text=True, capture_output=True, check=False)
 
-    if process.returncode != 0:
-        raise(RuntimeError(f'Error in subprocess partition runtime.\nSTDERR:\n{process.stderr}\n\nSTDOUT:\n{process.stdout}'))
-
+    _ = default_subprocess_run(args_str=partition_cmd)
     assert os.path.exists(tsc_path)
 
 
@@ -124,10 +121,9 @@ def test_cli_tsc(test_id, scif_path, tmp_path):
 
     use_scif_path = os.path.join(tmp_path, f'{test_id}.scif')
     new_scif_with_workdir(scif_path, tmp_path, use_scif_path)
+    arg_str = f'python -m qctbx.scaff tsc --cif_path {cif_path} --scif_path {use_scif_path} --block_name {block_name} --tsc_path {tsc_path}'
 
-    r = subprocess.call(f'python -m qctbx.scaff tsc --cif_path {cif_path} --scif_path {use_scif_path} --block_name {block_name} --tsc_path {tsc_path}', shell=True)
-
-    assert r == 0, 'Error in subprocess tsc runtime'
+    _ = default_subprocess_run(args_str=arg_str)
 
     assert os.path.exists(tsc_path)
 

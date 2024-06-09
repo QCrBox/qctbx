@@ -146,7 +146,8 @@ class PythonRegGridPartitioner(RegGridDensityPartitioner):
         cell_lengths = np.array([cell_dict[f'_cell_length_{axis}'] for axis in ('a', 'b', 'c')])
 
         cube = read_cube(density_path)
-        density = cube[0] / ANGSTROM_PER_BOHR**3 * np.linalg.det(np.stack(tuple((cube[1]['xvec'], cube[1]['yvec'], cube[1]['zvec'])), axis=0) * ANGSTROM_PER_BOHR) #
+        voxel_size = np.linalg.det(np.stack(tuple((cube[1]['xvec'], cube[1]['yvec'], cube[1]['zvec'])), axis=0) * ANGSTROM_PER_BOHR)
+        density = cube[0] / ANGSTROM_PER_BOHR**3 * voxel_size
         linspaces = (np.linspace(0.0, 1.0, npoints, endpoint=False) for npoints in density.shape)
         xyz_cart_cell = np.einsum('xy, abcy -> abcx', cell_mat_m, np.stack(np.meshgrid(*linspaces, indexing='ij'), axis=-1))
 

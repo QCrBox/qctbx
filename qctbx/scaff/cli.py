@@ -271,7 +271,7 @@ def use_check_available_parser(args):
         except NotImplementedError:
             check_available_dict[f'{calc_type};{software}'] = False
             continue
-        check_available_dict[f'{calc_type};{software}'] = calc_cls().check_availability()
+        check_available_dict[f'{calc_type};{software}'.lower()] = calc_cls().check_availability()
 
     if pargs.scif_path is not None:
         assert pargs.block_name is not None, 'Working with an scif, a block name is required.'

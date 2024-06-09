@@ -5,7 +5,9 @@ from copy import deepcopy
 from functools import reduce
 from itertools import islice
 from pathlib import Path
-from typing import Any, Dict, Iterable
+from typing import Any, Dict, Iterable, Tuple, Optional
+import subprocess
+import shlex
 
 
 def batched(iterable: Iterable, n:int) -> iter:
@@ -143,3 +145,37 @@ def tempinput(data, suffix='.cif'):
         os.unlink(temp.name)
 
 
+def default_subprocess_run(args: Optional[Tuple[str]]=None, args_str: str=None):
+    """
+    Run a subprocess with the given arguments and return the result.
+
+    Args:
+        args (List[str]): A list of strings with the command and arguments.
+        args_str (str): A string with the command and arguments.
+
+    Returns:
+        CompletedProcess: The result of the subprocess run.
+
+    Raises:
+        RuntimeError: If the subprocess returns a non-zero exit code.
+    """
+    if args is None and args_str is None:
+        raise ValueError("Either args or args_str must be provided.")
+    if args is None and args_str is not None:
+        args = shlex.split(args_str)
+
+    process = subprocess.run(
+        args,
+        text=True,
+        capture_output=True,
+        check=False
+    )
+
+    if process.returncode != 0:
+        cmd = shlex.join(args)
+        raise RuntimeError(
+            f'Error when running command\n{cmd}\n'
+            + f'\nSTDERR:\n{process.stderr}'
+            + f'\n\nSTDOUT:\n{process.stdout}')
+
+    return process

@@ -11,6 +11,7 @@ from ..custom_typing import Path
 from ..io.cif import read_settings_cif
 from ..io.tsc import TSCBFile
 from ..io.minimal_files import write_minimal_cif
+from .util import default_subprocess_run
 from .lcao_density.base import LCAODensityCalculator
 from .reggr_density.base import RegGridDensityCalculator
 from .lcao_partition.base import LCAODensityPartitioner
@@ -79,20 +80,22 @@ def partitioner_wrapper_factory(base_class):
             block_name = self.calc_options['block_name']
             self.to_wrapped_settings_cif(os.path.join(calc_dir, scif_path), block_name)
 
-            r = subprocess.call([
-                *self.calc_options['run_command'].split(), 'qctbx.scaff', 'available',
+            args = [
+                *shlex.split(self.calc_options['run_command']),
+                'qctbx.scaff', 'available',
                 '--scif_path', os.path.join(inwr_calc_dir, scif_path),
                 '--block_name', self.calc_options['block_name'],
                 '--output_json', os.path.join(inwr_calc_dir, json_path)
-            ])
-            assert r == 0, 'Failed subprocess call in check_availability'
+            ]
+
+            _ = default_subprocess_run(args=args)
 
             with open(os.path.join(calc_dir, json_path), 'r', encoding='UTF-8') as fobj:
                 check_dict = json.load(fobj)
 
             calc_type = self._cif_entry_start.split('_')[2]
 
-            return check_dict[f'{calc_type},{self.dewrapped_software}']
+            return check_dict[f'{calc_type};{self.dewrapped_software}'.lower()]
 
         def citation_strings(self):
             self.update_from_dict(defaults, update_if_present=False)
@@ -104,13 +107,15 @@ def partitioner_wrapper_factory(base_class):
             block_name = self.calc_options['block_name']
             self.to_wrapped_settings_cif(os.path.join(calc_dir, scif_path), block_name)
 
-            r = subprocess.call([
-                *self.calc_options['run_command'].split(), 'qctbx.scaff', 'citation',
+            args = [
+                *shlex.split(self.calc_options['run_command']),
+                'qctbx.scaff', 'citation',
                 '--scif_path', os.path.join(inwr_calc_dir, scif_path),
                 '--block_name', self.calc_options['block_name'],
                 '--output_json', os.path.join(inwr_calc_dir, json_path)
-            ])
-            assert r == 0, 'Failed subprocess call in check_availability'
+            ]
+
+            _ = default_subprocess_run(args=args)
 
             with open(os.path.join(calc_dir, json_path), 'r', encoding='UTF-8') as fobj:
                 citation_dict = json.load(fobj)
@@ -151,28 +156,19 @@ def partitioner_wrapper_factory(base_class):
                 refln_dict=refln_dict,
                 block_name=block_name
             )
-            cmd_list = shlex.split(self.calc_options['run_command'])
+            args = [
+                *shlex.split(self.calc_options['run_command']),
+                'qctbx.scaff', 'partition',
+                '--cif_path',  os.path.join(inwr_calc_dir, cif_path),
+                '--scif_path', os.path.join(inwr_calc_dir, scif_path),
+                '--input_wfn_path', inwr_density_path,
+                '--atom_labels', *atom_labels,
+                '--block_name', self.calc_options['block_name'],
+                '--tsc_path', os.path.join(inwr_calc_dir, tsc_path),
+                '--charge_json', os.path.join(inwr_calc_dir, json_path)
+            ]
 
-            process = subprocess.run(
-                [
-                    *cmd_list, 'qctbx.scaff', 'partition',
-                    '--cif_path',  os.path.join(inwr_calc_dir, cif_path),
-                    '--scif_path', os.path.join(inwr_calc_dir, scif_path),
-                    '--input_wfn_path', inwr_density_path,
-                    '--atom_labels', *atom_labels,
-                    '--block_name', self.calc_options['block_name'],
-                    '--tsc_path', os.path.join(inwr_calc_dir, tsc_path),
-                    '--charge_json', os.path.join(inwr_calc_dir, json_path)
-                ],
-                text=True,
-                capture_output=True,
-                check=False
-            )
-
-            if process.returncode != 0:
-                raise RuntimeError(
-                    f'Error in subprocess partition runtime.\nSTDERR:\n{process.stderr}'
-                    + f'\n\nSTDOUT:\n{process.stdout}')
+            _ = default_subprocess_run(args=args)
 
             tsc = TSCBFile.from_file(os.path.join(calc_dir, tsc_path))
 
@@ -238,20 +234,21 @@ def density_wrapper_factory(base_class):
             block_name = self.calc_options['block_name']
             self.to_wrapped_settings_cif(os.path.join(calc_dir, scif_path), block_name)
 
-            r = subprocess.call([
-                *self.calc_options['run_command'].split(), 'qctbx.scaff', 'available',
+            args = [
+                *shlex.split(self.calc_options['run_command']), 'qctbx.scaff', 'available',
                 '--scif_path', os.path.join(inwr_calc_dir, scif_path),
                 '--block_name', self.calc_options['block_name'],
                 '--output_json', os.path.join(inwr_calc_dir, json_path)
-            ])
-            assert r == 0, 'Failed subprocess call in check_availability'
+            ]
+
+            _ = default_subprocess_run(args=args)
 
             with open(os.path.join(calc_dir, json_path), 'r', encoding='UTF-8') as fobj:
                 check_dict = json.load(fobj)
 
             calc_type = self._cif_entry_start.split('_')[2]
 
-            return check_dict[f'{calc_type},{self.dewrapped_software}']
+            return check_dict[f'{calc_type};{self.dewrapped_software}'.lower()]
 
         def citation_strings(self):
             self.update_from_dict(defaults, update_if_present=False)
@@ -263,13 +260,15 @@ def density_wrapper_factory(base_class):
             block_name = self.calc_options['block_name']
             self.to_wrapped_settings_cif(os.path.join(calc_dir, scif_path), block_name)
 
-            r = subprocess.call([
-                *self.calc_options['run_command'].split(), 'qctbx.scaff', 'citation',
+            args = [
+                *shlex.split(self.calc_options['run_command']),
+                'qctbx.scaff', 'citation',
                 '--scif_path', os.path.join(inwr_calc_dir, scif_path),
                 '--block_name', self.calc_options['block_name'],
                 '--output_json', os.path.join(inwr_calc_dir, json_path)
-            ])
-            assert r == 0, 'Failed subprocess call in check_availability'
+            ]
+
+            _ = default_subprocess_run(args=args)
 
             with open(os.path.join(calc_dir, json_path), 'r', encoding='UTF-8') as fobj:
                 citation_dict = json.load(fobj)
@@ -296,15 +295,16 @@ def density_wrapper_factory(base_class):
                 block_name=self.calc_options['block_name']
             )
 
-            r = subprocess.call([
-                *self.calc_options['run_command'].split(), 'qctbx.scaff', 'density',
+            args = [
+                *shlex.split(self.calc_options['run_command']),
+                'qctbx.scaff', 'density',
                 '--cif_path',  os.path.join(inwr_calc_dir, cif_path),
                 '--scif_path', os.path.join(inwr_calc_dir, scif_path),
                 '--block_name', self.calc_options['block_name'],
                 '--text_output_path', os.path.join(inwr_calc_dir, text_path)
-            ])
-            assert r == 0, 'Failed subprocess call in density'
+            ]
 
+            _ = default_subprocess_run(args=args)
 
             with open(os.path.join(calc_dir, text_path), 'r', encoding='UTF-8') as fobj:
                 density_path = fobj.read().strip()

@@ -182,7 +182,8 @@ class GPAWDensityPartitioner(RegGridDensityPartitioner):
         )
 
         cube = read_cube(density_path)
-        density = cube[0] / ANGSTROM_PER_BOHR**3 * np.linalg.det(np.stack(tuple((cube[1]['xvec'], cube[1]['yvec'], cube[1]['zvec']))) * ANGSTROM_PER_BOHR)
+        voxel_size = np.linalg.det(np.stack(tuple((cube[1]['xvec'], cube[1]['yvec'], cube[1]['zvec']))) * ANGSTROM_PER_BOHR)
+        density = cube[0] / ANGSTROM_PER_BOHR**3 * voxel_size
 
         grid_interpolation = self.specific_options['grid_interpolation']
         assert np.all((np.round((np.array(density.shape) / grid_interpolation), 10) % 1.0) == 0.0), 'grid_interpolation produces a remainder for size of cube file density grid'
